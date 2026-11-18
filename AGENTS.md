@@ -22,9 +22,9 @@ Eglo Kozmetik (deterjan + kozmetik) için web tabanlı, modüler ERP + WMS + CRM
 7. **Migration:** Model değişikliğinde `python manage.py makemigrations <modül>`; mevcut migration dosyaları düzenlenmez.
 8. **Güvenlik:** Gizli bilgi koda yazılmaz (`.env`). Her görünüm `login_required` + uygun `permission_required` kullanır.
 9. **Test:** Değişiklikten sonra `python manage.py test` tamamen geçmeli.
-11. **Arayüz:** Her yeni giriş alanının açıklaması `apps/core/field_help.py`ye (ⓘ simgesi); ekranlar masaüstü/tablet/telefon uyumlu.
 10. **Belge:** Bir modülde davranış değiştiyse aynı committe `MODULE.md`, gerekiyorsa `docs/ROADMAP.md` ve
     önemli tasarım kararıysa `docs/DECISIONS.md` güncellenir.
+11. **Arayüz:** Her yeni giriş alanının açıklaması `apps/core/field_help.py`ye (ⓘ simgesi); ekranlar masaüstü/tablet/telefon uyumlu.
 
 ## Yeni modül ekleme (kısa)
 `docs/MODULE_TEMPLATE.md` dosyasını izleyin: klasör + `module.py` + `apps.py` (label = kod) + `MODULE.md` + testler,
