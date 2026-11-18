@@ -28,6 +28,7 @@ class Provider:
     icon = "plug"
     available = True
     fields: list = []
+    presets: list = []  # isteğe bağlı hazır servis kartları (bkz. notify.MAIL_PRESETS)
     steps = [("credentials", "Bağlantı bilgileri"), ("company", "Şirket bilgileri"), ("test", "Bağlantı testi"),
              ("settings", "Ayarlar"), ("summary", "Özet ve etkinleştir")]
 

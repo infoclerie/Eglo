@@ -78,3 +78,27 @@ class NotificationTests(ErpFixture, TestCase):
         with mock.patch("apps.integrations.providers.notify.get_connection", return_value=mail.get_connection("django.core.mail.backends.locmem.EmailBackend")):
             run_job(ej)
         self.assertEqual((mail.outbox[0].to, mail.outbox[0].subject), (["z@x.com"], "S"))
+
+
+class MailWizardTests(ErpFixture, TestCase):
+    def setUp(self):
+        self.setup_erp()
+        self.client.force_login(self.boss)
+
+    def test_service_preset_fills_server(self):
+        r = self.client.get("/integrations/new/smtp_email/service/")
+        self.assertContains(r, "Microsoft 365")
+        self.assertContains(r, "Amazon SES")
+        r = self.client.post("/integrations/new/smtp_email/service/", {"service": "sendgrid"})
+        self.assertRedirects(r, "/integrations/new/smtp_email/credentials/", fetch_redirect_response=False)
+        r = self.client.get("/integrations/new/smtp_email/credentials/")
+        self.assertContains(r, 'value="smtp.sendgrid.net"')
+        self.assertContains(r, 'value="apikey"')
+        self.assertContains(r, "API anahtar")
+
+    def test_friendly_errors(self):
+        import smtplib, socket
+        from apps.integrations.providers.notify import friendly_smtp_error
+        self.assertIn("uygulama şifresi", friendly_smtp_error(smtplib.SMTPAuthenticationError(535, b"5.7.8 bad")))
+        self.assertIn("SSL", friendly_smtp_error(socket.timeout("timed out")))
+        self.assertIn("Kimliği doğrulanmış SMTP", friendly_smtp_error(Exception("5.7.139 Authentication unsuccessful, SmtpClientAuthentication is disabled")))

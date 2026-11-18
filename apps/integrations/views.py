@@ -101,6 +101,24 @@ def wizard(request, provider, step):
     prev = steps[idx - 1] if idx > 0 else None
     ctx = {"p": p, "steps": p.steps, "step": step, "idx": idx, "prev": prev, "state": state}
 
+    if step == "service":  # hazır servis kartları (ör. e-posta: Gmail, Microsoft 365, Yandex...)
+        if request.method == "POST" and request.POST.get("service") in {x[0] for x in p.presets}:
+            code, _, host, port, sec, user, _, _ = next(x for x in p.presets if x[0] == request.POST["service"])
+            prev_service = state["config"].get("service")
+            state["config"]["service"] = code
+            if code != prev_service:  # servis değişti → sunucu bilgilerini hazır değerlerle doldur
+                state["config"].update({"host": host, "port": port, "security": sec})
+                if user:
+                    state["config"]["username"] = user
+            state["test"] = None
+            _save_state(request, p, state)
+            return redirect("integrations:wizard", provider=p.code, step=nxt)
+        groups = {}
+        for x in p.presets:
+            groups.setdefault(x[7], []).append({"code": x[0], "name": x[1], "host": x[2], "note": x[6]})
+        ctx.update({"preset_groups": groups, "current": state["config"].get("service")})
+        return render(request, "integrations/wizard.html", ctx)
+
     if step in ("credentials", "company", "settings"):
         Form = _form_class(p, step, secrets_known=state.get("has_secrets"))
         initial = {f.name: state["config"].get(f.name, f.default) for f in p.fields_for(step) if not f.secret}
@@ -117,6 +135,9 @@ def wizard(request, provider, step):
             _save_state(request, p, state)
             return redirect("integrations:wizard", provider=p.code, step=nxt)
         ctx["form"] = form
+        preset = next((x for x in getattr(p, "presets", []) if x[0] == state["config"].get("service")), None)
+        if preset and step == "credentials":
+            ctx["tip"] = {"name": preset[1], "note": preset[6]}
         return render(request, "integrations/wizard.html", ctx)
 
     if step == "test":

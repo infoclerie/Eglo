@@ -56,7 +56,8 @@ def badge(status, label=None):
 
 @register.filter
 def initials(user):
-    name = (user.get_full_name() or user.get_username() or "?").strip()
+    name = user if isinstance(user, str) else (user.get_full_name() or user.get_username())
+    name = "".join(c if c.isalnum() else " " for c in (name or "?")).strip() or "?"
     return "".join(p[0] for p in name.split()[:2]).upper()
 
 

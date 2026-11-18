@@ -71,3 +71,4 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 - E-posta (SMTP) ve SMS (Netgsm) sağlayıcıları Entegrasyonlar › Yeni bağlantı › Bildirim sihirbazında. Netgsm canlı hesapla doğrulanmadı.
 - chat modülü: yoklama (polling) ile çalışır, sunucuya ek kurulum yok. Yeşil/kırmızı nokta = son 60 sn içinde aktif mi.
 - Test sayısı: 95.
+- E-posta sihirbazı: ilk adımda servis kartları (notify.MAIL_PRESETS: Gmail, Workspace, M365, Outlook.com, Yandex, Zoho, Yahoo, iCloud, hosting/cPanel, Brevo, SES, SendGrid, Mailgun, Mailjet, Diğer). Seçim sunucu/port/güvenliği doldurur, servis notu gösterilir; SMTP hataları friendly_smtp_error ile Türkçeleştirilir. Yeni servis = listeye bir satır. Microsoft 365: Aralık 2026 sonundan itibaren SMTP AUTH (şifreyle giriş) varsayılan kapalı, yönetici açabilir.

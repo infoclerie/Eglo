@@ -5,8 +5,20 @@
   <a class="btn" href="{% url 'integrations:home' %}">Vazgeç</a></div>
 <div class="steps">{% for code, label in steps %}<div class="step {% if forloop.counter0 < idx %}done{% elif forloop.counter0 == idx %}current{% endif %}">{{ label }}</div>{% endfor %}</div>
 <div class="card card-pad" style="max-width:760px">
-{% if form %}
+{% if preset_groups %}
+  <h2 style="margin-top:0">Hangi e-posta servisini kullanıyorsunuz?</h2>
+  <p class="muted">Seçtiğinizde sunucu, port ve güvenlik ayarları otomatik doldurulur; size sadece kullanıcı adı ve şifre kalır.</p>
+  <form method="post">{% csrf_token %}
+  {% for g, items in preset_groups.items %}<h3 class="preset-group">{{ g }}</h3>
+    <div class="preset-grid">{% for x in items %}
+      <button name="service" value="{{ x.code }}" class="preset{% if x.code == current %} on{% endif %}">
+        <span class="preset-logo">{{ x.name|initials }}</span><span><b>{{ x.name }}</b><small>{{ x.host|default:"Sunucuyu kendim gireceğim" }}</small></span>
+      </button>{% endfor %}</div>{% endfor %}
+  </form>
+  {% if prev %}<a class="btn" style="margin-top:14px" href="{% url 'integrations:wizard' p.code prev %}">← Geri</a>{% endif %}
+{% elif form %}
   <form method="post" class="form" autocomplete="off">{% csrf_token %}
+    {% if tip %}<div class="alert success">{% icon "check" %}<div><b>{{ tip.name }}</b> — {{ tip.note }} <a href="{% url 'integrations:wizard' p.code 'service' %}">Servisi değiştir</a></div></div>{% endif %}
     {% if step == "credentials" and p.code == "uyumsoft_einvoice" %}<div class="alert success">{% icon "check" %}<div>Önce <b>Test ortamı</b> ile deneyin. Uyumsoft test hesabı: kullanıcı adı <b>Uyumsoft</b>, şifre <b>Uyumsoft</b>. Canlıya geçerken kendi Uyumsoft bilgilerinizi girin.</div></div>{% endif %}
     {% if step == "credentials" and p.code == "trendyol" %}<div class="alert success">{% icon "check" %}<div>Bilgiler: Trendyol Satıcı Paneli › sağ üstte mağaza adınız › <b>Hesap Bilgilerim › Entegrasyon Bilgileri</b> (yalnız ana kullanıcı görür).</div></div>{% endif %}
     {% if step == "company" %}<p class="muted" style="margin:0">Bu bilgiler faturalarda <b>satıcı</b> olarak yer alır. Vergi levhanızdaki gibi yazın.</p>{% endif %}
