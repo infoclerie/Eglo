@@ -1,6 +1,12 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ title }}{% endblock %}
 {% block content %}
-<h2>{{ title }}</h2>
-{% for m in messages %}<p style="color:var(--ok)">{{ m }}</p>{% endfor %}
-<form method="post" style="max-width:520px">{% csrf_token %}{{ form.as_p }}<button>Kaydet</button></form>
+<div class="page-head"><div><h1>{{ title }}</h1></div></div>
+<div class="card card-pad" style="max-width:640px">
+  {% if form.non_field_errors %}<div class="alert error" style="margin-bottom:14px">{% icon "alert" %}{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <form method="post" class="form">{% csrf_token %}
+    {% for f in form %}<div>{{ f.label_tag }}{{ f }}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>{% endfor %}
+    <div><button class="btn btn-primary btn-lg">{% icon "check" %}Kaydet</button></div>
+  </form>
+</div>
 {% endblock %}

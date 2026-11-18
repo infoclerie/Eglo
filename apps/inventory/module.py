@@ -4,10 +4,13 @@ MANIFEST = {
     "version": "0.1.0",
     "depends": ["core", "catalog"],
     "urls": "apps.inventory.urls",
+    "icon": "warehouse",
+    "color": "#0f9d8a",
     "menu": [
-        ("Stok Durumu", "inventory:summary"),
-        ("Barkod Sorgu", "inventory:scan"),
-        ("Mal Kabul", "inventory:receive"),
-        ("Transfer", "inventory:transfer"),
+        ("Stok Durumu", "inventory:summary", "warehouse"),
+        ("Barkod Sorgu", "inventory:scan", "scan"),
+        ("Mal Kabul", "inventory:receive", "inbox"),
+        ("Transfer", "inventory:transfer", "swap"),
+        ("Sayımlar", "admin:inventory_stockcount_changelist", "check"),
     ],
 }

@@ -18,5 +18,6 @@ def widgets(request):
         {"title": "SKT'si geçmiş LOT (blokajlı)", "value": expired, "url": reverse("admin:inventory_lot_changelist"),
          "level": "danger" if expired else "ok"},
         {"title": "Onay bekleyen sayım", "value": StockCount.objects.filter(status="submitted").count(),
-         "url": reverse("admin:inventory_stockcount_changelist"), "level": "warning"},
+         "url": reverse("admin:inventory_stockcount_changelist"),
+         "level": "warning" if StockCount.objects.filter(status="submitted").exists() else "ok"},
     ]

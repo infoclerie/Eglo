@@ -133,6 +133,10 @@ def receive(product, quantity, location, lot_no=None, expiry_date=None, producti
         if not created and expiry_date and lot.expiry_date and lot.expiry_date != expiry_date:
             raise ValidationError(f"LOT {lot_no} sistemde farklı SKT ile kayıtlı ({lot.expiry_date}).")
     source = virtual_location("production" if move_type == "production_in" else "supplier")
+    if unit_cost is not None:
+        from apps.catalog.services import update_average_cost
+        on_hand = Quant.objects.filter(product=product).aggregate(s=Sum("quantity"))["s"] or ZERO
+        update_average_cost(product, on_hand, quantity, unit_cost)
     return move_stock(product, quantity, source, location, move_type, lot=lot, pallet=pallet,
                       reference=reference, user=user, unit_cost=unit_cost)
 
@@ -216,6 +220,38 @@ def ship_reserved(reference, user=None, destination=None, move_type="sale_out"):
         r.delete()
     publish("inventory.shipped", reference=reference, moves=moves)
     return moves
+
+
+def reservations_for(reference):
+    """Bir referansın rezervasyonları (toplama listesi için), lokasyon koduna göre sıralı."""
+    return [{"product": r.product, "location": r.quant.location, "lot": r.quant.lot, "pallet": r.quant.pallet,
+             "quantity": r.quantity}
+            for r in Reservation.objects.select_related("product", "quant__location", "quant__lot", "quant__pallet")
+            .filter(reference=reference).order_by("quant__location__code")]
+
+
+def shipped_lots(reference, product):
+    """Bir siparişle sevk edilen LOT'lar ve miktarları (iade kabulünde LOT bulmak için)."""
+    rows = (StockMove.objects.filter(reference=reference, product=product, move_type="sale_out")
+            .values("lot").annotate(q=Sum("quantity")).order_by("lot"))
+    return [(Lot.objects.get(pk=r["lot"]) if r["lot"] else None, r["q"]) for r in rows]
+
+
+@transaction.atomic
+def receive_customer_return(product, quantity, location, lot=None, reference="", user=None):
+    """Müşteri iadesi: sanal müşteri lokasyonundan iade kontrol alanına giriş."""
+    return move_stock(product, quantity, virtual_location("customer"), location, "customer_return",
+                      lot=lot, reference=reference, user=user)
+
+
+def find_location(warehouse, kind):
+    qs = Location.objects.filter(kind=kind, active=True)
+    if warehouse is not None:
+        qs = qs.filter(warehouse=warehouse)
+    loc = qs.order_by("code").first()
+    if loc is None:
+        raise ValidationError(f"Depoda '{dict(Location.KIND)[kind]}' türünde lokasyon tanımlı değil.")
+    return loc
 
 
 # ---------------------------------------------------------------- stok durumu

@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Sipariş Havuzu{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Sipariş Havuzu</h1><p>Tüm kanallardan gelen siparişler ve her siparişin o aşamada ne kadar beklediği.</p></div>
+  <a class="btn btn-primary" href="{% url 'admin:sales_salesorder_add' %}">{% icon "cart" %}Yeni sipariş</a></div>
+<div class="chips"><a class="chip{% if not status %} active{% endif %}" href="?">Açık siparişler</a>
+{% for code, label, n in statuses %}{% if n %}<a class="chip{% if code == status %} active{% endif %}" href="?status={{ code }}">{{ label }}<b>{{ n }}</b></a>{% endif %}{% endfor %}</div>
+<div class="card"><div class="table-wrap"><table class="table">
+<thead><tr><th>Sipariş</th><th class="hide-sm">Tarih</th><th>Kanal</th><th>Müşteri</th><th>Durum</th><th class="num">Bekleme</th><th class="num">Toplam</th></tr></thead><tbody>
+{% for o in orders %}
+<tr><td><a href="{% url 'admin:sales_salesorder_change' o.pk %}"><b>{{ o.number }}</b></a>{% if o.external_ref %}<div class="small muted">{{ o.external_ref }}</div>{% endif %}</td>
+<td class="hide-sm">{{ o.order_date|date:"d.m.Y H:i" }}</td><td>{{ o.channel }}</td><td>{{ o.display_customer|default:"—" }}</td>
+<td>{{ o.status|badge:o.get_status_display }}</td>
+<td class="num">{% if o.hours_in_status > 24 %}<span class="badge danger">{{ o.hours_in_status }} sa</span>{% else %}{{ o.hours_in_status }} sa{% endif %}</td>
+<td class="num"><b>{{ o.grand_total }}</b> ₺</td></tr>
+{% empty %}<tr><td colspan="7"><div class="empty">{% icon "cart" %}<div>Bu filtrede sipariş yok.</div></div></td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

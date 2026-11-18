@@ -23,3 +23,9 @@ adet = min(bileşen stoğu / set içi miktar).
 
 **2026-11-18 · Muhasebe hem içeride hem dışa aktarım.** Cari, fatura, tahsilat ve kârlılık sistemin içinde;
 resmi defter için mevcut muhasebe programına fiş/fatura aktarımı (müşteri kararı).
+
+**2026-11-19 · Tek `Partner` cari modeli.** Müşteri, bayi, tedarikçi ve fason üretici aynı tabloda (tür + grup); muhasebe cari hesabı buna bağlanır.
+
+**2026-11-19 · Stok sevkte düşer.** Onayda rezerve, `shipping.ship` anında `ship_reserved` ile düşer; paketlenmiş ama sevk edilmemiş ürün stokta görünür (rezerve).
+
+**2026-11-19 · Ortak arayüz tasarım sistemi + sihirbazlar.** Tek CSS dosyası ve ikon/rozet etiketleri; kurulum gerektiren işler adım adım sihirbaz.

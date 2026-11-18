@@ -1,32 +1,35 @@
-<!doctype html>
+{% load static ui %}<!doctype html>
 <html lang="tr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Eglo ERP{% endblock %}</title>
-  <style>
-    :root { --bg:#f6f7f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --line:#e5e7eb;
-            --accent:#714b67; --ok:#15803d; --warning:#b45309; --danger:#b91c1c; }
-    * { box-sizing:border-box } body { margin:0; font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--text) }
-    header { background:var(--accent); color:#fff; padding:10px 16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap }
-    header a { color:#fff; text-decoration:none; opacity:.9 } header a:hover { opacity:1; text-decoration:underline }
-    header .brand { font-weight:700; margin-right:8px }
-    main { padding:16px; max-width:1280px; margin:0 auto }
-    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px; text-decoration:none; color:inherit; display:block }
-    .card .v { font-size:28px; font-weight:700 } .card .t { color:var(--muted) }
-    .card.warning { border-left:4px solid var(--warning) } .card.danger { border-left:4px solid var(--danger) } .card.ok { border-left:4px solid var(--ok) }
-    table { width:100%; border-collapse:collapse; background:var(--card) } th,td { padding:8px; border-bottom:1px solid var(--line); text-align:left }
-    th { color:var(--muted); font-weight:600 } td.num, th.num { text-align:right; font-variant-numeric:tabular-nums }
-  </style>
+  <title>{% block title %}Eglo ERP{% endblock %} · Eglo ERP</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
 <body>
-<header>
-  <span class="brand">Eglo ERP</span>
-  {% for item in erp_menu %}<a href="{% url item.url_name %}">{{ item.label }}</a>{% endfor %}
-  <a href="{% url 'admin:index' %}">Yönetim</a>
-  <span style="margin-left:auto">{{ request.user }}</span>
-</header>
-<main>{% block content %}{% endblock %}</main>
+<div class="app">
+  <aside class="sidebar">
+    <a class="logo" href="{% url 'core:dashboard' %}"><span>{% icon "box" %}</span>Eglo ERP</a>
+    {% for g in erp_nav %}
+      <div class="nav-group">{{ g.name }}</div>
+      <nav class="nav">{% for i in g.items %}<a href="{{ i.url }}"{% if i.active %} class="active"{% endif %}>{% icon i.icon %}{{ i.label }}</a>{% endfor %}</nav>
+    {% endfor %}
+    <div class="nav-group">Sistem</div>
+    <nav class="nav">{% if request.user.is_staff %}<a href="{% url 'admin:index' %}">{% icon "admin" %}Yönetim paneli</a>{% endif %}</nav>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" onclick="document.body.classList.toggle('nav-open')" aria-label="Menü">{% icon "menu" %}</button>
+      <form action="{% url 'inventory:scan' %}" method="get" style="flex:1;max-width:420px"><input type="search" name="code" placeholder="Barkod, SKU, lokasyon veya palet ara…"></form>
+      <div class="spacer"></div>
+      <div class="user"><span class="avatar">{{ request.user|initials }}</span><span class="hide-sm">{{ request.user.get_full_name|default:request.user.username }}</span>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-sm" title="Çıkış">{% icon "logout" %}</button></form></div>
+    </header>
+    <main class="content">
+      {% if messages %}<div class="alerts">{% for m in messages %}<div class="alert {{ m.tags }}">{% if m.tags == 'error' %}{% icon "alert" %}{% else %}{% icon "check" %}{% endif %}{{ m }}</div>{% endfor %}</div>{% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
 </body>
 </html>

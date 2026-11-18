@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ sh.number }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ sh.number }} · {{ sh.order }}</h1><p>{{ sh.order.display_customer }} — {{ sh.order.channel }}</p></div>{{ sh.status|badge:sh.get_status_display }}</div>
+<div class="steps">
+  <div class="step {% if sh.status in 'waiting picking' %}current{% else %}done{% endif %}">Toplama</div>
+  <div class="step {% if sh.status == 'picked' %}current{% elif sh.status in 'packed shipped delivered' %}done{% endif %}">Paketleme</div>
+  <div class="step {% if sh.status == 'packed' %}current{% elif sh.status in 'shipped delivered' %}done{% endif %}">Sevk</div>
+  <div class="step {% if sh.status == 'shipped' %}current{% elif sh.status == 'delivered' %}done{% endif %}">Teslim</div>
+</div>
+<div class="grid grid-2">
+<div class="card card-pad">
+{% if sh.status == "waiting" or sh.status == "picking" %}
+  <h2>{% icon "scan" %} Ürün barkodu okutun</h2>
+  <form method="post" class="form">{% csrf_token %}<input type="hidden" name="action" value="scan">
+    <input class="scan-input" name="code" placeholder="Ürün veya koli barkodu…" autofocus autocomplete="off">
+    <div class="inline"><div><label>Adet</label><input name="qty" value="1" inputmode="decimal"></div><button class="btn btn-primary btn-lg">Okut</button></div></form>
+  <p class="small muted">Koli barkodu okutulursa koli içi adet kadar sayılır. Siparişte olmayan ürün kabul edilmez.</p>
+{% elif sh.status == "picked" %}
+  <h2>{% icon "box" %} Paketleme</h2>
+  <form method="post" class="form">{% csrf_token %}<input type="hidden" name="action" value="pack">
+    <div class="inline"><div><label>Koli adedi</label><input name="packages" value="1" inputmode="numeric"></div>
+    <div><label>Tartı (kg)</label><input name="weight" inputmode="decimal" placeholder="Beklenen {{ sh.expected_weight_kg|floatformat:'-3' }}"></div></div>
+    <button class="btn btn-ok btn-lg">{% icon "check" %}Paketlemeyi tamamla</button></form>
+{% elif sh.status == "packed" %}
+  <h2>{% icon "truck" %} Sevk et</h2>
+  <form method="post" class="form">{% csrf_token %}<input type="hidden" name="action" value="ship">
+    <div><label>Kargo / taşıyıcı</label><select name="carrier">{% for c, n in carriers %}<option value="{{ c }}">{{ n }}</option>{% endfor %}</select></div>
+    <div><label>Takip numarası</label><input name="tracking"></div>
+    <div class="inline"><div><label>Plaka</label><input name="plate"></div><div><label>Şoför</label><input name="driver"></div></div>
+    <button class="btn btn-ok btn-lg">{% icon "truck" %}Sevk et — stoktan düş</button></form>
+{% elif sh.status == "shipped" %}
+  <h2>{% icon "check" %} Teslimat</h2>
+  <form method="post" class="form">{% csrf_token %}<input type="hidden" name="action" value="deliver">
+    <div><label>Teslim alan</label><input name="received_by"></div><div><label>Eksik / hasar notu</label><input name="note"></div>
+    <button class="btn btn-ok btn-lg">Teslim edildi</button></form>
+{% else %}<div class="empty">{% icon "check" %}<div>Bu sevkiyat tamamlandı.</div></div>{% endif %}
+</div>
+<div class="card">
+  <div class="card-head"><h2>Toplama listesi</h2><span class="muted small">Beklenen ağırlık {{ sh.expected_weight_kg|floatformat:"-3" }} kg</span></div>
+  <div class="table-wrap"><table class="table"><thead><tr><th>Lokasyon</th><th>Ürün</th><th>LOT</th><th class="num">Toplanan</th></tr></thead><tbody>
+  {% for l in lines %}<tr{% if l.remaining <= 0 %} class="row-ok"{% endif %}><td><b>{{ l.location }}</b></td>
+  <td>{{ l.product.sku }}<div class="small muted">{{ l.product.barcode }}</div></td><td>{{ l.lot.lot_no|default:"—" }}</td>
+  <td class="num"><b>{{ l.picked_quantity|floatformat:"-3" }}</b> / {{ l.quantity|floatformat:"-3" }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  <div style="padding:14px 20px"><div class="progress"><span style="width:{{ progress }}%"></span></div><div class="small muted" style="margin-top:6px">%{{ progress }} toplandı</div></div>
+</div>
+</div>
+{% endblock %}

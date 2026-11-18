@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Mal Kabul {{ po.number }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Mal Kabul · {{ po.number }}</h1><p>{{ po.supplier.name }} — teslim deposu {{ po.warehouse }}</p></div>{{ po.status|badge:po.get_status_display }}</div>
+<div class="grid" style="gap:14px">
+{% for l in lines %}
+<div class="card card-pad">
+  <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+    <div><b>{{ l.product.sku }}</b> · {{ l.product.name }}</div>
+    <div class="muted">Sipariş <b>{{ l.quantity|floatformat:"-3" }}</b> · Alınan <b>{{ l.received_quantity|floatformat:"-3" }}</b></div>
+  </div>
+  {% if l.open_quantity > 0 %}
+  <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="line" value="{{ l.pk }}">
+    <div><label>Gelen miktar</label><input name="quantity" value="{{ l.open_quantity|floatformat:'-3' }}" inputmode="decimal"></div>
+    <div><label>Yerleşim lokasyonu</label><select name="location">{% for loc in locations %}<option value="{{ loc.pk }}">{{ loc }} · {{ loc.get_kind_display }}</option>{% endfor %}</select></div>
+    {% if l.product.track_lot %}<div><label>LOT no</label><input name="lot_no" required></div>
+    <div><label>SKT</label><input type="date" name="expiry_date"></div><div><label>Üretim tarihi</label><input type="date" name="production_date"></div>{% endif %}
+    <div><label>İrsaliye no</label><input name="waybill"></div>
+    <button class="btn btn-primary">{% icon "inbox" %}Kabul et</button>
+  </form>
+  {% else %}<span class="badge ok">Tamamı teslim alındı</span>{% endif %}
+</div>
+{% endfor %}
+</div>
+{% endblock %}

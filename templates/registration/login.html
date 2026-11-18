@@ -1,0 +1,14 @@
+{% load static ui %}<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Giriş · Eglo ERP</title><link rel="stylesheet" href="{% static 'css/app.css' %}"></head>
+<body><div class="auth"><div class="card">
+  <div class="logo">{% icon "box" %} Eglo ERP</div>
+  <p class="muted" style="margin:0 0 22px">Depo, sipariş, sevkiyat ve finans yönetimi</p>
+  {% if form.errors %}<div class="alert error" style="margin-bottom:14px">{% icon "alert" %}Kullanıcı adı veya şifre hatalı.</div>{% endif %}
+  <form method="post" class="form">{% csrf_token %}
+    <div><label for="id_username">Kullanıcı adı</label><input type="text" name="username" id="id_username" autofocus autocomplete="username" required></div>
+    <div><label for="id_password">Şifre</label><input type="password" name="password" id="id_password" autocomplete="current-password" required></div>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn btn-primary btn-lg" style="justify-content:center">Giriş yap</button>
+  </form>
+</div></div></body></html>

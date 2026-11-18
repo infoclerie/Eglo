@@ -1,15 +1,22 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load ui %}
+{% block title %}Barkod Sorgu{% endblock %}
 {% block content %}
-<h2>Barkod Sorgu</h2>
-<form method="get"><input name="code" value="{{ code }}" placeholder="Ürün / lokasyon / palet barkodu okutun" autofocus style="font-size:20px;width:100%;max-width:480px;padding:8px"></form>
-{% if not_found %}<p style="color:var(--danger)">"{{ code }}" bulunamadı.</p>{% endif %}
-{% if product %}<h3>{{ product }}</h3><p>Satışa uygun: <b>{{ summary.available|floatformat:"-3" }}</b> · Rezerve: {{ summary.reserved|floatformat:"-3" }} · Fiziksel: {{ summary.physical|floatformat:"-3" }}</p>{% endif %}
-{% if location %}<h3>Lokasyon {{ location }} ({{ location.get_kind_display }})</h3>{% endif %}
-{% if pallet %}<h3>Palet {{ pallet }} @ {{ pallet.location }}</h3>{% endif %}
+<div class="page-head"><div><h1>Barkod Sorgu</h1><p>Ürün, koli, lokasyon veya palet barkodunu okutun.</p></div></div>
+<form method="get" style="margin-bottom:18px"><input class="scan-input" name="code" value="{{ code }}" placeholder="Barkod okutun…" autofocus></form>
+{% if not_found %}<div class="alert error">{% icon "alert" %}"{{ code }}" bulunamadı.</div>{% endif %}
+{% if product %}
+<div class="grid grid-kpi" style="margin-bottom:16px">
+  <div class="card kpi ok"><div class="t">{{ product.sku }} · satışa uygun</div><div class="v">{{ summary.available|floatformat:"-3" }}</div></div>
+  <div class="card kpi"><div class="t">Rezerve</div><div class="v">{{ summary.reserved|floatformat:"-3" }}</div></div>
+  <div class="card kpi"><div class="t">Fiziksel toplam</div><div class="v">{{ summary.physical|floatformat:"-3" }}</div></div>
+</div><h2>{{ product.name }}</h2>{% endif %}
+{% if location %}<h2>Lokasyon {{ location }} <span class="badge">{{ location.get_kind_display }}</span></h2>{% endif %}
+{% if pallet %}<h2>Palet {{ pallet }} · {{ pallet.location|default:"lokasyon yok" }}</h2>{% endif %}
 {% if quants %}
-<table><tr><th>Ürün</th><th>Lokasyon</th><th>Palet</th><th>LOT</th><th>SKT</th><th>Durum</th><th class="num">Miktar</th><th class="num">Rezerve</th></tr>
-{% for x in quants %}<tr><td>{{ x.q.product.sku }}</td><td>{{ x.q.location }}</td><td>{{ x.q.pallet|default:"-" }}</td>
-<td>{{ x.q.lot.lot_no|default:"-" }}</td><td>{{ x.q.lot.expiry_date|default:"-" }}</td><td>{{ x.status }}</td>
-<td class="num">{{ x.q.quantity|floatformat:"-3" }}</td><td class="num">{{ x.q.reserved_quantity|floatformat:"-3" }}</td></tr>{% endfor %}
-</table>{% endif %}
+<div class="card"><div class="table-wrap"><table class="table">
+<thead><tr><th>Ürün</th><th>Lokasyon</th><th class="hide-sm">Palet</th><th>LOT</th><th>SKT</th><th>Durum</th><th class="num">Miktar</th><th class="num">Rezerve</th></tr></thead><tbody>
+{% for x in quants %}<tr><td><b>{{ x.q.product.sku }}</b></td><td>{{ x.q.location }}</td><td class="hide-sm">{{ x.q.pallet|default:"—" }}</td>
+<td>{{ x.q.lot.lot_no|default:"—" }}</td><td>{{ x.q.lot.expiry_date|date:"d.m.Y"|default:"—" }}</td><td>{{ x.code|badge:x.status }}</td>
+<td class="num"><b>{{ x.q.quantity|floatformat:"-3" }}</b></td><td class="num">{{ x.q.reserved_quantity|floatformat:"-3" }}</td></tr>{% endfor %}
+</tbody></table></div></div>{% endif %}
 {% endblock %}

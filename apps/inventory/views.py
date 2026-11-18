@@ -51,7 +51,8 @@ def scan(request):
         else:
             quants = quants.none()
             ctx["not_found"] = True
-        ctx["quants"] = [{"q": x, "status": services.EXPIRY_LABELS.get(services.expiry_status(x.lot), "-")}
+        ctx["quants"] = [{"q": x, "code": services.expiry_status(x.lot) or "",
+                          "status": services.EXPIRY_LABELS.get(services.expiry_status(x.lot), "LOT yok")}
                          for x in quants.order_by("lot__expiry_date")]
     return render(request, "inventory/scan.html", ctx)
 

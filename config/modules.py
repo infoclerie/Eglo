@@ -14,6 +14,10 @@ DEFAULT_MODULES = [
     "core",
     "catalog",
     "inventory",
+    "partners",
+    "sales",
+    "shipping",
+    "purchase",
 ]
 
 
