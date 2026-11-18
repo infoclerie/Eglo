@@ -1,6 +1,15 @@
 # Kurulum
 
-## Sunucu
+## Hızlı kurulum (tek komut)
+```bash
+curl -fsSL https://raw.githubusercontent.com/infoclerie/Eglo/main/deploy/bootstrap.sh | sudo bash
+# alan adı hazırsa: ... | sudo DOMAIN=erp.eglokozmetik.com bash
+```
+Alan adı verilmezse geçici olarak `<ip-tireli>.sslip.io` adresi kullanılır (gerçek HTTPS sertifikası alınır).
+AWS Lightsail'de ayrıca Networking > IPv4 Firewall'a **HTTPS (443)** kuralı eklenmeli.
+Uygulama `/opt/eglo-erp` altındadır; güncelleme: `cd /opt/eglo-erp && sudo git pull && sudo docker compose up -d --build`.
+
+## Sunucu (elle kurulum)
 Ubuntu 24.04 LTS · 4 vCPU · 8 GB RAM · 160 GB NVMe (büyüme: 8 vCPU / 16 GB) · sabit IP · alan adı A kaydı.
 
 İlk sertleştirme (root):
