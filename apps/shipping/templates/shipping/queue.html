@@ -2,11 +2,13 @@
 {% block title %}Toplama / Sevkiyat{% endblock %}
 {% block content %}
 <div class="page-head"><div><h1>Toplama ve Sevkiyat</h1><p>Onaylanan siparişler otomatik olarak buraya düşer. Öncelik sırasına göre listelenir.</p></div></div>
+<form id="lbl" action="{% url 'shipping:labels' %}" target="_blank" onsubmit="this.ids.value=[...document.querySelectorAll('.pick:checked')].map(x=>x.value).join(',');return !!this.ids.value">
+<input type="hidden" name="ids"><button class="btn" style="margin-bottom:12px">{% icon "tag" %}Seçilenlerin etiketlerini yazdır</button></form>
 <div class="card"><div class="table-wrap"><table class="table">
-<thead><tr><th>Sevkiyat</th><th>Sipariş</th><th class="hide-sm">Kanal</th><th>Müşteri</th><th>Durum</th><th class="hide-sm">Kargo / takip</th><th></th></tr></thead><tbody>
-{% for s in shipments %}<tr><td><b>{{ s.number }}</b></td><td>{{ s.order }}</td><td class="hide-sm">{{ s.order.channel }}</td><td>{{ s.order.display_customer|default:"—" }}</td>
+<thead><tr><th style="width:36px"></th><th>Sevkiyat</th><th>Sipariş</th><th class="hide-sm">Kanal</th><th>Müşteri</th><th>Durum</th><th class="hide-sm">Kargo / takip</th><th></th></tr></thead><tbody>
+{% for s in shipments %}<tr><td><input type="checkbox" class="pick" value="{{ s.pk }}" style="width:20px;height:20px"></td><td><b>{{ s.number }}</b></td><td>{{ s.order }}</td><td class="hide-sm">{{ s.order.channel }}</td><td>{{ s.order.display_customer|default:"—" }}</td>
 <td>{{ s.status|badge:s.get_status_display }}</td><td class="hide-sm">{{ s.get_carrier_display }} {{ s.tracking_no }}</td>
 <td class="num"><a class="btn btn-sm btn-primary" href="{% url 'shipping:pick' s.pk %}">{% if s.status == "waiting" %}Toplamaya başla{% else %}Aç{% endif %}</a></td></tr>
-{% empty %}<tr><td colspan="7"><div class="empty">{% icon "truck" %}<div>Bekleyen sevkiyat yok.</div></div></td></tr>{% endfor %}
+{% empty %}<tr><td colspan="8"><div class="empty">{% icon "truck" %}<div>Bekleyen sevkiyat yok.</div></div></td></tr>{% endfor %}
 </tbody></table></div></div>
 {% endblock %}

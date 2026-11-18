@@ -31,7 +31,7 @@
 core (modül sistemi, olay yolu, işlem logu, onay akışı, roller, numara serisi, görünüm/tema, panel düzeni) · catalog · inventory
 (LOT/SKT/FEFO, rezervasyon, sayım, satın alma önerisi) · partners · sales (kampanyalar, mükerrer engeli, kredi limiti) ·
 shipping (barkodlu toplama, tartı, sevk, iade) · purchase (teklif, onay, mal kabul, ortalama maliyet) · accounting (otomatik
-e-Fatura/e-Arşiv faturası, UBL-TR, cari, tahsilat, hakediş, kârlılık) · integrations (sihirbaz, iş kuyruğu, Uyumsoft, Trendyol).
+e-Fatura/e-Arşiv faturası, UBL-TR, cari, tahsilat, hakediş, kârlılık) · integrations (sihirbaz, iş kuyruğu, Uyumsoft, Trendyol) · portal (bayi portalı) · kargo etiketi.
 Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 
 ## 4. Gerçek sistemlerde doğrulanan bilgiler (değiştirmeden önce oku)
@@ -44,8 +44,8 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 ## 5. Sıradaki işler (öncelik sırası)
 1. Trendyol canlı bağlantı kontrolü; kargo takip no bildirimi (`/tracking-details`), iadeler (claims), fatura linki.
 2. **Hepsiburada** sağlayıcısı (`providers/` altında Trendyol örneğiyle aynı yapı + sihirbaz alanları).
-3. **Kargo** sağlayıcıları (Yurtiçi, Aras, MNG): etiket, takip no → `shipping` modülüne.
-4. **Bayi portalı + CRM** (§8): bayi girişi, özel fiyat, online sipariş, cari ekstre; fırsat/aktivite takibi, hatırlatma.
+3. **Kargo firması API'leri** (Yurtiçi, Aras, MNG): gönderi oluşturma + takip no; yazdırılabilir etiket hazır (`shipping`). Firma anlaşma/API bilgileri kullanıcıdan alınacak.
+4. **CRM** (§8.3–8.5): fırsat, aktivite, segment, hatırlatma. Bayi portalı hazır (`apps/portal`).
 5. **Üretim / fason** (§10): reçete (BOM), üretim emri, hammadde sarfı (`production_consume` hareket türü hazır), kalite kontrol → karantina.
 6. **Raporlar** (§11): Excel/PDF, stok yaşlandırma, devir hızı, kanal ciro grafikleri; bildirimler (§15, e-posta).
 7. Excel ile toplu ürün/fiyat/stok içe aktarma (§16).
@@ -56,3 +56,6 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 - Değişiklik GitHub'a gönderilir → kullanıcı sunucuda güncelleme komutunu çalıştırır.
 - Arayüzde yeni ekran: `templates/base.html`'i genişlet, `static/css/app.css` sınıflarını kullan (`page-head`, `card`, `table`,
   `badge`, `btn`, `steps`, `form`). Yönetim paneli ekranları otomatik aynı görünümü alır.
+
+## 7. Dikkat: Türkçe sayı biçimi
+Şablonlarda sayılar "54,00" (virgüllü) görünür. Form `value` alanlarına sayı basarken `|unlocalize` kullanın; kullanıcı girdisinde virgülü noktaya çevirin.

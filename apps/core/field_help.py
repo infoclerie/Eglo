@@ -76,4 +76,5 @@ FIELD_HELP = {
     "reference": "Dekont, irsaliye veya belge numarası.",
     "fee": "Banka / POS kesintisi (varsa).",
     "note": "İsteğe bağlı açıklama.",
+    "partner": "Bu kullanıcının bağlı olduğu bayi cari kartı. Bayi yalnızca bu carinin sipariş, fatura ve ekstresini görür.",
 }

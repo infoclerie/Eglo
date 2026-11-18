@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load ui %}
+{% extends "base.html" %}{% load ui l10n %}
 {% block title %}Mal Kabul {{ po.number }}{% endblock %}
 {% block content %}
 <div class="page-head"><div><h1>Mal Kabul · {{ po.number }}</h1><p>{{ po.supplier.name }} — teslim deposu {{ po.warehouse }}</p></div>{{ po.status|badge:po.get_status_display }}</div>
@@ -11,7 +11,7 @@
   </div>
   {% if l.open_quantity > 0 %}
   <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="line" value="{{ l.pk }}">
-    <div><label>Gelen miktar</label><input name="quantity" value="{{ l.open_quantity|floatformat:'-3' }}" inputmode="decimal"></div>
+    <div><label>Gelen miktar</label><input name="quantity" value="{{ l.open_quantity|unlocalize }}" inputmode="decimal"></div>
     <div><label>Yerleşim lokasyonu</label><select name="location">{% for loc in locations %}<option value="{{ loc.pk }}">{{ loc }} · {{ loc.get_kind_display }}</option>{% endfor %}</select></div>
     {% if l.product.track_lot %}<div><label>LOT no</label><input name="lot_no" required></div>
     <div><label>SKT</label><input type="date" name="expiry_date"></div><div><label>Üretim tarihi</label><input type="date" name="production_date"></div>{% endif %}

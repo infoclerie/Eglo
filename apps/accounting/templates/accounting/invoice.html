@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load ui %}
+{% extends "base.html" %}{% load ui l10n %}
 {% block title %}{{ inv }}{% endblock %}
 {% block content %}
 <div class="page-head"><div><h1>{{ inv.get_kind_display }} · {{ inv }}</h1><p>{{ inv.get_doc_type_display }} · {{ inv.get_profile_display }} · ETTN {{ inv.uuid }}</p></div>
@@ -28,7 +28,7 @@
       {% if inv.partner and inv.open_amount > 0 and inv.status != "draft" and inv.status != "cancelled" %}
       <form method="post" class="form" style="border-top:1px solid var(--line);padding-top:14px">{% csrf_token %}<input type="hidden" name="action" value="payment">
         <b>{% if inv.direction == "out" %}Tahsilat al{% else %}Ödeme yap{% endif %}</b>
-        <div class="inline"><div><label>Tutar</label><input name="amount" value="{{ inv.open_amount }}" inputmode="decimal"></div>
+        <div class="inline"><div><label>Tutar</label><input name="amount" value="{{ inv.open_amount|unlocalize }}" inputmode="decimal"></div>
           <div><label>Tarih</label><input type="date" name="date" value="{{ today|date:'Y-m-d' }}"></div></div>
         <div class="inline"><div><label>Hesap</label><select name="account">{% for a in accounts %}<option value="{{ a.pk }}">{{ a }}</option>{% empty %}<option value="">Önce kasa/banka hesabı tanımlayın</option>{% endfor %}</select></div>
           <div><label>Yöntem</label><select name="method"><option value="transfer">Havale / EFT</option><option value="card">Kredi kartı</option><option value="cash">Nakit</option><option value="check">Çek / senet</option><option value="marketplace">Pazaryeri hakedişi</option></select></div></div>

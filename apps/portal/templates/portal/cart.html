@@ -1,0 +1,21 @@
+{% extends "portal/base.html" %}{% load ui %}
+{% block title %}Sepet{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Sepet</h1></div><a class="btn" href="{% url 'portal:home' %}">← Alışverişe devam</a></div>
+{% if lines %}
+<form method="post">{% csrf_token %}
+<div class="card"><div class="table-wrap"><table class="table">
+<thead><tr><th>Ürün</th><th class="num">Birim fiyat</th><th class="num" style="width:120px">Adet</th><th class="num">Tutar</th></tr></thead><tbody>
+{% for l in lines %}<tr{% if l.qty > l.available %} class="row-danger"{% endif %}><td><b>{{ l.p.name }}</b><div class="small muted">{{ l.p.sku }}{% if l.qty > l.available %} · stokta {{ l.available }} adet var{% endif %}</div></td>
+<td class="num">{{ l.price }}</td><td class="num"><input name="qty_{{ l.p.pk }}" type="number" min="0" value="{{ l.qty }}" inputmode="numeric"></td><td class="num"><b>{{ l.amount|floatformat:2 }}</b></td></tr>{% endfor %}
+</tbody></table></div>
+<div style="padding:14px 20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center">
+  <button class="btn" name="action" value="update">Sepeti güncelle (0 = sil)</button>
+  <div class="num">Ara toplam <b>{{ total|floatformat:2 }}</b> · KDV {{ vat }} · <span style="font-size:18px">Toplam <b>{{ grand|floatformat:2 }} TL</b></span></div></div></div>
+<div class="card card-pad form" style="margin-top:16px;max-width:640px">
+  <div><label for="note">Sipariş notu</label><input id="note" name="note" placeholder="Teslimat ile ilgili notunuz (isteğe bağlı)"></div>
+  <button class="btn btn-ok btn-lg" name="action" value="order">{% icon "check" %}Siparişi gönder</button>
+  <p class="small muted" style="margin:0">Sipariş cari hesabınıza vadeli işlenir. Kredi limitiniz aşılırsa sipariş onaya düşer.</p>
+</div></form>
+{% else %}<div class="card"><div class="empty">{% icon "cart" %}<div>Sepetiniz boş. <a href="{% url 'portal:home' %}">Kataloğa git →</a></div></div></div>{% endif %}
+{% endblock %}

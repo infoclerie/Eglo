@@ -54,7 +54,7 @@ def invoice_detail(request, pk):
                 messages.success(request, "İptal talebi yönetici onayına gönderildi.")
             elif action == "payment":
                 services.register_payment(inv.partner, Account.objects.get(pk=request.POST["account"]),
-                                          request.POST["amount"], "in" if inv.direction == "out" else "out",
+                                          request.POST["amount"].replace(".", "").replace(",", ".") if "," in request.POST["amount"] else request.POST["amount"], "in" if inv.direction == "out" else "out",
                                           parse_date(request.POST.get("date") or "") or None,
                                           request.POST.get("method", "transfer"), invoice=inv,
                                           reference=request.POST.get("reference", ""), user=request.user)

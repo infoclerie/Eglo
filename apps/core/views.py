@@ -33,6 +33,8 @@ def collect_widgets(request):
 
 @login_required
 def dashboard(request):
+    if hasattr(request.user, "portal") and not request.user.is_staff:
+        return redirect("portal:home")  # bayi kullanıcıları doğrudan portala
     pref = UserPreference.for_user(request.user)
     widgets = collect_widgets(request)
     if pref.widget_order:

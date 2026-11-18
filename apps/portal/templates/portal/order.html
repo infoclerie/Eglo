@@ -1,0 +1,16 @@
+{% extends "portal/base.html" %}{% load ui %}
+{% block title %}{{ order.number }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Sipariş {{ order.number }}</h1><p>{{ order.order_date|date:"d.m.Y H:i" }}</p></div>{{ order.status|badge:order.get_status_display }}</div>
+<div class="card"><div class="table-wrap"><table class="table">
+<thead><tr><th>Ürün</th><th class="num">Adet</th><th class="num">Birim fiyat</th><th class="num">Tutar (KDV hariç)</th></tr></thead><tbody>
+{% for l in lines %}<tr><td>{{ l.product.name }}</td><td class="num">{{ l.quantity|floatformat:"-3" }}</td><td class="num">{{ l.unit_price }}</td><td class="num">{{ l.net }}</td></tr>{% endfor %}
+<tr><td colspan="3"><b>Genel toplam (KDV dahil)</b></td><td class="num"><b>{{ order.grand_total }} TL</b></td></tr>
+</tbody></table></div></div>
+{% if shipments %}<h2 style="margin-top:18px">Sevkiyat</h2><div class="card"><div class="table-wrap"><table class="table"><tbody>
+{% for s in shipments %}<tr><td>{{ s.number }}</td><td>{{ s.status|badge:s.get_status_display }}</td><td>{{ s.get_carrier_display }}</td><td>{{ s.tracking_no|default:"" }}</td><td>{{ s.shipped_at|date:"d.m.Y"|default:"" }}</td></tr>{% endfor %}
+</tbody></table></div></div>{% endif %}
+{% if invoices %}<h2 style="margin-top:18px">Faturalar</h2><div class="card"><div class="table-wrap"><table class="table"><tbody>
+{% for i in invoices %}<tr><td>{{ i.number }}</td><td>{{ i.issue_date|date:"d.m.Y" }}</td><td class="num">{{ i.total }} TL</td><td class="num"><a class="btn btn-sm" href="{% url 'portal:invoice_xml' i.pk %}">e-Fatura XML</a></td></tr>{% endfor %}
+</tbody></table></div></div>{% endif %}
+{% endblock %}

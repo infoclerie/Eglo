@@ -19,7 +19,7 @@ def receive(request, pk):
     if request.method == "POST":
         line = get_object_or_404(po.lines, pk=request.POST["line"])
         try:
-            services.receive_line(line, request.POST["quantity"], Location.objects.get(pk=request.POST["location"]),
+            services.receive_line(line, request.POST["quantity"].replace(",", "."), Location.objects.get(pk=request.POST["location"]),
                                   lot_no=request.POST.get("lot_no") or None,
                                   expiry_date=parse_date(request.POST.get("expiry_date") or ""),
                                   production_date=parse_date(request.POST.get("production_date") or ""),

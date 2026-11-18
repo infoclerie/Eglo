@@ -24,6 +24,7 @@
     <button class="btn btn-ok btn-lg">{% icon "check" %}Paketlemeyi tamamla</button></form>
 {% elif sh.status == "packed" %}
   <h2>{% icon "truck" %} Sevk et</h2>
+  <a class="btn btn-lg" href="{% url 'shipping:label' sh.pk %}?print=1" target="_blank" style="margin-bottom:12px">{% icon "tag" %}Kargo etiketi yazdır ({{ sh.package_count }} koli)</a>
   <form method="post" class="form">{% csrf_token %}<input type="hidden" name="action" value="ship">
     <div><label>Kargo / taşıyıcı</label><select name="carrier">{% for c, n in carriers %}<option value="{{ c }}">{{ n }}</option>{% endfor %}</select></div>
     <div><label>Takip numarası</label><input name="tracking"></div>
@@ -31,6 +32,7 @@
     <button class="btn btn-ok btn-lg">{% icon "truck" %}Sevk et — stoktan düş</button></form>
 {% elif sh.status == "shipped" %}
   <h2>{% icon "check" %} Teslimat</h2>
+  <a class="btn" href="{% url 'shipping:label' sh.pk %}" target="_blank" style="margin-bottom:12px">{% icon "tag" %}Etiketi tekrar yazdır</a>
   <form method="post" class="form">{% csrf_token %}<input type="hidden" name="action" value="deliver">
     <div><label>Teslim alan</label><input name="received_by"></div><div><label>Eksik / hasar notu</label><input name="note"></div>
     <button class="btn btn-ok btn-lg">Teslim edildi</button></form>

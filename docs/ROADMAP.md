@@ -8,10 +8,10 @@ Durum: ✅ tamam · 🟡 kısmi · ⬜ başlanmadı. Sıra müşteri dokümanı 
 | 1 | Ürün kartları (`catalog`) | SKU/barkod, koli/palet, kanal fiyatı, set/kampanya paketi | ✅ (toplu Excel içe aktarma ⬜) |
 | 2 | Depo ve stok (`inventory`) | depo/lokasyon, LOT/SKT, FEFO, rezervasyon, transfer, sayım+onay, stok durumları, uyarılar, satın alma önerisi formülü, barkod sorgu | ✅ (palet doluluk raporu, stok yaşlandırma ⬜) |
 | 3 | Sipariş (`sales`) + Cari (`partners`) | merkezi sipariş havuzu, kanallar, 13 durum, kampanyalar, mükerrer engeli, kredi limiti, onaylı iptal | ✅ |
-| 4 | Sevkiyat (`shipping`) | toplama listesi, barkod doğrulama, paketleme+tartı, sevk, teslim, çoklu toplama, iade (hijyen kuralı, onay) | ✅ (kargo etiketi → entegrasyon) |
+| 4 | Sevkiyat (`shipping`) | toplama listesi, barkod doğrulama, paketleme+tartı, sevk, teslim, çoklu toplama, iade (hijyen kuralı, onay) | ✅ (yazdırılabilir barkodlu etiket ✅; kargo firması API'leri ⬜) |
 | 5 | Muhasebe (`accounting`) | otomatik satış faturası (e-Fatura/e-Arşiv seçimi, GİB numarası, UBL-TR), iade faturası, alış faturası 3'lü eşleştirme, cari hareket/ekstre, tahsilat/ödeme, vadesi geçmiş, nakit akışı, hakediş mutabakatı, ürün kârlılığı, onaylı iptal | ✅ (resmi fiş aktarımı ⬜) |
 | 6 | Satın alma (`purchase`) | talep, öneri, teklif karşılaştırma, onaylı sipariş, mal kabul, ortalama maliyet, tutanak, performans | ✅ (fatura eşleştirme → muhasebe) |
-| 7 | CRM ve bayi portalı (`crm`, `portal`) | müşteri kartı, fırsat, aktivite, segment, bayi girişi | ⬜ |
+| 7 | Bayi portalı (`portal`) ✅ · CRM (`crm`) ⬜ | bayi girişi, özel fiyatlı katalog, sepet/sipariş, faturalar, ekstre ✅; fırsat, aktivite, segment, hatırlatma ⬜ | 🟡 |
 | 8 | Üretim ve fason (`production`) | BOM, üretim emri, fason takibi, kalite kontrol → karantina | ⬜ |
 | 9 | Raporlama (`reports`) | yönetim paneli, kanal/ürün kârlılığı, Excel/PDF | ⬜ |
 | 10 | Entegrasyonlar (`integrations`) | sihirbaz, şifreli bilgiler, iş kuyruğu + yeniden deneme + loglar, arka plan işçisi; **Uyumsoft e-Fatura/e-Arşiv** ✅ (test ortamında doğrulandı); **Trendyol** sipariş/stok/fiyat/durum ✅; Hepsiburada, Amazon, web, kargo, banka ⬜ | 🟡 |

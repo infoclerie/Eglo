@@ -20,6 +20,7 @@ DEFAULT_MODULES = [
     "purchase",
     "accounting",
     "integrations",
+    "portal",
 ]
 
 

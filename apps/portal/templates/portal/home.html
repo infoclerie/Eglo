@@ -1,0 +1,20 @@
+{% extends "portal/base.html" %}{% load ui %}
+{% block content %}
+<div class="page-head"><div><h1>Hoş geldiniz, {{ partner.name }}</h1><p>Fiyatlar size özeldir ve KDV hariçtir. Siparişleriniz cari hesabınıza ({{ partner.payment_term_days }} gün vade) işlenir.</p></div>
+  <div class="card kpi {% if balance > 0 %}warning{% else %}ok{% endif %}" style="min-width:220px"><div class="t">Güncel bakiyeniz</div><div class="v">{{ balance }} TL</div></div></div>
+{% if campaigns %}<div class="alert success" style="margin-bottom:16px">{% icon "tag" %}<div><b>Kampanyalar:</b> {% for c in campaigns %}{{ c.name }}{% if not forloop.last %} · {% endif %}{% endfor %}</div></div>{% endif %}
+<form class="inline" style="margin-bottom:16px"><input type="search" name="q" value="{{ q }}" placeholder="Ürün adı, kod veya barkod"><button class="btn btn-primary">{% icon "search" %}Ara</button></form>
+<div class="prod-grid">
+{% for r in rows %}
+  <div class="card prod">
+    <div class="small muted">{{ r.p.category|default:"" }}</div>
+    <b>{{ r.p.name }}</b><div class="small muted">{{ r.p.sku }}{% if r.p.units_per_case > 1 %} · koli içi {{ r.p.units_per_case }}{% endif %}</div>
+    <div class="price">{{ r.price }} TL <span class="small muted" style="font-weight:500">+ KDV</span></div>
+    <div><span class="badge {% if r.level == 'ok' %}ok{% elif r.level == 'low' %}warning{% else %}danger{% endif %}">{{ r.label }}</span></div>
+    {% if r.level != 'out' %}<form method="post">{% csrf_token %}<input type="hidden" name="product" value="{{ r.p.pk }}">
+      <input name="qty" type="number" min="1" max="{{ r.available }}" value="{% if r.p.units_per_case > 1 %}{{ r.p.units_per_case }}{% else %}1{% endif %}" inputmode="numeric" aria-label="Adet">
+      <button class="btn btn-primary" style="flex:1;justify-content:center">{% icon "cart" %}Ekle</button></form>{% endif %}
+  </div>
+{% empty %}<div class="card"><div class="empty">{% icon "box" %}<div>Ürün bulunamadı.</div></div></div>{% endfor %}
+</div>
+{% endblock %}

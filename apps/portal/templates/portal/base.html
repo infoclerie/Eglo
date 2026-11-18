@@ -1,0 +1,35 @@
+{% load static ui %}<!doctype html>
+<html lang="tr"><head><meta charset="utf-8">{% include "partials/head.html" %}
+<title>{% block title %}Bayi Portalı{% endblock %} · Eglo</title><link rel="stylesheet" href="{% static 'css/app.css' %}">
+<style>
+  .p-top { background: linear-gradient(90deg, var(--brand), var(--brand-600)); color: #fff; }
+  .p-top .in { max-width: 1240px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 12px 20px; flex-wrap: wrap; }
+  .p-top a { color: #fff; } .p-logo { font-weight: 800; font-size: 18px; display: flex; gap: 8px; align-items: center; }
+  .p-nav { display: flex; gap: 4px; overflow-x: auto; flex: 1; } .p-nav a { padding: 8px 12px; border-radius: 8px; white-space: nowrap; font-weight: 600; opacity: .9; }
+  .p-nav a:hover, .p-nav a.on { background: rgba(255,255,255,.18); text-decoration: none; opacity: 1; }
+  .p-main { max-width: 1240px; margin: 0 auto; padding: 22px 20px 50px; }
+  .cart-pill { background: #fff; color: var(--brand) !important; border-radius: 999px; padding: 7px 14px; font-weight: 800; }
+  .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .prod { display: flex; flex-direction: column; gap: 8px; padding: 16px; } .prod .price { font-size: 20px; font-weight: 800; }
+  .prod form { display: flex; gap: 8px; margin-top: auto; } .prod form input { max-width: 90px; }
+  @media (max-width: 700px) { .p-top .in { padding: 10px 12px; } .p-nav { order: 3; flex-basis: 100%; } .p-main { padding: 16px 12px 40px; } }
+</style></head>
+<body class="erp">
+<header class="p-top"><div class="in">
+  <a class="p-logo" href="{% url 'portal:home' %}">{% icon "box" %} Bayi Portalı</a>
+  <nav class="p-nav">
+    <a href="{% url 'portal:home' %}" {% if request.resolver_match.url_name == 'home' %}class="on"{% endif %}>Katalog</a>
+    <a href="{% url 'portal:orders' %}" {% if request.resolver_match.url_name in 'orders order' %}class="on"{% endif %}>Siparişlerim</a>
+    <a href="{% url 'portal:invoices' %}" {% if request.resolver_match.url_name == 'invoices' %}class="on"{% endif %}>Faturalarım</a>
+    <a href="{% url 'portal:statement' %}" {% if request.resolver_match.url_name == 'statement' %}class="on"{% endif %}>Cari ekstre</a>
+  </nav>
+  <a class="cart-pill" href="{% url 'portal:cart' %}">{% icon "cart" %} Sepet ({{ cart_count }})</a>
+  <span class="hide-sm">{{ partner.name }}</span>
+  <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-sm" title="Çıkış">{% icon "logout" %}</button></form>
+</div></header>
+<main class="p-main">
+  {% if messages %}<div class="alerts">{% for m in messages %}<div class="alert {{ m.tags }}">{% if m.tags == 'error' or m.tags == 'warning' %}{% icon "alert" %}{% else %}{% icon "check" %}{% endif %}{{ m }}</div>{% endfor %}</div>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+<script src="{% static 'js/help.js' %}" defer></script>
+</body></html>
