@@ -11,7 +11,7 @@ PUBLIC_IP=$(curl -fsS4 https://checkip.amazonaws.com || hostname -I | awk '{prin
 DOMAIN=${DOMAIN:-$(echo "$PUBLIC_IP" | tr . -).sslip.io}
 
 echo ">> Sistem güncelleniyor"
-export DEBIAN_FRONTEND=noninteractive
+export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
 apt-get update -q && apt-get -yq upgrade
 apt-get -yq install git ufw fail2ban unattended-upgrades ca-certificates curl
 
@@ -66,6 +66,7 @@ echo "=================================================================="
 echo " Kurulum tamam. Adres: https://$(grep ^DOMAIN= .env | cut -d= -f2)"
 echo " Yönetici kullanıcı oluşturmak için:"
 echo "   cd $APP_DIR && sudo docker compose exec web python manage.py createsuperuser"
+[ -f /var/run/reboot-required ] && echo " NOT: Çekirdek güncellendi. Kullanıcıyı oluşturduktan sonra: sudo reboot (uygulama kendiliğinden geri açılır)"
 echo " Örnek veri (isteğe bağlı):"
 echo "   sudo docker compose exec web python manage.py seed_demo"
 echo "=================================================================="
