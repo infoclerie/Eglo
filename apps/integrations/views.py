@@ -125,7 +125,7 @@ def wizard(request, provider, step):
             if state.get("edit") and not secrets:
                 secrets = IntegrationAccount.objects.get(pk=state["edit"]).get_secrets()
             ok, msg = p.test_connection(state["config"], secrets, state["config"].get("environment", "test"))
-            state["test"] = {"ok": ok, "message": msg, "at": timezone.now().strftime("%d.%m.%Y %H:%M:%S")}
+            state["test"] = {"ok": ok, "message": msg, "at": timezone.localtime().strftime("%d.%m.%Y %H:%M:%S")}
             _save_state(request, p, state)
             if request.method == "POST":
                 return redirect(request.path)
