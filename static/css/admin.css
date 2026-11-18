@@ -64,3 +64,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); outline:
 fieldset.module { border: 1px solid var(--line) !important; } .module h2 { border-top: 0 !important; }
 .dashboard #content { width: auto; max-width: 1440px; } .dashboard #content-main { float: none; width: 100%; }
 .admin-apps { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-items: start; }
+
+#content h1, .module h2, .fieldset-heading, #changelist-filter h2, .object-tools a, .button, input[type=submit] { font-family: var(--font) !important; letter-spacing: 0 !important; }
+.form-row label { display: inline-flex; align-items: center; }
+.module, fieldset.module, .form-row, .aligned .form-row { overflow: visible !important; }

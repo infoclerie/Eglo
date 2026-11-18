@@ -13,7 +13,24 @@ def _location_field(label):
     return forms.ModelChoiceField(Location.objects.filter(active=True).exclude(kind__in=Location.VIRTUAL_KINDS), label=label)
 
 
-class ReceiveForm(forms.Form):
+from apps.core.field_help import FIELD_HELP
+
+
+class HelpMixin:
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        extra = {"location": "Ürünün yerleştirileceği raf/alan. Barkod okuyucuyla lokasyon barkodunu okutabilirsiniz.",
+                 "source": "Ürünün şu an bulunduğu lokasyon.", "destination": "Ürünün taşınacağı lokasyon.",
+                 "lot": "Taşınan ürünün LOT'u (LOT takipli ürünlerde zorunlu).",
+                 "pallet": "Ürün bir palet üzerindeyse paleti seçin (isteğe bağlı).",
+                 "reference": "Tedarikçi irsaliye veya satın alma sipariş numarası.",
+                 "move_type": "Satın alma ile mi geldi, kendi üretimimiz mi?"}
+        for name, f in self.fields.items():
+            if not f.help_text:
+                f.help_text = extra.get(name) or FIELD_HELP.get(name, "")
+
+
+class ReceiveForm(HelpMixin, forms.Form):
     product = _product_field()
     quantity = forms.DecimalField(label="Miktar", min_value=0.001)
     location = _location_field("Yerleşim lokasyonu")
@@ -25,7 +42,7 @@ class ReceiveForm(forms.Form):
     move_type = forms.ChoiceField(label="Giriş türü", choices=[("purchase_in", "Satın alma girişi"), ("production_in", "Üretimden giriş")])
 
 
-class TransferForm(forms.Form):
+class TransferForm(HelpMixin, forms.Form):
     product = _product_field()
     quantity = forms.DecimalField(label="Miktar", min_value=0.001)
     source = _location_field("Kaynak lokasyon")

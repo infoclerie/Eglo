@@ -1,6 +1,6 @@
 {% extends "admin/base.html" %}{% load static %}
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Eglo ERP{% endblock %}
-{% block extrahead %}{{ block.super }}{% include "partials/head.html" %}{% endblock %}
+{% block extrahead %}{{ block.super }}{% include "partials/head.html" %}<script src="{% static 'js/help.js' %}" defer></script>{% endblock %}
 {% block extrastyle %}{{ block.super }}
 <link rel="stylesheet" href="{% static 'css/app.css' %}"><link rel="stylesheet" href="{% static 'css/admin.css' %}">
 <style>:root, html[data-theme="light"], html[data-theme="dark"] { --primary:var(--brand); --secondary:var(--brand-600); --accent:#0f9d8a; --primary-fg:#fff;

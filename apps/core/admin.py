@@ -56,3 +56,41 @@ class ApprovalRequestAdmin(admin.ModelAdmin):
     @admin.action(description="Seçili talepleri REDDET")
     def do_reject(self, request, queryset):
         self._decide(request, queryset, approvals.reject, "reddedildi")
+
+
+# ---------------------------------------------------------------- tüm yönetim ekranları için ortak davranış
+from django.utils.text import capfirst  # noqa: E402
+
+from .field_help import FIELD_HELP  # noqa: E402
+
+_orig_formfield = admin.ModelAdmin.formfield_for_dbfield
+_orig_changelist = admin.ModelAdmin.changelist_view
+_orig_changeform = admin.ModelAdmin.changeform_view
+_orig_inline_formfield = admin.options.InlineModelAdmin.formfield_for_dbfield
+
+
+def _with_help(formfield, db_field):
+    if formfield is not None and not formfield.help_text and db_field.name in FIELD_HELP:
+        formfield.help_text = FIELD_HELP[db_field.name]
+    return formfield
+
+
+def formfield_for_dbfield(self, db_field, request, **kwargs):
+    return _with_help(_orig_formfield(self, db_field, request, **kwargs), db_field)
+
+
+def changelist_view(self, request, extra_context=None):
+    """Başlık: 'Değiştirmek için X seçin' yerine sade 'Xler'."""
+    return _orig_changelist(self, request, {"title": capfirst(self.model._meta.verbose_name_plural), **(extra_context or {})})
+
+
+def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+    name = self.model._meta.verbose_name
+    title = f"{capfirst(name)} düzenle" if object_id else f"Yeni {name}"
+    return _orig_changeform(self, request, object_id, form_url, {"title": title, **(extra_context or {})})
+
+
+admin.ModelAdmin.formfield_for_dbfield = formfield_for_dbfield
+admin.options.InlineModelAdmin.formfield_for_dbfield = formfield_for_dbfield
+admin.ModelAdmin.changelist_view = changelist_view
+admin.ModelAdmin.changeform_view = changeform_view

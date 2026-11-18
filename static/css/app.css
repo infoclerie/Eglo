@@ -181,3 +181,18 @@ body.editing a.kpi, body.editing a.app-tile { pointer-events: auto; }
   .apps.scroll-x { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
   .apps.scroll-x .app-tile { flex: 0 0 96px; scroll-snap-align: start; }
 }
+/* ⓘ açıklama simgesi */
+.info-tip { position: relative; display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 6px; vertical-align: middle;
+  border-radius: 50%; border: 1.5px solid var(--brand); background: #fff; color: var(--brand); font: 700 11px/1 Georgia, serif; cursor: help; padding: 0; }
+.info-tip:hover, .info-tip.open { background: var(--brand); color: #fff; }
+.info-pop { display: none; position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); width: max-content; max-width: 280px;
+  padding: 9px 11px; border-radius: 8px; background: #1c2130; color: #fff; font: 500 12.5px/1.45 var(--font); text-align: left; white-space: normal;
+  box-shadow: var(--shadow-lg); z-index: 30; pointer-events: none; }
+.info-pop::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -6px; border: 6px solid transparent; border-top-color: #1c2130; }
+.info-tip:hover .info-pop, .info-tip.open .info-pop { display: block; }
+@media (max-width: 560px) { .info-pop { left: auto; right: -8px; transform: none; max-width: 240px; } .info-pop::after { left: auto; right: 12px; } }
+/* yazı tipi birliği: tüm başlık ve menü metinleri aynı aile ve ağırlıkta */
+.nav a, .nav-group, h1, h2, .btn, .chip, .badge, label { font-family: var(--font); }
+.nav a { font-weight: 500; letter-spacing: 0; }
+.info-pop { bottom: auto; top: calc(100% + 8px); }
+.info-pop::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: #1c2130; }
