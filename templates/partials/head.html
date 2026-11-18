@@ -1,5 +1,6 @@
 {% load static %}<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#5b3a6e"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="{{ ui_theme.brand }}"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Eglo ERP">
 <link rel="manifest" href="{% static 'manifest.webmanifest' %}"><link rel="icon" href="{% static 'img/icon.svg' %}" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{% static 'img/icon.svg' %}">
+<style>:root{--brand:{{ ui_theme.brand }};--brand-600:{{ ui_theme.brand_600 }};--brand-50:{{ ui_theme.brand_50 }}}</style>

@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Görünüm{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Görünüm</h1><p>Menü ve vurgu rengini seçin. Seçim yalnızca sizin hesabınıza uygulanır.</p></div></div>
+<div class="card card-pad" style="max-width:760px">
+  <form method="post" class="form" id="theme-form">{% csrf_token %}
+    <div class="swatches">
+      {% for hex, name in presets %}
+      <label class="swatch"><input type="radio" name="color" value="{{ hex }}" {% if ui_theme.brand == hex %}checked{% endif %}>
+        <span style="background:{{ hex }}"></span><small>{{ name }}</small></label>
+      {% endfor %}
+      <label class="swatch"><input type="radio" name="color" value="{{ ui_theme.brand }}" id="custom-radio">
+        <span class="custom"><input type="color" id="custom-color" value="{{ ui_theme.brand }}" aria-label="Özel renk"></span><small>Özel</small></label>
+    </div>
+    {% if request.user.is_superuser %}<label style="display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" name="for_all" value="1"> Tüm kullanıcılar için varsayılan yap</label>{% endif %}
+    <div class="inline"><button class="btn btn-primary btn-lg" name="action" value="save">{% icon "check" %}Kaydet</button>
+      <button class="btn" name="action" value="reset">Varsayılana dön</button></div>
+  </form>
+</div>
+<script>
+(function(){
+  const root=document.documentElement, form=document.getElementById('theme-form');
+  function shade(hex,f){let n=[1,3,5].map(i=>parseInt(hex.substr(i,2),16));n=f<=1?n.map(c=>Math.round(c*f)):n.map(c=>Math.round(c+(255-c)*(f-1)));return '#'+n.map(c=>c.toString(16).padStart(2,'0')).join('');}
+  function preview(c){root.style.setProperty('--brand',c);root.style.setProperty('--brand-600',shade(c,.8));root.style.setProperty('--brand-50',shade(c,1.92));}
+  form.addEventListener('change',e=>{if(e.target.name==='color')preview(e.target.value);});
+  const cc=document.getElementById('custom-color'), cr=document.getElementById('custom-radio');
+  cc.addEventListener('input',()=>{cr.value=cc.value;cr.checked=true;preview(cc.value);});
+})();
+</script>
+{% endblock %}

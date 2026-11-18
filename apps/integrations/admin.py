@@ -8,6 +8,9 @@ class IntegrationAccountAdmin(admin.ModelAdmin):
     list_display = ("name", "provider", "environment", "active", "last_test_ok", "last_test_at")
     readonly_fields = ("provider", "secret", "last_test_at", "last_test_ok", "last_message")
 
+    def has_add_permission(self, request):
+        return False  # bağlantılar sihirbazla kurulur
+
 
 @admin.register(IntegrationJob)
 class IntegrationJobAdmin(admin.ModelAdmin):
@@ -15,9 +18,15 @@ class IntegrationJobAdmin(admin.ModelAdmin):
     list_filter = ("status", "kind", "account")
     search_fields = ("ref", "idempotency_key")
 
+    def has_add_permission(self, request):
+        return False
+
 
 @admin.register(SyncLog)
 class SyncLogAdmin(admin.ModelAdmin):
     list_display = ("at", "account", "action", "ok", "message")
     list_filter = ("ok", "action", "account")
     readonly_fields = [f.name for f in SyncLog._meta.fields]
+
+    def has_add_permission(self, request):
+        return False

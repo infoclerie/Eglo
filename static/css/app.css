@@ -90,7 +90,7 @@ table.table { width: 100%; border-collapse: separate; border-spacing: 0; }
 .form .helptext { color: var(--muted); font-size: 12px; }
 body.erp input[type=text], body.erp input[type=number], body.erp input[type=date], body.erp input[type=password], body.erp input[type=email], body.erp input[type=search], body.erp input:not([type]), body.erp select, body.erp textarea {
   width: 100%; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: #fff; font: 14px var(--font); color: var(--text); }
-body.erp input:focus, body.erp select:focus, body.erp textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(91,58,110,.15); }
+body.erp input:focus, body.erp select:focus, body.erp textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent); }
 .inline { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; } .inline > * { flex: 1 1 140px; }
 .inline > .btn { flex: 0 0 auto; }
 .errorlist { list-style: none; margin: 4px 0 0; padding: 0; color: var(--danger); font-size: 13px; }
@@ -158,3 +158,26 @@ body.erp input:focus, body.erp select:focus, body.erp textarea:focus { outline: 
 .grid > *, .main, .card { min-width: 0; }
 .page-head p, .card p { overflow-wrap: anywhere; }
 @media (max-width: 560px) { .btn { white-space: normal; text-align: center; } .form .btn, .form form .btn { width: 100%; justify-content: center; } }
+/* görünüm: renk seçici */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 12px; }
+.swatch { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; }
+.swatch input[type=radio] { position: absolute; opacity: 0; pointer-events: none; }
+.swatch > span { width: 56px; height: 56px; border-radius: 14px; box-shadow: var(--shadow); border: 3px solid transparent; display: grid; place-items: center; }
+.swatch input:checked + span { border-color: var(--text); box-shadow: 0 0 0 3px #fff inset, var(--shadow-lg); }
+.swatch .custom { background: conic-gradient(#ef4444, #f59e0b, #22c55e, #06b6d4, #6366f1, #d946ef, #ef4444); }
+.swatch .custom input[type=color] { width: 30px; height: 30px; border: 2px solid #fff; border-radius: 50%; padding: 0; background: none; cursor: pointer; }
+/* ana panel: düzenleme modu */
+.edit-bar { display: none; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 14px; border-radius: var(--radius);
+  background: var(--brand-50); border: 1px dashed var(--brand); color: var(--brand); font-weight: 600; }
+body.editing .edit-bar { display: flex; }
+body.editing .sortable > * { cursor: grab; position: relative; outline: 2px dashed color-mix(in srgb, var(--brand) 45%, transparent); outline-offset: 3px; border-radius: 12px; touch-action: none; }
+.sortable-ghost { opacity: .35; } .sortable-chosen { box-shadow: var(--shadow-lg) !important; }
+.kpi .hide-btn { display: none; position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-2);
+  background: #fff; color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; }
+body.editing .kpi .hide-btn { display: block; }
+body.editing a.kpi, body.editing a.app-tile { pointer-events: auto; }
+.hidden-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+@media (max-width: 900px) {
+  .apps.scroll-x { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+  .apps.scroll-x .app-tile { flex: 0 0 96px; scroll-snap-align: start; }
+}

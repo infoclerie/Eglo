@@ -128,3 +128,23 @@ class ApprovalRequest(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"
+
+
+class UserPreference(models.Model):
+    """Kullanıcıya özel görünüm: menü rengi, ana panel kart sırası ve gizlenen kartlar."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="erp_pref")
+    sidebar_color = models.CharField("Menü rengi", max_length=7, blank=True)
+    app_order = models.JSONField("Uygulama sırası", default=list, blank=True)
+    widget_order = models.JSONField("Kart sırası", default=list, blank=True)
+    hidden_widgets = models.JSONField("Gizlenen kartlar", default=list, blank=True)
+
+    class Meta:
+        verbose_name, verbose_name_plural = "Kullanıcı tercihi", "Kullanıcı tercihleri"
+
+    @classmethod
+    def for_user(cls, user):
+        if not getattr(user, "is_authenticated", False):
+            return None
+        obj, _ = cls.objects.get_or_create(user=user)
+        return obj

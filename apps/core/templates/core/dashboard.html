@@ -1,18 +1,60 @@
-{% extends "base.html" %}{% load ui %}
+{% extends "base.html" %}{% load ui static %}
 {% block title %}Ana Panel{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>Merhaba {{ request.user.first_name|default:request.user.username }}</h1><p>Şirketin bugünkü durumu tek ekranda.</p></div></div>
+<div class="page-head"><div><h1>Merhaba {{ request.user.first_name|default:request.user.username }}</h1><p>Şirketin bugünkü durumu tek ekranda.</p></div>
+  <div class="inline" style="flex:0 0 auto"><a class="btn" href="{% url 'core:appearance' %}">{% icon "settings" %}Görünüm</a>
+  <button class="btn" type="button" id="edit-toggle">{% icon "admin" %}<span>Paneli düzenle</span></button></div></div>
 
-<div class="apps" style="margin-bottom:26px">
+<div class="edit-bar">{% icon "swap" %} Kartları ve uygulamaları sürükleyip bırakarak sıralayın, × ile gizleyin. Sıra otomatik kaydedilir.
+  <span style="flex:1"></span><button class="btn btn-sm" type="button" id="layout-reset">Varsayılan düzen</button>
+  <button class="btn btn-sm btn-primary" type="button" id="edit-done">Bitti</button></div>
+
+<div class="apps sortable scroll-x" id="apps" style="margin-bottom:26px">
   {% for g in erp_nav %}{% with first=g.items.0 %}
-  <a class="app-tile" href="{{ first.url }}"><span class="ic" style="background:{{ g.color }}">{% icon g.icon %}</span>{{ g.name }}</a>
+  <a class="app-tile" data-key="{{ g.code }}" href="{{ first.url }}"><span class="ic" style="background:{{ g.color }}">{% icon g.icon %}</span>{{ g.name }}</a>
   {% endwith %}{% endfor %}
 </div>
 
 <h2>Göstergeler ve uyarılar</h2>
-<div class="grid grid-kpi">
+<div class="grid grid-kpi sortable" id="widgets">
   {% for w in widgets %}
-  <a class="card kpi {{ w.level }}" href="{{ w.url }}"><div class="t">{{ w.title }}</div><div class="v">{{ w.value }}</div></a>
+  <a class="card kpi {{ w.level }}" data-key="{{ w.key }}" href="{{ w.url }}"><button class="hide-btn" type="button" title="Gizle">×</button>
+    <div class="t">{{ w.title }}</div><div class="v">{{ w.value }}</div></a>
   {% endfor %}
 </div>
+{% if hidden %}<div class="hidden-list" id="hidden-list"><span class="muted small" style="align-self:center">Gizlenen kartlar:</span>
+  {% for w in hidden %}<button class="chip" type="button" data-show="{{ w.key }}">+ {{ w.title }}</button>{% endfor %}</div>{% endif %}
+
+<script src="{% static 'vendor/sortable.min.js' %}"></script>
+<script>
+(function () {
+  const csrf = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "";
+  const apps = document.getElementById("apps"), widgets = document.getElementById("widgets");
+  let hidden = {{ hidden_keys|safe }};
+  const keys = el => [...el.children].map(c => c.dataset.key).filter(Boolean);
+  function save(extra) {
+    return fetch("{% url 'core:save_layout' %}", {method: "POST", headers: {"Content-Type": "application/json", "X-CSRFToken": csrf},
+      body: JSON.stringify(Object.assign({apps: keys(apps), widgets: keys(widgets), hidden: hidden}, extra || {}))});
+  }
+  const opts = {animation: 160, delay: 180, delayOnTouchOnly: true, ghostClass: "sortable-ghost", chosenClass: "sortable-chosen",
+                disabled: true, onEnd: () => save()};
+  const s1 = Sortable.create(apps, opts), s2 = Sortable.create(widgets, opts);
+  function setEditing(on) {
+    document.body.classList.toggle("editing", on);
+    s1.option("disabled", !on); s2.option("disabled", !on);
+    document.querySelector("#edit-toggle span").textContent = on ? "Düzenleniyor…" : "Paneli düzenle";
+  }
+  document.getElementById("edit-toggle").onclick = () => setEditing(!document.body.classList.contains("editing"));
+  document.getElementById("edit-done").onclick = () => setEditing(false);
+  document.addEventListener("click", e => {
+    if (!document.body.classList.contains("editing")) return;
+    const hb = e.target.closest(".hide-btn");
+    if (hb) { e.preventDefault(); const card = hb.closest("[data-key]"); hidden.push(card.dataset.key); card.remove(); save(); return; }
+    if (e.target.closest(".sortable a")) e.preventDefault();  // düzenlerken link açılmasın
+  }, true);
+  document.querySelectorAll("[data-show]").forEach(b => b.onclick = () => {
+    hidden = hidden.filter(k => k !== b.dataset.show); save().then(() => location.reload()); });
+  document.getElementById("layout-reset").onclick = () => save({reset: true}).then(() => location.reload());
+})();
+</script>
 {% endblock %}

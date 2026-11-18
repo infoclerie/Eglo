@@ -27,6 +27,11 @@ for _p, _u in {"s": S, "t": T, "o": WSSE, "u": WSU, "a": ARR}.items():
     ET.register_namespace(_p, _u)
 
 
+# WSDL'deki soapAction değerleri (GetSystemDate temel arayüzden gelir — test sunucusunda doğrulandı)
+ACTION_INTERFACE = {"GetSystemDate": "ICustomerServiceBase"}
+UUID_RE = __import__("re").compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+
 class UyumsoftError(Exception):
     pass
 
@@ -59,7 +64,7 @@ class UyumsoftClient:
         data = self._envelope(body_el)
         try:
             r = self.http.post(self.url, data=data, timeout=self.timeout, headers={
-                "Content-Type": "text/xml; charset=utf-8", "SOAPAction": f'"http://tempuri.org/IIntegration/{action}"'})
+                "Content-Type": "text/xml; charset=utf-8", "SOAPAction": f'"http://tempuri.org/{ACTION_INTERFACE.get(action, "IIntegration")}/{action}"'})
         except requests.RequestException as exc:
             raise UyumsoftError(f"Uyumsoft'a bağlanılamadı: {exc}") from exc
         try:
@@ -115,10 +120,8 @@ class UyumsoftClient:
         ET.SubElement(q, f"{{{T}}}CreateStartDate").text = start.strftime("%Y-%m-%dT00:00:00")
         ET.SubElement(q, f"{{{T}}}CreateEndDate").text = end.strftime("%Y-%m-%dT23:59:59")
         root = self.call("GetInboxInvoiceList", body)
-        items_el = next((e for e in root.iter() if _local(e.tag) == "Items"), None)
-        out = []
-        for item in (list(items_el) if items_el is not None else []):
-            out.append({_local(c.tag): (c.text or "") for c in item})
+        # Yanıt: <Value TotalPages=..><Items>alanlar</Items><Items>…</Items></Value> — her <Items> bir fatura
+        out = [{_local(c.tag): (c.text or "") for c in item} for item in root.iter() if _local(item.tag) == "Items"]
         paged = next((e for e in root.iter() if "TotalPages" in e.attrib), None)
         total_pages = int(paged.attrib.get("TotalPages", "1")) if paged is not None else 1
         return out, total_pages
@@ -144,7 +147,7 @@ class UyumsoftEInvoice(Provider):
         Field("password", "Uyumsoft şifresi", kind="password", secret=True, help="Test ortamı için: Uyumsoft"),
         Field("environment", "Ortam", kind="choice", default="test",
               choices=[("test", "Test ortamı (önce burada deneyin)"), ("live", "Canlı ortam")]),
-        Field("vkn", "Şirket VKN", step="company", help="10 haneli vergi kimlik numarası"),
+        Field("vkn", "Şirket VKN", step="company", help="10 haneli vergi kimlik numarası. Test ortamında Uyumsoft test hesabının VKN'si 9000068418 girilmelidir (farklı VKN ile fatura reddedilir)."),
         Field("title", "Şirket unvanı", step="company"),
         Field("tax_office", "Vergi dairesi", step="company"),
         Field("street", "Adres (cadde, sokak, no)", step="company"),
@@ -218,10 +221,14 @@ class UyumsoftEInvoice(Provider):
             while page < pages:
                 items, pages = c.inbox_list(start, end, page)
                 for it in items:
-                    if not it.get("InvoiceId"):
+                    # Uyumsoft: InvoiceId = fatura numarası, DocumentId = ETTN (test ortamında doğrulandı)
+                    ettn, number = it.get("DocumentId", ""), it.get("InvoiceId", "")
+                    if not UUID_RE.match(ettn) and UUID_RE.match(number):
+                        ettn, number = number, ettn
+                    if not UUID_RE.match(ettn):
                         continue
                     _, new = acc.record_incoming_invoice({
-                        "uuid": it["InvoiceId"], "number": it.get("DocumentId", ""), "vkn": it.get("TargetTcknVkn", ""),
+                        "uuid": ettn, "number": number, "vkn": it.get("TargetTcknVkn", ""),
                         "title": it.get("TargetTitle", ""), "issue_date": (it.get("ExecutionDate") or "")[:10] or None,
                         "subtotal": it.get("TaxExclusiveAmount") or 0, "vat_total": it.get("TaxTotal") or 0,
                         "total": it.get("PayableAmount") or 0, "currency": it.get("DocumentCurrencyCode") or "TRY",
@@ -234,14 +241,16 @@ class UyumsoftEInvoice(Provider):
             if not invs:
                 return {"updated": 0}
             by_id = {str(i.uuid).upper(): i for i in invs}
+            by_id.update({i.number.upper(): i for i in invs if i.number})
             updated = 0
-            for st in c.outbox_status(list(by_id)):
+            for st in c.outbox_status([str(i.uuid) for i in invs]):
                 inv = by_id.get(st.get("InvoiceId", "").upper())
                 if not inv:
                     continue
                 status = st.get("Status", "")
                 inv.external_status = status
-                if any(w in status.lower() for w in ("approved", "accepted", "kabul")):
+                code = st.get("StatusCode", "")
+                if code == "1000" or any(w in status.lower() for w in ("approved", "accepted", "kabul")):
                     inv.status = "accepted"
                 elif any(w in status.lower() for w in ("declined", "rejected", "red", "error", "fail")):
                     inv.status, inv.message = "rejected", st.get("Message", "")

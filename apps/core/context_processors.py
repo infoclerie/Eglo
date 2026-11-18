@@ -26,4 +26,11 @@ def erp(request):
         if items:
             nav.append({"code": m["code"], "name": m["name"], "icon": m.get("icon", "box"),
                         "color": m.get("color", "#5b3a6e"), "items": items})
-    return {"erp_nav": nav}
+    user = getattr(request, "user", None)
+    from .models import UserPreference
+    from .theme import current
+    pref = UserPreference.objects.filter(user=user).first() if getattr(user, "is_authenticated", False) else None
+    if pref and pref.app_order:
+        order = {code: i for i, code in enumerate(pref.app_order)}
+        nav.sort(key=lambda g: order.get(g["code"], 999))
+    return {"erp_nav": nav, "ui_theme": current(user), "ui_pref": pref}

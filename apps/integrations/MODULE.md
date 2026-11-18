@@ -17,5 +17,6 @@ Bağımlılık: core, accounting. Müşteri dokümanı §13.
 Uç noktalar: test `https://efatura-test.uyumsoft.com.tr/Services/Integration` (Uyumsoft/Uyumsoft), canlı `https://efatura.uyumsoft.com.tr/Services/Integration`.
 SOAP 1.1 + WS-Security UsernameToken. Metotlar: GetSystemDate, IsEInvoiceUser, SendInvoice (InvoiceInfo: Invoice UBL-TR,
 TargetCustomer, EArchiveInvoiceInfo DeliveryType=Electronic, Scenario eInvoice|eArchive), GetInboxInvoiceList, QueryOutboxInvoiceStatus.
-**Test ortamında doğrulanacaklar:** e-Arşiv internet satışı bilgisi (InternetSalesInfo) gereksinimi, durum kodlarının eşlemesi,
+**Test ortamında doğrulandı (19.11.2026):** kimlik doğrulama (UsernameToken+Timestamp), GetSystemDate (soapAction `ICustomerServiceBase`), IsEInvoiceUser, GetInboxInvoiceList (her fatura bir `<Items>`; InvoiceId = numara, DocumentId = ETTN), SendInvoice e-Arşiv (bizim UBL-TR'miz kabul edildi; test hesabı VKN 9000068418). Durum kodları: 1000 Approved, 2000 Error.
+**Hâlâ doğrulanacaklar:** e-Arşiv internet satışı bilgisi (InternetSalesInfo) gereksinimi, durum kodlarının eşlemesi,
 gelen faturayı "alındı" işaretleme (SetInvoicesTaken).

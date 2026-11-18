@@ -21,10 +21,10 @@ FAIL = b"""<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Bo
 <XResult IsSucceded="false" Message="Kullanici adi veya sifre hatali"/></X></s:Body></s:Envelope>"""
 INBOX = b"""<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><GetInboxInvoiceListResponse xmlns="http://tempuri.org/">
 <GetInboxInvoiceListResult IsSucceded="true"><Value PageIndex="0" PageSize="100" TotalCount="1" TotalPages="1"><Items>
-<InboxInvoiceListItem><InvoiceId>11111111-2222-3333-4444-555555555555</InvoiceId><DocumentId>TED2026000000123</DocumentId>
+<InvoiceId>TED2026000000123</InvoiceId><DocumentId>11111111-2222-3333-4444-555555555555</DocumentId>
 <TargetTcknVkn>5555555555</TargetTcknVkn><TargetTitle>Ambalaj A.S.</TargetTitle><ExecutionDate>2026-11-18T10:00:00</ExecutionDate>
 <PayableAmount>1200.00</PayableAmount><TaxTotal>200.00</TaxTotal><TaxExclusiveAmount>1000.00</TaxExclusiveAmount>
-<DocumentCurrencyCode>TRY</DocumentCurrencyCode><Status>Approved</Status></InboxInvoiceListItem></Items></Value></GetInboxInvoiceListResult>
+<DocumentCurrencyCode>TRY</DocumentCurrencyCode><Status>Approved</Status></Items></Value></GetInboxInvoiceListResult>
 </GetInboxInvoiceListResponse></s:Body></s:Envelope>"""
 
 
@@ -53,6 +53,13 @@ class ClientTests(TestCase):
         for part in ("UsernameToken", ">Uyumsoft<", "TargetCustomer", 'VknTckn="11111111111"', ">eArchive<",
                      'DeliveryType="Electronic"', ">X</"):
             self.assertIn(part, xml)
+
+    def test_system_date_action_and_value_attribute(self):
+        resp = (b'<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><GetSystemDateResponse xmlns="http://tempuri.org/">'
+                b'<GetSystemDateResult IsSucceded="true" Value="2026-11-19T00:42:48+03:00"/></GetSystemDateResponse></s:Body></s:Envelope>')
+        http = FakeHttp(resp)
+        self.assertEqual(UyumsoftClient("u", "p", session=http).system_date(), "2026-11-19T00:42:48+03:00")
+        self.assertEqual(http.sent[0][2]["SOAPAction"], '"http://tempuri.org/ICustomerServiceBase/GetSystemDate"')
 
     def test_failure_message(self):
         c = UyumsoftClient("u", "p", "test", session=FakeHttp(FAIL))
