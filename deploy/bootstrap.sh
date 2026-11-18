@@ -58,8 +58,9 @@ docker compose up -d --build
 
 echo ">> Günlük yedek (02:30)"
 chmod +x deploy/backup.sh
-( crontab -l 2>/dev/null | grep -v eglo-erp; echo "30 2 * * * cd $APP_DIR && ./deploy/backup.sh >> $APP_DIR/backups/backup.log 2>&1" ) | crontab -
 mkdir -p backups
+CRON_LINE="30 2 * * * cd $APP_DIR && ./deploy/backup.sh >> $APP_DIR/backups/backup.log 2>&1"
+{ crontab -l 2>/dev/null | grep -v eglo-erp || true; echo "$CRON_LINE"; } | crontab -
 
 echo
 echo "=================================================================="
