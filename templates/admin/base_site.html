@@ -1,13 +1,13 @@
 {% extends "admin/base.html" %}{% load static %}
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Eglo ERP{% endblock %}
-{% block extrastyle %}{{ block.super }}<style>
-  :root, html[data-theme="light"] { --primary:#5b3a6e; --secondary:#4a2e5a; --accent:#f3d9ff; --primary-fg:#fff;
-    --header-bg:#4a2e5a; --header-link-color:#fff; --breadcrumbs-bg:#5b3a6e; --link-fg:#5b3a6e; --link-hover-color:#0f9d8a;
-    --button-bg:#5b3a6e; --button-hover-bg:#4a2e5a; --default-button-bg:#0f9d8a; --default-button-hover-bg:#0b7f70;
-    --selected-row:#f5f0f8; --font-family-primary: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  #header { padding: 12px 28px; } #branding h1 a { font-weight: 700; }
-  .module h2, .module caption { border-radius: 6px 6px 0 0; }
-</style>{% endblock %}
-{% block branding %}<div id="site-name"><a href="{% url 'admin:index' %}">Eglo ERP · Yönetim</a></div>{% endblock %}
-{% block userlinks %}<a href="/">Uygulamaya dön</a> / {{ block.super }}{% endblock %}
-{% block nav-global %}{% endblock %}
+{% block extrahead %}{{ block.super }}{% include "partials/head.html" %}{% endblock %}
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/app.css' %}"><link rel="stylesheet" href="{% static 'css/admin.css' %}">
+<style>:root, html[data-theme="light"], html[data-theme="dark"] { --primary:#5b3a6e; --secondary:#4a2e5a; --accent:#0f9d8a; --primary-fg:#fff;
+  --header-bg:#4a2e5a; --breadcrumbs-bg:transparent; --link-fg:#5b3a6e; --link-hover-color:#0f9d8a; --button-bg:#5b3a6e;
+  --button-hover-bg:#4a2e5a; --default-button-bg:#128a52; --default-button-hover-bg:#0e7344; --selected-row:#f5f0f8;
+  --body-bg:#f4f5f8; --body-fg:#1c2130; --darkened-bg:#fafbfc; --hairline-color:#e6e8ee; --border-color:#d6d9e1;
+  --font-family-primary: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color-scheme: light; }</style>
+{% endblock %}
+{% block header %}{% if not is_popup %}{% include "partials/topbar.html" %}{% endif %}{% endblock %}
+{% block nav-sidebar %}<div class="backdrop" onclick="document.body.classList.remove('nav-open')"></div>{% include "partials/sidebar.html" %}{% endblock %}

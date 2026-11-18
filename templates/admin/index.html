@@ -1,0 +1,18 @@
+{% extends "admin/base_site.html" %}{% load i18n ui %}
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+{% block content_title %}<h1>Tüm kayıtlar</h1><p class="muted" style="margin:-10px 0 20px">Ürün, cari, depo, sipariş ve diğer tüm kayıtlara buradan ulaşabilirsiniz.</p>{% endblock %}
+{% block content %}
+<div class="admin-apps">
+{% for app in app_list %}{% module_meta app.app_label as m %}
+  <section class="admin-app">
+    <header><span class="ic" style="background:{{ m.color }}">{% icon m.icon %}</span>{{ app.name }}</header>
+    <ul>{% for model in app.models %}
+      <li>{% if model.admin_url %}<a class="name" href="{{ model.admin_url }}">{{ model.name }}</a>{% else %}<span>{{ model.name }}</span>{% endif %}
+        <span class="acts">{% if model.add_url %}<a href="{{ model.add_url }}">+ Ekle</a>{% endif %}{% if model.admin_url %}<a href="{{ model.admin_url }}">Liste</a>{% endif %}</span></li>
+    {% endfor %}</ul>
+  </section>
+{% empty %}<p>Görüntüleme yetkiniz olan kayıt yok.</p>{% endfor %}
+</div>
+{% endblock %}
+{% block sidebar %}{% endblock %}

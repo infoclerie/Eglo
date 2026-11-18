@@ -14,8 +14,8 @@ ROLES = {
     "Satın alma": {"catalog": "view", "inventory": "view", "partners": "all", "purchase": "all"},
     "Satış ekibi": {"catalog": "view", "inventory": ["view_quant"], "partners": "all", "sales": "all"},
     "E-ticaret ekibi": {"catalog": "view", "inventory": ["view_quant"], "partners": "view", "sales": "all", "shipping": "view"},
-    "Finans": {"catalog": "view", "partners": "all", "sales": "view", "purchase": "view"},
-    "Muhasebe": {"catalog": "view", "partners": "view", "sales": "view", "purchase": "view"},
+    "Finans": {"catalog": "view", "partners": "all", "sales": "view", "purchase": "view", "accounting": "all", "integrations": "view"},
+    "Muhasebe": {"catalog": "view", "partners": "view", "sales": "view", "purchase": "view", "accounting": "all", "integrations": "all"},
     "Sevkiyat personeli": {"catalog": "view", "inventory": ["view_quant", "view_location", "view_stockmove"], "sales": ["view_salesorder"], "shipping": ["view_shipment", "change_shipment", "view_shipmentline", "view_returnrequest", "change_returnrequest", "add_returnrequest", "view_returnline", "add_returnline", "change_returnline"]},
     "Raporlama kullanıcısı": {"*": "view"},
 }

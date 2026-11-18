@@ -29,3 +29,9 @@ resmi defter için mevcut muhasebe programına fiş/fatura aktarımı (müşteri
 **2026-11-19 · Stok sevkte düşer.** Onayda rezerve, `shipping.ship` anında `ship_reserved` ile düşer; paketlenmiş ama sevk edilmemiş ürün stokta görünür (rezerve).
 
 **2026-11-19 · Ortak arayüz tasarım sistemi + sihirbazlar.** Tek CSS dosyası ve ikon/rozet etiketleri; kurulum gerektiren işler adım adım sihirbaz.
+
+**2026-11-19 · Uyumsoft için elle SOAP (requests).** WSDL'den kod üretimi yerine UBL-TR'yi kendimiz üretip SendInvoice zarfına koyuyoruz; bağımlılık az, test edilebilir (sahte HTTP ile).
+
+**2026-11-19 · Dış sistem işleri kuyrukta.** Fatura kesme işlemi entegratör kapalıyken de tamamlanır; gönderim kuyrukta yeniden denenir.
+
+**2026-11-19 · Arayüz her cihazda Türkçe.** LocaleMiddleware kaldırıldı; tarayıcı dili ne olursa olsun Türkçe.

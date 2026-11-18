@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ inv }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ inv.get_kind_display }} · {{ inv }}</h1><p>{{ inv.get_doc_type_display }} · {{ inv.get_profile_display }} · ETTN {{ inv.uuid }}</p></div>
+  <div>{{ inv.status|badge:inv.get_status_display }}</div></div>
+{% if inv.message %}<div class="alert {% if inv.status == 'error' or inv.status == 'on_hold' %}error{% else %}success{% endif %}" style="margin-bottom:16px">{% icon "alert" %}<div style="white-space:pre-line">{{ inv.message }}</div></div>{% endif %}
+<div class="grid grid-2">
+  <div class="card card-pad">
+    <h2>Alıcı / satıcı</h2>
+    <p style="margin:0"><b>{{ inv.buyer_title }}</b><br><span class="muted">VKN/TCKN {{ inv.buyer_vkn|default:"—" }} · {{ inv.buyer_tax_office }}</span><br>{{ inv.buyer_address|linebreaksbr }}</p>
+    {% if inv.partner %}<p><a href="{% url 'accounting:statement' inv.partner.pk %}">Cari ekstre →</a></p>{% endif %}
+    <h2 style="margin-top:16px">Tutarlar</h2>
+    <table class="table"><tbody>
+      <tr><td>Mal / hizmet (KDV hariç)</td><td class="num">{{ inv.subtotal }}</td></tr>
+      <tr><td>KDV</td><td class="num">{{ inv.vat_total }}</td></tr>
+      <tr><td><b>Ödenecek</b></td><td class="num"><b>{{ inv.total }} {{ inv.currency }}</b></td></tr>
+      <tr><td>Ödenen</td><td class="num">{{ inv.paid_amount }}</td></tr>
+      <tr><td>Açık bakiye</td><td class="num"><b>{{ inv.open_amount }}</b></td></tr>
+      <tr><td>Fatura / vade tarihi</td><td class="num">{{ inv.issue_date|date:"d.m.Y" }} / {{ inv.due_date|date:"d.m.Y"|default:"—" }}</td></tr>
+    </tbody></table>
+  </div>
+  <div class="card card-pad">
+    <h2>İşlemler</h2>
+    <div class="form">
+      {% if inv.status == "draft" and inv.direction == "out" %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="issue"><button class="btn btn-primary btn-lg">{% icon "check" %}Faturayı kes (numara ver)</button></form>{% endif %}
+      {% if inv.direction == "out" and inv.status == "ready" or inv.direction == "out" and inv.status == "error" %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="send"><button class="btn btn-ok btn-lg">{% icon "plug" %}Entegratöre gönder (e-Fatura / e-Arşiv)</button></form>{% endif %}
+      {% if inv.direction == "out" %}<a class="btn" href="{% url 'accounting:invoice_xml' inv.pk %}">UBL-TR XML indir</a>{% endif %}
+      {% if inv.partner and inv.open_amount > 0 and inv.status != "draft" and inv.status != "cancelled" %}
+      <form method="post" class="form" style="border-top:1px solid var(--line);padding-top:14px">{% csrf_token %}<input type="hidden" name="action" value="payment">
+        <b>{% if inv.direction == "out" %}Tahsilat al{% else %}Ödeme yap{% endif %}</b>
+        <div class="inline"><div><label>Tutar</label><input name="amount" value="{{ inv.open_amount }}" inputmode="decimal"></div>
+          <div><label>Tarih</label><input type="date" name="date" value="{{ today|date:'Y-m-d' }}"></div></div>
+        <div class="inline"><div><label>Hesap</label><select name="account">{% for a in accounts %}<option value="{{ a.pk }}">{{ a }}</option>{% empty %}<option value="">Önce kasa/banka hesabı tanımlayın</option>{% endfor %}</select></div>
+          <div><label>Yöntem</label><select name="method"><option value="transfer">Havale / EFT</option><option value="card">Kredi kartı</option><option value="cash">Nakit</option><option value="check">Çek / senet</option><option value="marketplace">Pazaryeri hakedişi</option></select></div></div>
+        <div><label>Dekont / referans</label><input name="reference"></div>
+        <button class="btn btn-primary">Kaydet</button></form>{% endif %}
+      {% if inv.status != "cancelled" and inv.status != "draft" %}<form method="post" class="inline" style="border-top:1px solid var(--line);padding-top:14px">{% csrf_token %}<input type="hidden" name="action" value="cancel"><div><label>İptal nedeni</label><input name="reason"></div><button class="btn">İptal talebi (onaylı)</button></form>{% endif %}
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-top:16px"><div class="card-head"><h2>Satırlar</h2></div><div class="table-wrap"><table class="table">
+<thead><tr><th>Açıklama</th><th class="num">Miktar</th><th class="num hide-sm">Birim fiyat</th><th class="num">KDV %</th><th class="num">Tutar</th><th class="num">KDV</th></tr></thead><tbody>
+{% for l in lines %}<tr><td>{{ l.description }}{% if l.product %}<div class="small muted">{{ l.product.sku }}</div>{% endif %}</td><td class="num">{{ l.quantity|floatformat:"-3" }}</td>
+<td class="num hide-sm">{{ l.unit_price|floatformat:2 }}</td><td class="num">{{ l.vat_rate|floatformat:"-2" }}</td><td class="num">{{ l.net_amount }}</td><td class="num">{{ l.vat_amount }}</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% if payments %}<div class="card" style="margin-top:16px"><div class="card-head"><h2>Tahsilat / ödemeler</h2></div><div class="table-wrap"><table class="table"><tbody>
+{% for p in payments %}<tr><td>{{ p.date|date:"d.m.Y" }}</td><td>{{ p.get_method_display }} · {{ p.account }}</td><td>{{ p.reference }}</td><td class="num"><b>{{ p.amount }}</b></td></tr>{% endfor %}
+</tbody></table></div></div>{% endif %}
+{% endblock %}

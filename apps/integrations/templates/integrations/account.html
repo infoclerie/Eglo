@@ -1,0 +1,33 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ acc.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ acc.name }}</h1><p>{{ p.description }}</p></div>
+  <div class="inline" style="flex:0 0 auto"><a class="btn" href="{% url 'integrations:wizard' p.code 'credentials' %}?edit={{ acc.pk }}">{% icon "settings" %}Ayarları düzenle</a>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle"><button class="btn">{% if acc.active %}Durdur{% else %}Etkinleştir{% endif %}</button></form></div></div>
+<div class="grid grid-2" style="margin-bottom:16px">
+  <div class="card card-pad">
+    <h2>Durum</h2>
+    <p>{% if acc.active %}<span class="badge ok">Aktif</span>{% else %}<span class="badge">Durduruldu</span>{% endif %}
+       <span class="badge {% if acc.environment == 'live' %}danger{% else %}info{% endif %}">{{ acc.get_environment_display }}</span></p>
+    <p class="small">{% if acc.last_test_ok %}<span class="badge ok">Son test başarılı</span>{% else %}<span class="badge danger">Son test başarısız</span>{% endif %} {{ acc.last_test_at|date:"d.m.Y H:i" }}<br>{{ acc.last_message }}</p>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="test"><button class="btn">{% icon "plug" %}Bağlantıyı test et</button></form>
+  </div>
+  {% if p.category == "einvoice" %}<div class="card card-pad">
+    <h2>e-Fatura işlemleri</h2>
+    <p class="small muted">Otomatik gönderim: <b>{{ acc.config.auto_send|yesno:"açık,kapalı" }}</b> · Gelen fatura kontrolü: <b>{{ acc.config.fetch_inbox|yesno:"her ,kapalı" }}{% if acc.config.fetch_inbox %}{{ acc.config.fetch_interval }} dk{% endif %}</b></p>
+    <div class="form">
+      <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="action" value="fetch"><div><label>Son kaç gün</label><input name="days" value="30" inputmode="numeric"></div><button class="btn btn-primary">{% icon "inbox" %}Gelen faturaları şimdi çek</button></form>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="status"><button class="btn">Gönderilen faturaların durumunu güncelle</button></form>
+      <a class="btn" href="{% url 'accounting:invoices' %}?tab=in">Gelen faturaları görüntüle →</a>
+    </div>
+  </div>{% endif %}
+</div>
+<div class="card" style="margin-bottom:16px"><div class="card-head"><h2>Son işler</h2><a href="{% url 'integrations:jobs' %}">Tümü →</a></div><div class="table-wrap"><table class="table">
+<thead><tr><th>Zaman</th><th>İş</th><th>Durum</th><th class="num">Deneme</th><th class="hide-sm">Hata / sonuç</th></tr></thead><tbody>
+{% for j in jobs %}<tr><td>{{ j.created_at|date:"d.m H:i" }}</td><td>{{ j.kind }}<div class="small muted">{{ j.ref }}</div></td><td>{{ j.status|badge:j.get_status_display }}</td><td class="num">{{ j.attempts }}/{{ j.max_attempts }}</td>
+<td class="hide-sm small">{% if j.last_error %}<span style="color:var(--danger)">{{ j.last_error|truncatechars:160 }}</span>{% else %}{{ j.result|default:"" }}{% endif %}</td></tr>
+{% empty %}<tr><td colspan="5"><div class="empty">Henüz iş yok.</div></td></tr>{% endfor %}</tbody></table></div></div>
+<div class="card"><div class="card-head"><h2>Senkronizasyon logları</h2></div><div class="table-wrap"><table class="table"><tbody>
+{% for l in logs %}<tr{% if not l.ok %} class="row-danger"{% endif %}><td style="width:120px">{{ l.at|date:"d.m H:i:s" }}</td><td>{{ l.action }}</td><td>{{ l.message }}</td></tr>
+{% empty %}<tr><td><div class="empty">Log yok.</div></td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

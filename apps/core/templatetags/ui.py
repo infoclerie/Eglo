@@ -58,3 +58,18 @@ def badge(status, label=None):
 def initials(user):
     name = (user.get_full_name() or user.get_username() or "?").strip()
     return "".join(p[0] for p in name.split()[:2]).upper()
+
+
+@register.simple_tag
+def module_meta(app_label):
+    """Yönetim ana sayfası için modül ikon/renk bilgisi."""
+    from apps.core.registry import load_manifests
+    m = load_manifests().get(app_label)
+    if m:
+        return {"icon": m.get("icon", "box"), "color": m.get("color", "#5b3a6e")}
+    return {"icon": "users" if app_label == "auth" else "settings", "color": "#6a7184"}
+
+
+@register.filter
+def get(d, key):
+    return d.get(key) if hasattr(d, "get") else None

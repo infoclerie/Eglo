@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Ürün Kârlılığı{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Ürün Bazında Gerçek Kârlılık</h1><p>KDV hariç satış − ürün maliyeti − ambalaj/depolama − komisyon − kargo − hizmet − reklam − POS = katkı kârı</p></div></div>
+<form class="inline card card-pad" style="margin-bottom:16px"><div><label>Başlangıç</label><input type="date" name="start" value="{{ start|date:'Y-m-d' }}"></div>
+<div><label>Bitiş</label><input type="date" name="end" value="{{ end|date:'Y-m-d' }}"></div>
+<div><label>Kanal</label><select name="channel"><option value="">Tüm kanallar</option>{% for c in channels %}<option value="{{ c.code }}"{% if c == channel %} selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+<button class="btn btn-primary">Hesapla</button></form>
+<div class="grid grid-kpi" style="margin-bottom:16px">
+  <div class="card kpi"><div class="t">Satış (KDV hariç)</div><div class="v">{{ tot.revenue|floatformat:2 }}</div></div>
+  <div class="card kpi"><div class="t">Ürün maliyeti</div><div class="v">{{ tot.product_cost|floatformat:2 }}</div></div>
+  <div class="card kpi"><div class="t">Komisyon + kargo</div><div class="v">{{ tot.commission|add:tot.shipping|floatformat:2 }}</div></div>
+  <div class="card kpi {% if tot.contribution < 0 %}danger{% else %}ok{% endif %}"><div class="t">Katkı kârı</div><div class="v">{{ tot.contribution|floatformat:2 }}</div></div>
+</div>
+<div class="card"><div class="table-wrap"><table class="table">
+<thead><tr><th>Ürün</th><th class="num">Adet</th><th class="num">Satış</th><th class="num hide-sm">Maliyet</th><th class="num hide-sm">Ambalaj vb.</th><th class="num hide-sm">Komisyon</th><th class="num hide-sm">Kargo</th><th class="num hide-sm">Reklam</th><th class="num">Katkı kârı</th><th class="num">Marj</th></tr></thead><tbody>
+{% for r in rows %}<tr{% if r.contribution < 0 %} class="row-danger"{% endif %}><td><b>{{ r.product.sku }}</b><div class="small muted">{{ r.product.name }}</div></td><td class="num">{{ r.qty|floatformat:"-3" }}</td>
+<td class="num">{{ r.revenue }}</td><td class="num hide-sm">{{ r.product_cost }}</td><td class="num hide-sm">{{ r.extra_cost|default:"0.00" }}</td><td class="num hide-sm">{{ r.commission|default:"0.00" }}</td>
+<td class="num hide-sm">{{ r.shipping|default:"0.00" }}</td><td class="num hide-sm">{{ r.ads|default:"0.00" }}</td><td class="num"><b>{{ r.contribution }}</b></td><td class="num">%{{ r.margin_pct }}</td></tr>
+{% empty %}<tr><td colspan="10"><div class="empty">{% icon "chart" %}<div>Bu dönemde sevk edilmiş sipariş yok.</div></div></td></tr>{% endfor %}
+</tbody></table></div></div>
+<p class="small muted">Kanal komisyon/kargo oranları: Yönetim › Kanal maliyet profilleri. Ürün ambalaj maliyetleri: Yönetim › Ürün ek maliyetleri.</p>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Yeni bağlantı{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Yeni bağlantı</h1><p>Bağlanmak istediğiniz sistemi seçin.</p></div></div>
+{% for group, items in groups.items %}
+<h2 style="margin-top:8px">{{ group }}</h2>
+<div class="grid grid-2" style="margin-bottom:18px">
+{% for p in items %}
+  {% if p.available %}<a class="card card-pad" href="{% url 'integrations:wizard' p.code 'credentials' %}?reset=1" style="color:inherit;text-decoration:none;display:flex;gap:14px;align-items:center">
+  {% else %}<div class="card card-pad" style="display:flex;gap:14px;align-items:center;opacity:.6">{% endif %}
+    <span class="app-tile" style="padding:0"><span class="ic" style="background:{{ p.color }};width:48px;height:48px">{% icon p.icon %}</span></span>
+    <div style="flex:1"><b>{{ p.name }}</b><div class="small muted">{{ p.description }}</div></div>
+    {% if p.available %}<span class="btn btn-primary btn-sm">Kur →</span>{% else %}<span class="badge">Yakında</span>{% endif %}
+  {% if p.available %}</a>{% else %}</div>{% endif %}
+{% endfor %}
+</div>
+{% endfor %}
+{% endblock %}

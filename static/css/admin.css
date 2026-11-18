@@ -1,0 +1,64 @@
+/* Yönetim panelini uygulama kabuğuna uyarlar (app.css ile birlikte yüklenir). */
+body { font-family: var(--font); background: var(--bg); color: var(--text); }
+body:not(.popup) #container { margin-left: var(--sidebar); min-height: 100vh; min-width: 0; width: auto; }
+body:not(.popup) .sidebar { position: fixed; left: 0; top: 0; width: var(--sidebar); z-index: 20; }
+.topbar .top-search { width: 100%; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: var(--radius-sm); font: 14px var(--font); }
+.topbar .btn { border-radius: var(--radius-sm); }
+#main { display: block; } #main > .content, #content-start { padding: 0; }
+div.breadcrumbs { background: transparent; color: var(--muted); padding: 16px 28px 0; font-size: 13px; }
+div.breadcrumbs a { color: var(--brand); } div.breadcrumbs a:hover { color: var(--accent); }
+#content { padding: 14px 28px 48px; max-width: 1440px; }
+#content h1 { font-size: 22px; font-weight: 650; color: var(--text); margin: 4px 0 18px; }
+.messagelist li { border-radius: var(--radius-sm); margin-bottom: 8px; }
+.module { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 18px; }
+.module h2, .module caption, .inline-group h2 { background: var(--surface-2); color: var(--text); font-size: 14px; font-weight: 650; text-transform: none; letter-spacing: 0; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+fieldset.module { padding: 0; } .form-row { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.aligned label { color: var(--muted); font-weight: 600; }
+input[type=text], input[type=number], input[type=email], input[type=password], input[type=url], input[type=tel], input[type=search], textarea, select, .vTextField {
+  border: 1px solid var(--line-2); border-radius: var(--radius-sm); padding: 7px 10px; font-family: var(--font); background: #fff; }
+input:focus, select:focus, textarea:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px rgba(91,58,110,.15); }
+.button, input[type=submit], input[type=button], .submit-row input, a.button { border-radius: var(--radius-sm); padding: 9px 16px; font-weight: 600; background: var(--brand); }
+.button.default, input[type=submit].default, .submit-row input.default { background: var(--ok); }
+.submit-row { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+.submit-row a.deletelink { border-radius: var(--radius-sm); padding: 9px 16px; }
+.object-tools a:link, .object-tools a:visited { background: var(--brand); border-radius: 999px; padding: 7px 16px; font-weight: 600; text-transform: none; letter-spacing: 0; font-size: 13px; }
+.object-tools a:hover { background: var(--brand-600); }
+#changelist .actions { background: var(--surface-2); border-bottom: 1px solid var(--line); padding: 10px 14px; }
+#changelist .actions select { padding: 6px 8px; }
+#changelist table thead th, table thead th { background: var(--surface-2); color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--line); }
+#result_list tbody tr:hover td, #result_list tbody tr:hover th { background: #fbfaff; }
+#result_list td, #result_list th { padding: 10px 12px; vertical-align: middle; }
+#changelist-filter { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+#changelist-filter h2 { background: var(--surface-2); color: var(--text); border-radius: var(--radius) var(--radius) 0 0; text-transform: none; }
+#changelist-filter h3 { color: var(--muted); } #changelist-filter li.selected a { color: var(--brand); font-weight: 700; }
+#toolbar { background: transparent; border: 0; padding: 0 0 12px; } #toolbar #searchbar { min-width: 280px; padding: 8px 12px; }
+.paginator { padding: 12px 14px; color: var(--muted); }
+.inline-group .tabular td { padding: 8px; }
+.selector .selector-available h2, .selector .selector-chosen h2 { border-radius: 7px 7px 0 0; }
+/* yönetim ana sayfası */
+.admin-apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.admin-app { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.admin-app header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 650; font-size: 15px; }
+.admin-app header .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: #fff; }
+.admin-app ul { list-style: none; margin: 0; padding: 6px 0; }
+.admin-app li { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; }
+.admin-app li:hover { background: #fbfaff; }
+.admin-app li a.name { color: var(--text); font-weight: 500; }
+.admin-app li .acts a { font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--brand); margin-left: 6px; }
+.admin-app li .acts a:hover { background: var(--brand-50); text-decoration: none; }
+@media (max-width: 900px) {
+  body:not(.popup) #container { margin-left: 0; }
+  body:not(.popup) .sidebar { transform: translateX(-100%); transition: transform .2s; }
+  body.nav-open .sidebar { transform: none; }
+  #content { padding: 12px 14px 40px; } div.breadcrumbs { padding: 12px 14px 0; }
+}
+@media (max-width: 900px) {
+  body.nav-open .backdrop { display: block; position: fixed; inset: 0; background: rgba(16,24,40,.45); z-index: 15; }
+  #changelist .actions { flex-wrap: wrap; } #toolbar #searchbar { min-width: 0; width: 100%; }
+  .admin-apps { grid-template-columns: 1fr; }
+  .submit-row { position: sticky; bottom: 0; z-index: 4; }
+}
+.module h2, .module caption, .fieldset-heading, .inline-group h2, fieldset.module > h2, .module > details > summary h2 {
+  background: var(--surface-2) !important; color: var(--text) !important; font-size: 14px; font-weight: 650; text-transform: none; letter-spacing: 0; }
+.inline-group .tabular thead th { background: var(--surface-2); color: var(--muted); }
+fieldset.module { border: 1px solid var(--line) !important; } .module h2 { border-top: 0 !important; }

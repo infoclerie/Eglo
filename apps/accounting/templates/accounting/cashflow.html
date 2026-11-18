@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Nakit Akışı{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Nakit Akışı</h1><p>Açık faturaların vade tarihine göre haftalık beklenen tahsilat ve ödemeleri.</p></div></div>
+<div class="card"><div class="table-wrap"><table class="table">
+<thead><tr><th>Dönem</th><th class="num">Beklenen tahsilat</th><th class="num">Vadesi gelen ödeme</th><th class="num">Net</th><th style="width:30%" class="hide-sm"></th></tr></thead><tbody>
+{% for r in rows %}<tr{% if r.week == 0 and r.in %} class="row-danger"{% endif %}><td><b>{{ r.label }}</b></td><td class="num">{{ r.in }}</td><td class="num">{{ r.out }}</td>
+<td class="num"><b {% if r.net < 0 %}style="color:var(--danger)"{% endif %}>{{ r.net }}</b></td><td class="hide-sm">{% if r.net < 0 %}<span class="badge danger">Nakit açığı</span>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

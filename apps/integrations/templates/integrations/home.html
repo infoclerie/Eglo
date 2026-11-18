@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Entegrasyonlar{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Entegrasyonlar</h1><p>e-Fatura, pazaryeri, kargo ve banka bağlantıları. Her bağlantı adım adım sihirbazla kurulur.</p></div>
+  <a class="btn btn-primary btn-lg" href="{% url 'integrations:choose' %}">{% icon "plug" %}Yeni bağlantı</a></div>
+<div class="grid grid-kpi" style="margin-bottom:18px">
+  <a class="card kpi" href="{% url 'integrations:jobs' %}?status=pending"><div class="t">Kuyrukta bekleyen iş</div><div class="v">{{ stats.pending }}</div></a>
+  <a class="card kpi {% if stats.failed %}danger{% else %}ok{% endif %}" href="{% url 'integrations:jobs' %}?status=failed"><div class="t">Başarısız iş</div><div class="v">{{ stats.failed }}</div></a>
+  <a class="card kpi ok" href="{% url 'integrations:jobs' %}?status=success"><div class="t">Başarılı iş</div><div class="v">{{ stats.success }}</div></a>
+</div>
+<div class="grid grid-2">
+{% for a in accounts %}{% with p=a.provider_obj %}
+  <a class="card card-pad" href="{% url 'integrations:account' a.pk %}" style="color:inherit;text-decoration:none;display:flex;gap:14px;align-items:center">
+    <span class="app-tile" style="padding:0"><span class="ic" style="background:{{ p.color }};width:48px;height:48px">{% icon p.icon %}</span></span>
+    <div style="flex:1"><b>{{ a.name }}</b><div class="small muted">{{ p.description }}</div>
+      <div style="margin-top:6px">{% if a.active %}<span class="badge ok">Aktif</span>{% else %}<span class="badge">Durduruldu</span>{% endif %}
+      {% if a.last_test_ok %}<span class="badge info">Son test başarılı</span>{% else %}<span class="badge danger">Son test başarısız</span>{% endif %}</div></div>
+  </a>
+{% endwith %}{% empty %}
+  <div class="card"><div class="empty">{% icon "plug" %}<div>Henüz bağlantı yok. <a href="{% url 'integrations:choose' %}">İlk bağlantıyı kurun →</a></div></div></div>
+{% endfor %}
+</div>
+{% endblock %}

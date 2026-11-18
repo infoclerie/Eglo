@@ -18,6 +18,8 @@ DEFAULT_MODULES = [
     "sales",
     "shipping",
     "purchase",
+    "accounting",
+    "integrations",
 ]
 
 

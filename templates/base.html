@@ -2,29 +2,16 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% include "partials/head.html" %}
   <title>{% block title %}Eglo ERP{% endblock %} · Eglo ERP</title>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
-<body>
+<body class="erp">
+<div class="backdrop" onclick="document.body.classList.remove('nav-open')"></div>
 <div class="app">
-  <aside class="sidebar">
-    <a class="logo" href="{% url 'core:dashboard' %}"><span>{% icon "box" %}</span>Eglo ERP</a>
-    {% for g in erp_nav %}
-      <div class="nav-group">{{ g.name }}</div>
-      <nav class="nav">{% for i in g.items %}<a href="{{ i.url }}"{% if i.active %} class="active"{% endif %}>{% icon i.icon %}{{ i.label }}</a>{% endfor %}</nav>
-    {% endfor %}
-    <div class="nav-group">Sistem</div>
-    <nav class="nav">{% if request.user.is_staff %}<a href="{% url 'admin:index' %}">{% icon "admin" %}Yönetim paneli</a>{% endif %}</nav>
-  </aside>
+  {% include "partials/sidebar.html" %}
   <div class="main">
-    <header class="topbar">
-      <button class="menu-btn" onclick="document.body.classList.toggle('nav-open')" aria-label="Menü">{% icon "menu" %}</button>
-      <form action="{% url 'inventory:scan' %}" method="get" style="flex:1;max-width:420px"><input type="search" name="code" placeholder="Barkod, SKU, lokasyon veya palet ara…"></form>
-      <div class="spacer"></div>
-      <div class="user"><span class="avatar">{{ request.user|initials }}</span><span class="hide-sm">{{ request.user.get_full_name|default:request.user.username }}</span>
-        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-sm" title="Çıkış">{% icon "logout" %}</button></form></div>
-    </header>
+    {% include "partials/topbar.html" %}
     <main class="content">
       {% if messages %}<div class="alerts">{% for m in messages %}<div class="alert {{ m.tags }}">{% if m.tags == 'error' %}{% icon "alert" %}{% else %}{% icon "check" %}{% endif %}{{ m }}</div>{% endfor %}</div>{% endif %}
       {% block content %}{% endblock %}

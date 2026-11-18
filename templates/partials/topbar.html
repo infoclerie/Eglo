@@ -1,0 +1,7 @@
+{% load ui %}<header class="topbar">
+  <button class="menu-btn" type="button" onclick="document.body.classList.toggle('nav-open')" aria-label="Menü">{% icon "menu" %}</button>
+  <form action="{% url 'inventory:scan' %}" method="get" class="top-search-form"><input class="top-search" type="search" name="code" placeholder="Barkod / SKU / lokasyon ara…"></form>
+  <div class="spacer"></div>
+  <div class="user"><span class="avatar">{{ request.user|initials }}</span><span class="hide-sm">{{ request.user.get_full_name|default:request.user.username }}</span>
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-sm" title="Çıkış">{% icon "logout" %}</button></form></div>
+</header>

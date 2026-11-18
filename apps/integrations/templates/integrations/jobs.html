@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}İş kuyruğu{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>İş kuyruğu ve hatalar</h1><p>Dış sistemlere yapılan her işlem burada izlenir. Hatalı işler artan aralıklarla otomatik yeniden denenir.</p></div>
+  {% if counts.failed %}<form method="post">{% csrf_token %}<button class="btn btn-primary">{% icon "return" %}Başarısız tümünü yeniden dene ({{ counts.failed }})</button></form>{% endif %}</div>
+<div class="chips"><a class="chip{% if not status %} active{% endif %}" href="?">Tümü</a>{% for s, l in statuses %}<a class="chip{% if status == s %} active{% endif %}" href="?status={{ s }}">{{ l }}<b>{{ counts|get:s }}</b></a>{% endfor %}</div>
+<div class="card"><div class="table-wrap"><table class="table">
+<thead><tr><th>Zaman</th><th>Bağlantı</th><th>İş</th><th>Durum</th><th class="num">Deneme</th><th class="hide-sm">Sonraki deneme</th><th class="hide-sm">Hata / sonuç</th><th></th></tr></thead><tbody>
+{% for j in jobs %}<tr{% if j.status == 'failed' %} class="row-danger"{% endif %}><td>{{ j.created_at|date:"d.m H:i" }}</td><td>{{ j.account }}</td><td>{{ j.kind }}<div class="small muted">{{ j.ref }}</div></td>
+<td>{{ j.status|badge:j.get_status_display }}</td><td class="num">{{ j.attempts }}/{{ j.max_attempts }}</td><td class="hide-sm">{% if j.status == 'pending' %}{{ j.next_run_at|date:"d.m H:i" }}{% endif %}</td>
+<td class="hide-sm small">{% if j.last_error %}{{ j.last_error|truncatechars:140 }}{% else %}{{ j.result|default:"" }}{% endif %}</td>
+<td class="num">{% if j.status == 'failed' %}<form method="post">{% csrf_token %}<input type="hidden" name="job" value="{{ j.pk }}"><button class="btn btn-sm">Yeniden dene</button></form>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="8"><div class="empty">{% icon "check" %}<div>Kayıt yok.</div></div></td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

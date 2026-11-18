@@ -1,7 +1,7 @@
 {% load static ui %}<!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="tr"><head><meta charset="utf-8">{% include "partials/head.html" %}
 <title>Giriş · Eglo ERP</title><link rel="stylesheet" href="{% static 'css/app.css' %}"></head>
-<body><div class="auth"><div class="card">
+<body class="erp"><div class="auth"><div class="card">
   <div class="logo">{% icon "box" %} Eglo ERP</div>
   <p class="muted" style="margin:0 0 22px">Depo, sipariş, sevkiyat ve finans yönetimi</p>
   {% if form.errors %}<div class="alert error" style="margin-bottom:14px">{% icon "alert" %}Kullanıcı adı veya şifre hatalı.</div>{% endif %}

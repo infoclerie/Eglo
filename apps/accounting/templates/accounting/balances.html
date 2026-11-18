@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Cari Bakiyeler{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Cari Bakiyeler</h1><p>Pozitif bakiye: cari bize borçlu · Negatif: biz cariye borçluyuz.</p></div>
+  <a class="btn btn-primary" href="{% url 'admin:accounting_payment_add' %}">{% icon "check" %}Tahsilat / ödeme gir</a></div>
+{% if overdue %}<div class="card" style="margin-bottom:16px"><div class="card-head"><h2>Vadesi geçmiş alacaklar</h2></div><div class="table-wrap"><table class="table">
+<thead><tr><th>Cari</th><th>Fatura</th><th class="num">Gecikme</th><th class="num">Açık tutar</th></tr></thead><tbody>
+{% for r in overdue %}<tr class="row-danger"><td>{{ r.invoice.partner.name }}</td><td><a href="{% url 'accounting:invoice' r.invoice.pk %}">{{ r.invoice }}</a></td><td class="num"><span class="badge danger">{{ r.days }} gün</span></td><td class="num"><b>{{ r.open }}</b></td></tr>{% endfor %}
+</tbody></table></div></div>{% endif %}
+<div class="chips"><a class="chip{% if not request.GET.open %} active{% endif %}" href="?">Tümü</a><a class="chip{% if request.GET.open %} active{% endif %}" href="?open=1">Sadece bakiyesi olanlar</a></div>
+<div class="card"><div class="table-wrap"><table class="table">
+<thead><tr><th>Cari</th><th class="hide-sm">Tür</th><th class="num hide-sm">Borç</th><th class="num hide-sm">Alacak</th><th class="num">Bakiye</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr><td><b>{{ r.partner__name }}</b><div class="small muted">{{ r.partner__code }}</div></td><td class="hide-sm">{{ r.partner__kind }}</td>
+<td class="num hide-sm">{{ r.d|default:0 }}</td><td class="num hide-sm">{{ r.c|default:0 }}</td><td class="num"><b>{{ r.balance }}</b></td>
+<td class="num"><a class="btn btn-sm" href="{% url 'accounting:statement' r.partner %}">Ekstre</a></td></tr>
+{% empty %}<tr><td colspan="6"><div class="empty">{% icon "users" %}<div>Henüz cari hareket yok.</div></div></td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

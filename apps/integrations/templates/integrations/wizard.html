@@ -1,0 +1,37 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ p.name }} kurulumu{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ p.name }}</h1><p>{% if state.edit %}Bağlantı ayarlarını düzenliyorsunuz.{% else %}Kurulum sihirbazı — adımları sırayla tamamlayın.{% endif %}</p></div>
+  <a class="btn" href="{% url 'integrations:home' %}">Vazgeç</a></div>
+<div class="steps">{% for code, label in steps %}<div class="step {% if forloop.counter0 < idx %}done{% elif forloop.counter0 == idx %}current{% endif %}">{{ label }}</div>{% endfor %}</div>
+<div class="card card-pad" style="max-width:760px">
+{% if form %}
+  <form method="post" class="form" autocomplete="off">{% csrf_token %}
+    {% if step == "credentials" %}<div class="alert success">{% icon "check" %}<div>Önce <b>Test ortamı</b> ile deneyin. Uyumsoft test hesabı: kullanıcı adı <b>Uyumsoft</b>, şifre <b>Uyumsoft</b>. Canlıya geçerken kendi Uyumsoft bilgilerinizi girin.</div></div>{% endif %}
+    {% if step == "company" %}<p class="muted" style="margin:0">Bu bilgiler faturalarda <b>satıcı</b> olarak yer alır. Vergi levhanızdaki gibi yazın.</p>{% endif %}
+    {% for f in form %}<div>{% if f.field.widget.input_type == "checkbox" %}<label style="display:flex;gap:10px;align-items:center;font-weight:600">{{ f }} {{ f.label }}</label>
+      {% else %}{{ f.label_tag }}{{ f }}{% endif %}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>{% endfor %}
+    <div class="inline" style="justify-content:space-between">{% if prev %}<a class="btn" href="{% url 'integrations:wizard' p.code prev %}">← Geri</a>{% else %}<span></span>{% endif %}
+      <button class="btn btn-primary btn-lg">Devam →</button></div>
+  </form>
+{% elif step == "test" %}
+  <h2>{% icon "plug" %} Bağlantı testi</h2>
+  {% if state.test.ok %}<div class="alert success">{% icon "check" %}<div><b>Bağlantı başarılı.</b><br>{{ state.test.message }}</div></div>
+  {% else %}<div class="alert error">{% icon "alert" %}<div><b>Bağlantı kurulamadı.</b><br>{{ state.test.message }}<br><span class="small">Kullanıcı adı/şifreyi ve ortam seçimini kontrol edin. Sunucunun internete çıkışı ve Uyumsoft'un IP kısıtlaması varsa sunucu IP'sinin tanımlı olması gerekir.</span></div></div>{% endif %}
+  <p class="small muted">Test zamanı: {{ state.test.at }}</p>
+  <div class="inline" style="justify-content:space-between">
+    <a class="btn" href="{% url 'integrations:wizard' p.code prev %}">← Geri</a>
+    <form method="post">{% csrf_token %}<button class="btn">Tekrar test et</button></form>
+    {% if state.test.ok %}<a class="btn btn-primary btn-lg" href="{% url 'integrations:wizard' p.code 'settings' %}">Devam →</a>{% endif %}
+  </div>
+{% elif step == "summary" %}
+  <h2>Özet</h2>
+  <table class="table"><tbody>{% for label, value in summary %}<tr><td class="muted">{{ label }}</td><td><b>{{ value }}</b></td></tr>{% endfor %}</tbody></table>
+  <div class="alert {% if state.config.environment == 'live' %}error{% else %}success{% endif %}" style="margin-top:14px">{% icon "alert" %}<div>
+    {% if state.config.environment == 'live' %}<b>Canlı ortam:</b> gönderilen faturalar GİB'e iletilir ve resmi belge olur.{% else %}<b>Test ortamı:</b> gönderilen faturalar resmi değildir; akışı güvenle deneyebilirsiniz.{% endif %}</div></div>
+  <form method="post" class="inline" style="justify-content:space-between;margin-top:14px">{% csrf_token %}
+    <a class="btn" href="{% url 'integrations:wizard' p.code prev %}">← Geri</a>
+    <button class="btn btn-ok btn-lg">{% icon "check" %}Etkinleştir</button></form>
+{% endif %}
+</div>
+{% endblock %}

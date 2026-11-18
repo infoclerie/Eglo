@@ -7,7 +7,7 @@ curl -fsSL https://raw.githubusercontent.com/infoclerie/Eglo/main/deploy/bootstr
 ```
 Alan adı verilmezse geçici olarak `<ip-tireli>.sslip.io` adresi kullanılır (gerçek HTTPS sertifikası alınır).
 AWS Lightsail'de ayrıca Networking > IPv4 Firewall'a **HTTPS (443)** kuralı eklenmeli.
-Uygulama `/opt/eglo-erp` altındadır; güncelleme: `cd /opt/eglo-erp && sudo git pull && sudo docker compose up -d --build`.
+Uygulama `/opt/eglo-erp` altındadır; `worker` servisi entegrasyon kuyruğunu çalıştırır; güncelleme: `cd /opt/eglo-erp && sudo git pull && sudo docker compose up -d --build`.
 
 ## Sunucu (elle kurulum)
 Ubuntu 24.04 LTS · 4 vCPU · 8 GB RAM · 160 GB NVMe (büyüme: 8 vCPU / 16 GB) · sabit IP · alan adı A kaydı.

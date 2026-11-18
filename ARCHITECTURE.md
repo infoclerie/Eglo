@@ -20,7 +20,9 @@ apps/partners/     cari kartlar (müşteri, bayi, tedarikçi)
 apps/sales/        sipariş havuzu, kampanyalar, kanal siparişi içe alma
 apps/shipping/     toplama, paketleme, sevk, teslim, iade
 apps/purchase/     talep, teklif, satın alma siparişi, mal kabul
-static/css/app.css ortak arayüz tasarım sistemi
+apps/accounting/   fatura (UBL-TR), cari hareket, tahsilat, hakediş, kârlılık
+apps/integrations/ sihirbaz, sağlayıcılar (Uyumsoft), iş kuyruğu, işçi
+static/css/        app.css (tasarım sistemi), admin.css (yönetim paneli uyarlaması)
 templates/         ortak şablon (base.html)
 deploy/            Caddyfile, yedekleme betiği
 docs/              yol haritası, kararlar, kurulum, müşteri ihtiyaç dokümanı, modül şablonu
@@ -48,9 +50,11 @@ docs/              yol haritası, kararlar, kurulum, müşteri ihtiyaç doküman
 | `shipping.shipment_created/picking_started/picked/packed/shipped/delivered` | shipping | order, shipment |
 | `shipping.return_requested` / `shipping.return_completed` | shipping | order, return_request |
 | `purchase.order_sent` / `purchase.goods_received` | purchase | order (, line, move) |
+| `accounting.invoice_ready/sent/cancelled`, `accounting.incoming_invoice` | accounting | invoice |
+| `accounting.send_requested` | accounting | invoice → integrations iş kuyruğuna alır |
 
 Dinleyiciler senkron çalışır ve aynı veritabanı işleminin parçasıdır (biri hata verirse tümü geri alınır).
-Dış sistem çağrıları (pazaryeri, kargo, e-belge) ileride **outbox** tablosu + arka plan işçisi ile yapılacak.
+Dış sistem çağrıları `integrations` iş kuyruğu + arka plan işçisi (`worker` servisi) ile işlem sonrasında yapılır.
 
 ## Uçtan uca hedef akış (müşteri dokümanı §1, §17)
 Sipariş (sales) → `reserve()` → toplama emri (shipping) → `ship_reserved()` → fatura (accounting) → muhasebe fişi.

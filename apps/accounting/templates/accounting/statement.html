@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Ekstre {{ partner.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Cari Ekstre · {{ partner.name }}</h1><p>{{ partner.code }} · vade {{ partner.payment_term_days }} gün · limit {{ partner.credit_limit }}</p></div>
+  <button class="btn" onclick="window.print()">Yazdır / PDF</button></div>
+<form class="inline card card-pad" style="margin-bottom:16px"><div><label>Başlangıç</label><input type="date" name="start" value="{{ start|date:'Y-m-d' }}"></div>
+<div><label>Bitiş</label><input type="date" name="end" value="{{ end|date:'Y-m-d' }}"></div><button class="btn btn-primary">Göster</button></form>
+<div class="card"><div class="table-wrap"><table class="table">
+<thead><tr><th>Tarih</th><th>Açıklama</th><th class="hide-sm">Vade</th><th class="num">Borç</th><th class="num">Alacak</th><th class="num">Bakiye</th></tr></thead><tbody>
+<tr><td colspan="5"><b>Devreden bakiye</b></td><td class="num"><b>{{ st.opening }}</b></td></tr>
+{% for r in st.rows %}<tr><td>{{ r.entry.date|date:"d.m.Y" }}</td><td>{{ r.entry.description }}</td><td class="hide-sm">{{ r.entry.due_date|date:"d.m.Y"|default:"" }}</td>
+<td class="num">{% if r.entry.debit %}{{ r.entry.debit }}{% endif %}</td><td class="num">{% if r.entry.credit %}{{ r.entry.credit }}{% endif %}</td><td class="num">{{ r.balance }}</td></tr>{% endfor %}
+<tr><td colspan="5"><b>Kapanış bakiyesi</b></td><td class="num"><b>{{ st.closing }}</b></td></tr>
+</tbody></table></div></div>
+{% endblock %}
