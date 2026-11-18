@@ -77,3 +77,31 @@ class SyncLog(models.Model):
     class Meta:
         verbose_name, verbose_name_plural = "Senkronizasyon logu", "Senkronizasyon logları"
         ordering = ["-at"]
+
+
+class ChannelListing(models.Model):
+    """Ürün ↔ pazaryeri eşleştirmesi. Kayıt yoksa ürün barkodu ile eşleşir."""
+
+    account = models.ForeignKey(IntegrationAccount, on_delete=models.CASCADE, related_name="listings")
+    product = models.ForeignKey("catalog.Product", verbose_name="Ürün", on_delete=models.CASCADE, related_name="channel_listings")
+    external_barcode = models.CharField("Pazaryeri barkodu", max_length=60, blank=True)
+    sync_stock = models.BooleanField("Stok/fiyat gönder", default=True)
+
+    class Meta:
+        verbose_name, verbose_name_plural = "Ürün eşleştirmesi", "Ürün eşleştirmeleri"
+        unique_together = [("account", "product")]
+
+
+class ExternalOrder(models.Model):
+    """Pazaryerinden gelen paket/sipariş ham verisi (durum bildirimi için satır kimlikleri burada saklanır)."""
+
+    account = models.ForeignKey(IntegrationAccount, on_delete=models.CASCADE, related_name="external_orders")
+    external_id = models.CharField("Paket / sipariş no", max_length=60)
+    order = models.OneToOneField("sales.SalesOrder", on_delete=models.CASCADE, related_name="external")
+    status = models.CharField("Pazaryeri durumu", max_length=40, blank=True)
+    raw = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name, verbose_name_plural = "Pazaryeri siparişi", "Pazaryeri siparişleri"
+        unique_together = [("account", "external_id")]

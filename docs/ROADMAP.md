@@ -14,7 +14,7 @@ Durum: ✅ tamam · 🟡 kısmi · ⬜ başlanmadı. Sıra müşteri dokümanı 
 | 7 | CRM ve bayi portalı (`crm`, `portal`) | müşteri kartı, fırsat, aktivite, segment, bayi girişi | ⬜ |
 | 8 | Üretim ve fason (`production`) | BOM, üretim emri, fason takibi, kalite kontrol → karantina | ⬜ |
 | 9 | Raporlama (`reports`) | yönetim paneli, kanal/ürün kârlılığı, Excel/PDF | ⬜ |
-| 10 | Entegrasyonlar (`integrations`) | sihirbaz, şifreli bilgiler, iş kuyruğu + yeniden deneme + loglar, arka plan işçisi; **Uyumsoft e-Fatura/e-Arşiv** ✅; Trendyol, Hepsiburada, Amazon, web, kargo, banka ⬜ | 🟡 |
+| 10 | Entegrasyonlar (`integrations`) | sihirbaz, şifreli bilgiler, iş kuyruğu + yeniden deneme + loglar, arka plan işçisi; **Uyumsoft e-Fatura/e-Arşiv** ✅ (test ortamında doğrulandı); **Trendyol** sipariş/stok/fiyat/durum ✅; Hepsiburada, Amazon, web, kargo, banka ⬜ | 🟡 |
 | — | Bildirimler (`notifications`) | sistem içi + e-posta uyarıları (§15) | ⬜ |
 
 ## Açık sorular (müşteriye)
@@ -27,3 +27,4 @@ Ortak tasarım sistemi `static/css/app.css` + `core/templatetags/ui.py` (ikon, d
 Arka ofis kayıt ekranları uygulama kabuğuna alınmış Django yönetim paneli (aynı menü/tasarım); sık kullanılan ekranlar (stok, sipariş havuzu, toplama, mal kabul) özel tasarım.
 Kurulum gerektiren her şey (entegrasyon, ilk kurulum) adım adım **sihirbaz** olarak yapılacak.
 Tüm ekranlar masaüstü, tablet ve telefon için duyarlı; dokunma alanları ≥44px; site ana ekrana uygulama olarak eklenebilir (manifest).
+Kullanıcı başına menü rengi (Görünüm) ve sürükle-bırak ana panel düzeni (`core.UserPreference`).

@@ -7,7 +7,8 @@
 <div class="card card-pad" style="max-width:760px">
 {% if form %}
   <form method="post" class="form" autocomplete="off">{% csrf_token %}
-    {% if step == "credentials" %}<div class="alert success">{% icon "check" %}<div>Önce <b>Test ortamı</b> ile deneyin. Uyumsoft test hesabı: kullanıcı adı <b>Uyumsoft</b>, şifre <b>Uyumsoft</b>. Canlıya geçerken kendi Uyumsoft bilgilerinizi girin.</div></div>{% endif %}
+    {% if step == "credentials" and p.code == "uyumsoft_einvoice" %}<div class="alert success">{% icon "check" %}<div>Önce <b>Test ortamı</b> ile deneyin. Uyumsoft test hesabı: kullanıcı adı <b>Uyumsoft</b>, şifre <b>Uyumsoft</b>. Canlıya geçerken kendi Uyumsoft bilgilerinizi girin.</div></div>{% endif %}
+    {% if step == "credentials" and p.code == "trendyol" %}<div class="alert success">{% icon "check" %}<div>Bilgiler: Trendyol Satıcı Paneli › sağ üstte mağaza adınız › <b>Hesap Bilgilerim › Entegrasyon Bilgileri</b> (yalnız ana kullanıcı görür).</div></div>{% endif %}
     {% if step == "company" %}<p class="muted" style="margin:0">Bu bilgiler faturalarda <b>satıcı</b> olarak yer alır. Vergi levhanızdaki gibi yazın.</p>{% endif %}
     {% for f in form %}<div>{% if f.field.widget.input_type == "checkbox" %}<label style="display:flex;gap:10px;align-items:center;font-weight:600">{{ f }} {{ f.label }}</label>
       {% else %}{{ f.label_tag }}{{ f }}{% endif %}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>{% endfor %}

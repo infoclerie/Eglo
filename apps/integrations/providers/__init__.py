@@ -48,6 +48,10 @@ class Provider:
     def on_final_failure(self, account, job, error):
         """Tüm denemeler bitince çağrılır."""
 
+    def periodic(self, account):
+        """Periyodik işler: [(tür, referans, veri, aralık_dakika)]"""
+        return []
+
 
 class ComingSoon(Provider):
     available = False
@@ -60,10 +64,10 @@ _REGISTRY = {}
 def _load():
     if _REGISTRY:
         return _REGISTRY
+    from .trendyol import Trendyol
     from .uyumsoft import UyumsoftEInvoice
-    items = [UyumsoftEInvoice()]
+    items = [UyumsoftEInvoice(), Trendyol()]
     for code, name, cat, color, icon, desc in [
-        ("trendyol", "Trendyol", "marketplace", "#f27a1a", "cart", "Sipariş, stok, fiyat, iade ve hakediş senkronu"),
         ("hepsiburada", "Hepsiburada", "marketplace", "#ff6000", "cart", "Sipariş, stok, fiyat, iade"),
         ("amazon", "Amazon", "marketplace", "#232f3e", "cart", "Sipariş ve stok senkronu"),
         ("website", "Web sitesi", "ecommerce", "#2563c9", "cart", "Web sitesi siparişleri ve stok"),

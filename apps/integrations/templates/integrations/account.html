@@ -21,6 +21,16 @@
       <a class="btn" href="{% url 'accounting:invoices' %}?tab=in">Gelen faturaları görüntüle →</a>
     </div>
   </div>{% endif %}
+  {% if p.category == "marketplace" %}<div class="card card-pad">
+    <h2>Pazaryeri işlemleri</h2>
+    <p class="small muted">Sipariş alma: <b>{{ acc.config.import_orders|yesno:"açık,kapalı" }}</b> ({{ acc.config.order_interval }} dk) ·
+      Stok/fiyat gönderimi: <b>{{ acc.config.push_stock|yesno:"açık,kapalı" }}</b> ({{ acc.config.stock_interval }} dk, güvenlik payı {{ acc.config.stock_buffer|default:0 }})</p>
+    <div class="form">
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="orders"><button class="btn btn-primary">{% icon "cart" %}Siparişleri şimdi al</button></form>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="stock"><button class="btn">{% icon "swap" %}Stok ve fiyatı şimdi gönder</button></form>
+      <a class="btn" href="{% url 'integrations:listings' acc.pk %}">{% icon "tag" %}Ürün eşleştirme</a>
+    </div>
+  </div>{% endif %}
 </div>
 <div class="card" style="margin-bottom:16px"><div class="card-head"><h2>Son işler</h2><a href="{% url 'integrations:jobs' %}">Tümü →</a></div><div class="table-wrap"><table class="table">
 <thead><tr><th>Zaman</th><th>İş</th><th>Durum</th><th class="num">Deneme</th><th class="hide-sm">Hata / sonuç</th></tr></thead><tbody>

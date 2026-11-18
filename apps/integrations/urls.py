@@ -7,5 +7,6 @@ urlpatterns = [
     path("new/", views.choose, name="choose"),
     path("new/<str:provider>/<str:step>/", views.wizard, name="wizard"),
     path("<int:pk>/", views.account_detail, name="account"),
+    path("<int:pk>/listings/", views.listings, name="listings"),
     path("jobs/", views.jobs, name="jobs"),
 ]

@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Ürün eşleştirme{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Ürün eşleştirme · {{ acc.name }}</h1><p>Varsayılan olarak ürünler kendi barkodlarıyla eşleşir. Pazaryerinde farklı barkod kullanıyorsanız buraya yazın.</p></div>
+  <a class="btn" href="{% url 'integrations:account' acc.pk %}">← Bağlantıya dön</a></div>
+<form method="post">{% csrf_token %}
+<div class="card"><div class="table-wrap"><table class="table">
+<thead><tr><th>Ürün</th><th class="hide-sm">Bizim barkod</th><th>Pazaryeri barkodu</th><th>Stok/fiyat gönder</th></tr></thead><tbody>
+{% for r in rows %}<tr><td><b>{{ r.p.sku }}</b><div class="small muted">{{ r.p.name }}</div></td><td class="hide-sm">{{ r.p.barcode|default:"—" }}</td>
+<td><input name="bc_{{ r.p.pk }}" value="{{ r.l.external_barcode|default:'' }}" placeholder="{{ r.p.barcode|default:'barkod girin' }}"></td>
+<td><input type="checkbox" name="sync_{{ r.p.pk }}" {% if not r.l or r.l.sync_stock %}checked{% endif %} style="width:22px;height:22px"></td></tr>
+{% endfor %}</tbody></table></div></div>
+<div style="margin-top:14px"><button class="btn btn-primary btn-lg">{% icon "check" %}Kaydet</button></div></form>
+{% endblock %}

@@ -79,18 +79,16 @@ def run_due(limit=25):
 
 
 def schedule_periodic(now=None):
-    """Periyodik işler: gelen e-fatura çekme ve gönderilen faturaların durum sorgusu."""
+    """Her aktif bağlantının periyodik işlerini (sağlayıcı tanımlar) zaman dilimi başına bir kez kuyruğa alır."""
     now = now or timezone.now()
     created = 0
     for acc in IntegrationAccount.objects.filter(active=True):
         p = acc.provider_obj
-        if not p or p.category != "einvoice":
+        if not p:
             continue
-        interval = max(5, int(acc.config.get("fetch_interval") or 30))
-        bucket = int(now.timestamp() // (interval * 60))
-        if acc.config.get("fetch_inbox"):
-            created += _once(acc, "einvoice.fetch_inbox", "gelen", {"days": 7}, f"{acc.pk}:inbox:{bucket}")
-        created += _once(acc, "einvoice.refresh_status", "durum", {}, f"{acc.pk}:status:{bucket}")
+        for kind, ref, payload, every in p.periodic(acc):
+            bucket = int(now.timestamp() // (max(1, int(every)) * 60))
+            created += _once(acc, kind, ref, payload, f"{acc.pk}:{kind}:{bucket}")
     return created
 
 

@@ -186,6 +186,12 @@ def account_detail(request, pk):
             services.run_job(job)
             job.refresh_from_db()
             (messages.success if job.status == "success" else messages.error)(request, f"Durum sorgusu: {job.result or job.last_error}")
+        elif action in ("orders", "stock"):
+            kind = "trendyol.import_orders" if action == "orders" else "trendyol.push_stock"
+            job = services.enqueue(acc, kind, "manuel", {"hours": 72}, key=f"{acc.pk}:{kind}:manual:{timezone.now().timestamp()}")
+            services.run_job(job)
+            job.refresh_from_db()
+            (messages.success if job.status == "success" else messages.error)(request, f"{job.result or job.last_error}")
         elif action == "toggle":
             acc.active = not acc.active
             acc.save(update_fields=["active", "updated_at"])
@@ -215,3 +221,30 @@ def jobs(request):
     counts = {s: IntegrationJob.objects.filter(status=s).count() for s, _ in IntegrationJob.STATUS}
     return render(request, "integrations/jobs.html", {"jobs": qs[:200], "status": status, "statuses": IntegrationJob.STATUS,
                                                       "counts": counts})
+
+
+@login_required
+@permission_required(PERM, raise_exception=True)
+def listings(request, pk):
+    """Ürün eşleştirme: pazaryeri barkodu farklıysa girilir, stok gönderimi ürün bazında kapatılabilir."""
+    from apps.catalog.models import Product
+    from .models import ChannelListing
+    acc = get_object_or_404(IntegrationAccount, pk=pk)
+    products = Product.objects.filter(active=True).exclude(kind__in=["raw", "packaging"]).order_by("sku")
+    existing = {l.product_id: l for l in acc.listings.all()}
+    if request.method == "POST":
+        n = 0
+        for p in products:
+            ext = request.POST.get(f"bc_{p.pk}", "").strip()
+            sync = request.POST.get(f"sync_{p.pk}") == "on"
+            l = existing.get(p.pk)
+            if l is None and not ext and sync:
+                continue  # varsayılan: kendi barkodu, stok gönder
+            l = l or ChannelListing(account=acc, product=p)
+            l.external_barcode, l.sync_stock = ext, sync
+            l.save()
+            n += 1
+        messages.success(request, f"Eşleştirmeler kaydedildi ({n} ürün özel ayarlı).")
+        return redirect(request.path)
+    rows = [{"p": p, "l": existing.get(p.pk)} for p in products]
+    return render(request, "integrations/listings.html", {"acc": acc, "rows": rows})

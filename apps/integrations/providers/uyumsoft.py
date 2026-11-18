@@ -185,6 +185,13 @@ class UyumsoftEInvoice(Provider):
         except UyumsoftError as exc:
             return False, str(exc)
 
+    def periodic(self, account):
+        every = max(5, int(account.config.get("fetch_interval") or 30))
+        jobs = [("einvoice.refresh_status", "durum", {}, every)]
+        if account.config.get("fetch_inbox"):
+            jobs.append(("einvoice.fetch_inbox", "gelen", {"days": 7}, every))
+        return jobs
+
     def on_activate(self, account):
         from apps.core.models import Setting
         c = account.config
