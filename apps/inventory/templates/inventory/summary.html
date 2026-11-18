@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Stok Durumu</h2>
+<form method="get" style="margin-bottom:12px"><input name="q" value="{{ q }}" placeholder="SKU, ad veya barkod" autofocus>
+<label><input type="checkbox" name="low" value="1" {% if request.GET.low %}checked{% endif %}> Sadece kritik stok</label>
+<button>Ara</button></form>
+<table>
+<tr><th>SKU</th><th>Ürün</th><th class="num">Fiziksel</th><th class="num">Satışa uygun</th><th class="num">Rezerve</th>
+<th class="num">Karantina</th><th class="num">Hasarlı</th><th class="num">İade kontrol</th><th class="num">SKT geçmiş</th><th class="num">Min.</th></tr>
+{% for r in rows %}
+<tr{% if r.low %} style="background:#fef2f2"{% endif %}>
+<td>{{ r.p.sku }}</td><td>{{ r.p.name }}{% if r.p.is_kit %} <small>(set)</small>{% endif %}</td>
+{% if r.p.is_kit %}<td></td><td class="num">{{ r.s.available|floatformat:0 }}</td><td colspan="5"></td>
+{% else %}<td class="num">{{ r.s.physical|floatformat:"-3" }}</td><td class="num"><b>{{ r.s.available|floatformat:"-3" }}</b></td>
+<td class="num">{{ r.s.reserved|floatformat:"-3" }}</td><td class="num">{{ r.s.quarantine|floatformat:"-3" }}</td>
+<td class="num">{{ r.s.damaged|floatformat:"-3" }}</td><td class="num">{{ r.s.return_check|floatformat:"-3" }}</td>
+<td class="num">{{ r.s.expired|floatformat:"-3" }}</td>{% endif %}
+<td class="num">{{ r.p.min_stock|floatformat:"-3" }}</td></tr>
+{% empty %}<tr><td colspan="10">Kayıt yok.</td></tr>{% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Ana Panel</h2>
+<div class="grid">
+  {% for w in widgets %}
+  <a class="card {{ w.level }}" href="{{ w.url }}"><div class="v">{{ w.value }}</div><div class="t">{{ w.title }}</div></a>
+  {% empty %}<p>Gösterilecek gösterge yok.</p>{% endfor %}
+</div>
+{% endblock %}

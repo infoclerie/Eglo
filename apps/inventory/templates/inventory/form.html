@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ title }}</h2>
+{% for m in messages %}<p style="color:var(--ok)">{{ m }}</p>{% endfor %}
+<form method="post" style="max-width:520px">{% csrf_token %}{{ form.as_p }}<button>Kaydet</button></form>
+{% endblock %}

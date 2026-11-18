@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Barkod Sorgu</h2>
+<form method="get"><input name="code" value="{{ code }}" placeholder="Ürün / lokasyon / palet barkodu okutun" autofocus style="font-size:20px;width:100%;max-width:480px;padding:8px"></form>
+{% if not_found %}<p style="color:var(--danger)">"{{ code }}" bulunamadı.</p>{% endif %}
+{% if product %}<h3>{{ product }}</h3><p>Satışa uygun: <b>{{ summary.available|floatformat:"-3" }}</b> · Rezerve: {{ summary.reserved|floatformat:"-3" }} · Fiziksel: {{ summary.physical|floatformat:"-3" }}</p>{% endif %}
+{% if location %}<h3>Lokasyon {{ location }} ({{ location.get_kind_display }})</h3>{% endif %}
+{% if pallet %}<h3>Palet {{ pallet }} @ {{ pallet.location }}</h3>{% endif %}
+{% if quants %}
+<table><tr><th>Ürün</th><th>Lokasyon</th><th>Palet</th><th>LOT</th><th>SKT</th><th>Durum</th><th class="num">Miktar</th><th class="num">Rezerve</th></tr>
+{% for x in quants %}<tr><td>{{ x.q.product.sku }}</td><td>{{ x.q.location }}</td><td>{{ x.q.pallet|default:"-" }}</td>
+<td>{{ x.q.lot.lot_no|default:"-" }}</td><td>{{ x.q.lot.expiry_date|default:"-" }}</td><td>{{ x.status }}</td>
+<td class="num">{{ x.q.quantity|floatformat:"-3" }}</td><td class="num">{{ x.q.reserved_quantity|floatformat:"-3" }}</td></tr>{% endfor %}
+</table>{% endif %}
+{% endblock %}

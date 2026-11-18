@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Eglo ERP{% endblock %}</title>
+  <style>
+    :root { --bg:#f6f7f9; --card:#fff; --text:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+            --accent:#714b67; --ok:#15803d; --warning:#b45309; --danger:#b91c1c; }
+    * { box-sizing:border-box } body { margin:0; font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--text) }
+    header { background:var(--accent); color:#fff; padding:10px 16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap }
+    header a { color:#fff; text-decoration:none; opacity:.9 } header a:hover { opacity:1; text-decoration:underline }
+    header .brand { font-weight:700; margin-right:8px }
+    main { padding:16px; max-width:1280px; margin:0 auto }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px; text-decoration:none; color:inherit; display:block }
+    .card .v { font-size:28px; font-weight:700 } .card .t { color:var(--muted) }
+    .card.warning { border-left:4px solid var(--warning) } .card.danger { border-left:4px solid var(--danger) } .card.ok { border-left:4px solid var(--ok) }
+    table { width:100%; border-collapse:collapse; background:var(--card) } th,td { padding:8px; border-bottom:1px solid var(--line); text-align:left }
+    th { color:var(--muted); font-weight:600 } td.num, th.num { text-align:right; font-variant-numeric:tabular-nums }
+  </style>
+</head>
+<body>
+<header>
+  <span class="brand">Eglo ERP</span>
+  {% for item in erp_menu %}<a href="{% url item.url_name %}">{{ item.label }}</a>{% endfor %}
+  <a href="{% url 'admin:index' %}">Yönetim</a>
+  <span style="margin-left:auto">{{ request.user }}</span>
+</header>
+<main>{% block content %}{% endblock %}</main>
+</body>
+</html>
