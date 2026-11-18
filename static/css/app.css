@@ -196,3 +196,12 @@ body.editing a.kpi, body.editing a.app-tile { pointer-events: auto; }
 .nav a { font-weight: 500; letter-spacing: 0; }
 .info-pop { bottom: auto; top: calc(100% + 8px); }
 .info-pop::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: #1c2130; }
+/* tam genişlik: sayfa çözünürlüğe oturur */
+body.erp .content { max-width: none; }
+/* tablo araçları */
+.table-tools { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+.btn-excel { background: #1d6f42; border-color: #1d6f42; color: #fff; } .btn-excel:hover { background: #185c37; color: #fff; text-decoration: none; }
+.btn-excel::before { content: "⬇"; font-size: 12px; }
+.table .filter-row th { padding: 6px 8px; background: #fff; position: static; }
+.table .filter-row input { width: 100%; min-width: 70px; padding: 6px 8px !important; font-size: 13px !important; min-height: 0 !important;
+  border: 1px solid var(--line-2); border-radius: 6px; }

@@ -80,7 +80,14 @@ def formfield_for_dbfield(self, db_field, request, **kwargs):
 
 
 def changelist_view(self, request, extra_context=None):
-    """Başlık: 'Değiştirmek için X seçin' yerine sade 'Xler'."""
+    """Başlık: 'Değiştirmek için X seçin' yerine sade 'Xler'. ?_export=xlsx → filtreli listenin tamamı Excel."""
+    if request.GET.get("_export") == "xlsx" and self.has_view_permission(request):
+        from .export import xlsx_response
+        get = request.GET.copy()
+        get.pop("_export")
+        request.GET = get
+        cl = self.get_changelist_instance(request)
+        return xlsx_response(self, request, cl.get_queryset(request))
     return _orig_changelist(self, request, {"title": capfirst(self.model._meta.verbose_name_plural), **(extra_context or {})})
 
 
@@ -94,3 +101,7 @@ admin.ModelAdmin.formfield_for_dbfield = formfield_for_dbfield
 admin.options.InlineModelAdmin.formfield_for_dbfield = formfield_for_dbfield
 admin.ModelAdmin.changelist_view = changelist_view
 admin.ModelAdmin.changeform_view = changeform_view
+
+from .export import export_selected  # noqa: E402
+
+admin.site.add_action(export_selected, "export_xlsx")

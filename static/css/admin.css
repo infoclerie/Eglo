@@ -68,3 +68,13 @@ fieldset.module { border: 1px solid var(--line) !important; } .module h2 { borde
 #content h1, .module h2, .fieldset-heading, #changelist-filter h2, .object-tools a, .button, input[type=submit] { font-family: var(--font) !important; letter-spacing: 0 !important; }
 .form-row label { display: inline-flex; align-items: center; }
 .module, fieldset.module, .form-row, .aligned .form-row { overflow: visible !important; }
+#content { max-width: none !important; }
+.grid-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 14px; margin-bottom: 12px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.grid-filter select { padding: 8px 32px 8px 12px; border-radius: 999px; border: 1px solid var(--line-2); background-color: #fff; font: 500 13.5px var(--font); cursor: pointer; }
+.grid-filter.on select { border-color: var(--brand); background: var(--brand-50); color: var(--brand); font-weight: 700; }
+#changelist.no-side-filter .changelist-form-container, #changelist.no-side-filter .results { width: 100% !important; margin-right: 0 !important; }
+#changelist.no-side-filter { display: block; }
+@media (max-width: 700px) { .grid-filter, .grid-filter select { width: 100%; } }
+.grid-filter select { height: auto !important; min-height: 38px; line-height: 1.4 !important; padding-top: 7px !important; padding-bottom: 7px !important; }
+a.btn-excel, a.btn-excel:link, a.btn-excel:visited { color: #fff !important; padding: 8px 14px; border-radius: 7px; font-weight: 600; }
