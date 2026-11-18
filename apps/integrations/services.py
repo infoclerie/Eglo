@@ -62,6 +62,8 @@ def run_job(job):
         if job.attempts >= job.max_attempts:
             job.status, job.finished_at = "failed", timezone.now()
             provider.on_final_failure(account, job, err)
+            from apps.core.events import publish
+            publish("integrations.job_failed", job=job, error=err)
         else:
             job.status, job.next_run_at = "pending", timezone.now() + timedelta(minutes=2 ** job.attempts)
         job.last_error = err[:2000]

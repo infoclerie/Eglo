@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ rule.get_event_display }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ rule.get_event_display }}</h1><p>Alıcı: <b>{{ rule.recipient_label }}</b></p></div><a class="btn" href="{% url 'notifications:center' %}">← Bildirim merkezi</a></div>
+<div class="grid grid-2">
+<div class="card card-pad">
+  <form method="post" class="form">{% csrf_token %}
+    <div class="inline" style="gap:18px">{% for f in form %}{% if f.field.widget.input_type == "checkbox" %}<label style="display:flex;gap:8px;align-items:center;flex:0 0 auto">{{ f }} {{ f.label }}</label>{% endif %}{% endfor %}</div>
+    {% for f in form %}{% if f.field.widget.input_type != "checkbox" %}<div>{{ f.label_tag }}{{ f }}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>{% endif %}{% endfor %}
+    <div class="small"><b>Kullanabileceğiniz alanlar</b> (tıklayınca imlecin olduğu yere eklenir):<div class="chips" style="margin:8px 0 0">
+      {% for k, v in ev.fields.items %}<button type="button" class="chip ins" data-v="{{ '{' }}{{ k }}{{ '}' }}" title="{{ v }}">{{ '{' }}{{ k }}{{ '}' }} · {{ v }}</button>{% endfor %}</div></div>
+    <div class="inline"><button class="btn btn-primary btn-lg" name="action" value="save">{% icon "check" %}Kaydet</button>
+      <button class="btn" name="action" value="reset" onclick="return confirm('Taslak varsayılana dönsün mü?')">Varsayılan taslak</button></div>
+  </form>
+</div>
+<div class="card card-pad">
+  <h2>Önizleme (örnek verilerle)</h2>
+  <div class="small muted">E-posta konusu</div><p style="margin:2px 0 12px"><b>{{ preview.subject }}</b></p>
+  <div class="small muted">E-posta</div><div style="white-space:pre-line;border:1px solid var(--line);border-radius:8px;padding:12px;margin:4px 0 12px">{{ preview.body }}</div>
+  <div class="small muted">SMS ({{ preview.sms|length }} karakter{% if preview.sms|length > 155 %} — birden fazla SMS{% endif %})</div>
+  <div style="background:#e7f6ee;border-radius:14px;padding:10px 12px;margin-top:4px;max-width:340px">{{ preview.sms }}</div>
+</div></div>
+<script>
+let last = null;
+document.querySelectorAll("textarea, input[type=text]").forEach(el => el.addEventListener("focus", () => last = el));
+document.querySelectorAll(".ins").forEach(b => b.onclick = () => { const el = last || document.querySelector("textarea");
+  const s = el.selectionStart ?? el.value.length; el.value = el.value.slice(0, s) + b.dataset.v + el.value.slice(el.selectionEnd ?? s); el.focus(); });
+</script>
+{% endblock %}

@@ -29,3 +29,6 @@ Kurulum gerektiren her şey (entegrasyon, ilk kurulum) adım adım **sihirbaz** 
 Tüm ekranlar masaüstü, tablet ve telefon için duyarlı; dokunma alanları ≥44px; site ana ekrana uygulama olarak eklenebilir (manifest).
 Kullanıcı başına menü rengi (Görünüm) ve sürükle-bırak ana panel düzeni (`core.UserPreference`).
 Ana panel: grafikler (ciro, kanal, ürün, stok değeri), kart/grafik seçme paneli, döviz-altın kur şeridi (`core/rates.py`). Tüm listelerde Excel'e aktarma ve filtre çubuğu.
+
+- [x] Bildirim merkezi (e-posta/SMS sihirbazı, düzenlenebilir şablonlar)
+- [x] Canlı sohbet (ofis içi + bayi destek, çevrimiçi durumu)

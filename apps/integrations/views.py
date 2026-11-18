@@ -146,6 +146,7 @@ def wizard(request, provider, step):
             acc.last_test_at, acc.last_test_ok, acc.last_message = timezone.now(), True, state["test"]["message"]
             acc.save()
             IntegrationAccount.objects.filter(provider=p.code).exclude(pk=acc.pk).update(active=False)
+            # aynı kategoride tek aktif bağlantı (ör. tek e-posta sağlayıcısı)
             p.on_activate(acc)
             services.log(acc, "activate", True, "Sihirbaz tamamlandı, bağlantı etkinleştirildi.")
             request.session.pop(f"wiz_{p.code}", None)

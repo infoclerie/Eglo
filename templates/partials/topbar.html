@@ -3,6 +3,8 @@
   <form action="{% url 'inventory:scan' %}" method="get" class="top-search-form"><input class="top-search" type="search" name="code" placeholder="Barkod / SKU / lokasyon ara…"></form>
   <div class="fx" id="fx" title="Kurlar 5 dakikada bir güncellenir"></div>
   <div class="spacer"></div>
+  <div class="bell"><button class="btn btn-sm" type="button" id="bell-btn" title="Bildirimler">🔔<span class="chat-badge" id="bell-n" hidden></span></button>
+    <div class="bell-pop" id="bell-pop" hidden></div></div>
   <div class="user"><span class="avatar">{{ request.user|initials }}</span><span class="hide-sm">{{ request.user.get_full_name|default:request.user.username }}</span>
     <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-sm" title="Çıkış">{% icon "logout" %}</button></form></div>
 </header>
@@ -16,5 +18,22 @@
     }).catch(() => {});
   }
   load(); setInterval(load, 300000);
+})();
+</script>
+<script>
+(function () {
+  if (window.__bell) return; window.__bell = 1;
+  const btn = document.getElementById("bell-btn"), pop = document.getElementById("bell-pop"), n = document.getElementById("bell-n");
+  if (!btn) return;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+  function load() { fetch("/notifications/api/").then(r => r.ok ? r.json() : null).then(d => { if (!d) return;
+    n.hidden = !d.unread; n.textContent = d.unread;
+    pop.innerHTML = (d.items.map(i => `<a class="${i.read ? "" : "unread"}" href="${i.url || "/notifications/"}" data-id="${i.id}"><b>${esc(i.title)}</b><small>${esc(i.body)} · ${i.at}</small></a>`).join("") || '<p class="muted small" style="padding:10px">Bildirim yok.</p>')
+      + '<a href="/notifications/" style="text-align:center;font-weight:600">Tümünü gör</a>'; }).catch(() => {}); }
+  btn.onclick = e => { e.stopPropagation(); pop.hidden = !pop.hidden; };
+  document.addEventListener("click", e => { if (!pop.contains(e.target)) pop.hidden = true; });
+  pop.addEventListener("click", e => { const a = e.target.closest("a[data-id]"); if (a) { const f = new FormData(); f.append("id", a.dataset.id);
+    fetch("/notifications/api/", {method: "POST", body: f, keepalive: true, headers: {"X-CSRFToken": (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || ""}}); } });
+  load(); setInterval(load, 30000);
 })();
 </script>

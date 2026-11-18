@@ -1,0 +1,37 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Bildirim merkezi{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Bildirim merkezi</h1><p>Hangi işlemde kime, hangi kanaldan mesaj gideceğini seçin. Mesaj taslaklarını "Taslağı düzenle" ile kendiniz yazın.</p></div>
+  <a class="btn" href="{% url 'integrations:choose' %}">{% icon "plug" %}E-posta / SMS bağlantısı kur</a></div>
+{% if not has_email or not has_sms %}<div class="alert warning" style="margin-bottom:16px">{% icon "alert" %}<div>
+  {% if not has_email %}E-posta bağlantısı kurulmadı — e-posta bildirimleri gönderilmez. {% endif %}{% if not has_sms %}SMS bağlantısı kurulmadı — SMS bildirimleri gönderilmez. {% endif %}
+  Entegrasyonlar › Yeni bağlantı › "Bildirim" bölümünden sihirbazla kurabilirsiniz.</div></div>{% endif %}
+<h2>{% icon "users" %} Müşteriye giden mesajlar</h2>
+<div class="card" style="margin-bottom:22px"><div class="table-wrap"><table class="table" data-grid="off">
+<thead><tr><th>İşlem</th><th class="num">Aktif</th><th class="num">E-posta</th><th class="num">SMS</th><th></th></tr></thead><tbody>
+{% for r in customer %}<tr><td><b>{{ r.get_event_display }}</b><div class="small muted">{{ r.subject|truncatechars:70 }}</div></td>
+<td class="num"><input class="tg" type="checkbox" data-rule="{{ r.pk }}" data-field="active" {% if r.active %}checked{% endif %}></td>
+<td class="num"><input class="tg" type="checkbox" data-rule="{{ r.pk }}" data-field="email" {% if r.email %}checked{% endif %}></td>
+<td class="num"><input class="tg" type="checkbox" data-rule="{{ r.pk }}" data-field="sms" {% if r.sms %}checked{% endif %}></td>
+<td class="num"><a class="btn btn-sm" href="{% url 'notifications:edit' r.pk %}">Taslağı düzenle</a></td></tr>{% endfor %}
+</tbody></table></div></div>
+<h2>{% icon "alert" %} Personele giden bildirimler</h2>
+<div class="card"><div class="table-wrap"><table class="table" data-grid="off">
+<thead><tr><th>İşlem</th><th>Alıcı</th><th class="num">Aktif</th><th class="num">Zil</th><th class="num">E-posta</th><th class="num">SMS</th><th></th></tr></thead><tbody>
+{% for r in staff %}<tr><td><b>{{ r.get_event_display }}</b></td><td>{{ r.recipient_label }}</td>
+<td class="num"><input class="tg" type="checkbox" data-rule="{{ r.pk }}" data-field="active" {% if r.active %}checked{% endif %}></td>
+<td class="num"><input class="tg" type="checkbox" data-rule="{{ r.pk }}" data-field="in_app" {% if r.in_app %}checked{% endif %}></td>
+<td class="num"><input class="tg" type="checkbox" data-rule="{{ r.pk }}" data-field="email" {% if r.email %}checked{% endif %}></td>
+<td class="num"><input class="tg" type="checkbox" data-rule="{{ r.pk }}" data-field="sms" {% if r.sms %}checked{% endif %}></td>
+<td class="num"><a class="btn btn-sm" href="{% url 'notifications:edit' r.pk %}">Düzenle</a></td></tr>{% endfor %}
+</tbody></table></div></div>
+<p class="small muted">Personel SMS'i için cep telefonu: Yönetim › Bildirimler › Personel iletişim bilgileri. Pazarlama amaçlı toplu mesajlar İYS izni gerektirir; buradaki mesajlar işlem bilgilendirmesidir.</p>
+<style>.tg { width: 22px; height: 22px; accent-color: var(--brand); cursor: pointer; }</style>
+<script>
+const csrf = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "";
+document.querySelectorAll(".tg").forEach(cb => cb.onchange = () => {
+  const fd = new FormData(); fd.append("rule", cb.dataset.rule); fd.append("field", cb.dataset.field); fd.append("value", cb.checked ? "1" : "0");
+  fetch("", {method: "POST", body: fd, headers: {"X-CSRFToken": csrf}}).then(r => { if (!r.ok) { cb.checked = !cb.checked; alert("Kaydedilemedi"); } });
+});
+</script>
+{% endblock %}

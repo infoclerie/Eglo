@@ -65,3 +65,9 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 - Yönetim listeleri: filtre çubuğu `static/js/admin-grid.js`, Excel `apps/core/export.py` (`?_export=xlsx` ve 'Seçilenleri Excel'e aktar').
 - Uygulama tabloları: `static/js/tables.js` sütun filtresi + CSV (Excel uyumlu) otomatik eklenir (`data-grid="off"` ile kapatılır).
 - Kurlar: `apps/core/rates.py` (truncgil + TCMB yedek, 5 dk önbellek).
+
+## Bildirimler + canlı sohbet (son eklenen)
+- notifications modülü: Bildirim merkezi (olay başına ekran/e-posta/SMS seçimi, şablonları kullanıcı yazar). Müşteri bildirimleri kapalı başlar.
+- E-posta (SMTP) ve SMS (Netgsm) sağlayıcıları Entegrasyonlar › Yeni bağlantı › Bildirim sihirbazında. Netgsm canlı hesapla doğrulanmadı.
+- chat modülü: yoklama (polling) ile çalışır, sunucuya ek kurulum yok. Yeşil/kırmızı nokta = son 60 sn içinde aktif mi.
+- Test sayısı: 95.

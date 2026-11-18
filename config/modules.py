@@ -22,6 +22,8 @@ DEFAULT_MODULES = [
     "integrations",
     "portal",
     "crm",
+    "notifications",
+    "chat",
 ]
 
 

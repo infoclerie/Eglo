@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Bildirimlerim{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Bildirimlerim</h1><p>Hangi olayda kime bildirim gideceği: Bildirimler › Bildirim kuralları.</p></div>
+  <form method="post">{% csrf_token %}<button class="btn">{% icon "check" %}Tümünü okundu işaretle</button></form></div>
+<div class="card"><div class="table-wrap"><table class="table" data-grid="off"><tbody>
+{% for n in items %}<tr{% if not n.read %} style="background:var(--brand-50)"{% endif %}><td style="width:110px" class="small muted">{{ n.created_at|date:"d.m.Y H:i" }}</td>
+<td>{% if n.url %}<a href="{{ n.url }}"><b>{{ n.title }}</b></a>{% else %}<b>{{ n.title }}</b>{% endif %}<div class="small muted">{{ n.body }}</div></td></tr>
+{% empty %}<tr><td><div class="empty">{% icon "check" %}<div>Bildirim yok.</div></div></td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

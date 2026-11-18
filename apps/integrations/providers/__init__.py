@@ -64,9 +64,10 @@ _REGISTRY = {}
 def _load():
     if _REGISTRY:
         return _REGISTRY
+    from .notify import NetgsmSms, SmtpEmail
     from .trendyol import Trendyol
     from .uyumsoft import UyumsoftEInvoice
-    items = [UyumsoftEInvoice(), Trendyol()]
+    items = [UyumsoftEInvoice(), Trendyol(), SmtpEmail(), NetgsmSms()]
     for code, name, cat, color, icon, desc in [
         ("hepsiburada", "Hepsiburada", "marketplace", "#ff6000", "cart", "Sipariş, stok, fiyat, iade"),
         ("amazon", "Amazon", "marketplace", "#232f3e", "cart", "Sipariş ve stok senkronu"),
@@ -92,5 +93,5 @@ def get_provider(code):
     return _load().get(code)
 
 
-CATEGORY_LABELS = {"einvoice": "e-Fatura / e-Arşiv", "marketplace": "Pazaryerleri", "ecommerce": "E-ticaret",
+CATEGORY_LABELS = {"einvoice": "e-Fatura / e-Arşiv", "notify_email": "Bildirim — e-posta", "notify_sms": "Bildirim — SMS", "marketplace": "Pazaryerleri", "ecommerce": "E-ticaret",
                    "cargo": "Kargo", "bank": "Banka"}
