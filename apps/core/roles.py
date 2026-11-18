@@ -12,7 +12,7 @@ ROLES = {
         "add_stockcountline", "change_stockcountline", "view_stockcountline"],
         "shipping": ["view_shipment", "change_shipment", "view_shipmentline"], "purchase": ["view_purchaseorder"]},
     "Satın alma": {"catalog": "view", "inventory": "view", "partners": "all", "purchase": "all"},
-    "Satış ekibi": {"catalog": "view", "inventory": ["view_quant"], "partners": "all", "sales": "all"},
+    "Satış ekibi": {"catalog": "view", "inventory": ["view_quant"], "partners": "all", "sales": "all", "crm": "all"},
     "E-ticaret ekibi": {"catalog": "view", "inventory": ["view_quant"], "partners": "view", "sales": "all", "shipping": "view"},
     "Finans": {"catalog": "view", "partners": "all", "sales": "view", "purchase": "view", "accounting": "all", "integrations": "view"},
     "Muhasebe": {"catalog": "view", "partners": "view", "sales": "view", "purchase": "view", "accounting": "all", "integrations": "all"},

@@ -31,7 +31,7 @@
 core (modül sistemi, olay yolu, işlem logu, onay akışı, roller, numara serisi, görünüm/tema, panel düzeni) · catalog · inventory
 (LOT/SKT/FEFO, rezervasyon, sayım, satın alma önerisi) · partners · sales (kampanyalar, mükerrer engeli, kredi limiti) ·
 shipping (barkodlu toplama, tartı, sevk, iade) · purchase (teklif, onay, mal kabul, ortalama maliyet) · accounting (otomatik
-e-Fatura/e-Arşiv faturası, UBL-TR, cari, tahsilat, hakediş, kârlılık) · integrations (sihirbaz, iş kuyruğu, Uyumsoft, Trendyol) · portal (bayi portalı) · kargo etiketi.
+e-Fatura/e-Arşiv faturası, UBL-TR, cari, tahsilat, hakediş, kârlılık) · integrations (sihirbaz, iş kuyruğu, Uyumsoft, Trendyol) · portal (bayi portalı) · crm · kargo etiketi · ana panel grafikleri/kur şeridi · Excel'e aktarma.
 Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 
 ## 4. Gerçek sistemlerde doğrulanan bilgiler (değiştirmeden önce oku)
@@ -45,7 +45,7 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 1. Trendyol canlı bağlantı kontrolü; kargo takip no bildirimi (`/tracking-details`), iadeler (claims), fatura linki.
 2. **Hepsiburada** sağlayıcısı (`providers/` altında Trendyol örneğiyle aynı yapı + sihirbaz alanları).
 3. **Kargo firması API'leri** (Yurtiçi, Aras, MNG): gönderi oluşturma + takip no; yazdırılabilir etiket hazır (`shipping`). Firma anlaşma/API bilgileri kullanıcıdan alınacak.
-4. **CRM** (§8.3–8.5): fırsat, aktivite, segment, hatırlatma. Bayi portalı hazır (`apps/portal`).
+4. CRM ve bayi portalı hazır; kalan: SMS/e-posta kampanya gönderimi (İYS).
 5. **Üretim / fason** (§10): reçete (BOM), üretim emri, hammadde sarfı (`production_consume` hareket türü hazır), kalite kontrol → karantina.
 6. **Raporlar** (§11): Excel/PDF, stok yaşlandırma, devir hızı, kanal ciro grafikleri; bildirimler (§15, e-posta).
 7. Excel ile toplu ürün/fiyat/stok içe aktarma (§16).
@@ -59,3 +59,9 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 
 ## 7. Dikkat: Türkçe sayı biçimi
 Şablonlarda sayılar "54,00" (virgüllü) görünür. Form `value` alanlarına sayı basarken `|unlocalize` kullanın; kullanıcı girdisinde virgülü noktaya çevirin.
+
+## 8. Ek arayüz altyapısı
+- Ana panele grafik eklemek: modülün `dashboard.py` dosyasına `charts(request)` → `[{key,title,type(line|bar|doughnut),labels,data,wide}]`.
+- Yönetim listeleri: filtre çubuğu `static/js/admin-grid.js`, Excel `apps/core/export.py` (`?_export=xlsx` ve 'Seçilenleri Excel'e aktar').
+- Uygulama tabloları: `static/js/tables.js` sütun filtresi + CSV (Excel uyumlu) otomatik eklenir (`data-grid="off"` ile kapatılır).
+- Kurlar: `apps/core/rates.py` (truncgil + TCMB yedek, 5 dk önbellek).

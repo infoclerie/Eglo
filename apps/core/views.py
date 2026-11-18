@@ -31,20 +31,41 @@ def collect_widgets(request):
     return widgets
 
 
+def collect_charts(request):
+    charts = []
+    for code in settings.ERP_MODULES:
+        try:
+            mod = import_module(f"apps.{code}.dashboard")
+        except ModuleNotFoundError:
+            continue
+        if hasattr(mod, "charts"):
+            charts.extend(mod.charts(request))
+    return charts
+
+
+@login_required
+def rates(request):
+    from .rates import get_rates
+    return JsonResponse({"rates": get_rates()})
+
+
 @login_required
 def dashboard(request):
     if hasattr(request.user, "portal") and not request.user.is_staff:
         return redirect("portal:home")  # bayi kullanıcıları doğrudan portala
     pref = UserPreference.for_user(request.user)
-    widgets = collect_widgets(request)
+    items = collect_charts(request) + collect_widgets(request)
+    for i in items:
+        i["is_chart"] = "type" in i
     if pref.widget_order:
-        order = {k: i for i, k in enumerate(pref.widget_order)}
-        widgets.sort(key=lambda w: order.get(w["key"], 999))
+        order = {k: n for n, k in enumerate(pref.widget_order)}
+        items.sort(key=lambda w: order.get(w["key"], 999))
     hidden = set(pref.hidden_widgets or [])
+    visible = [w for w in items if w["key"] not in hidden]
     return render(request, "core/dashboard.html", {
-        "widgets": [w for w in widgets if w["key"] not in hidden],
-        "hidden": [w for w in widgets if w["key"] in hidden],
-        "hidden_keys": json.dumps([w["key"] for w in widgets if w["key"] in hidden])})
+        "charts": [w for w in visible if w["is_chart"]], "widgets": [w for w in visible if not w["is_chart"]],
+        "catalog": items, "hidden_keys": json.dumps(sorted(hidden)),
+        "chart_json": json.dumps([{k: w[k] for k in ("key", "type", "labels", "data")} for w in visible if w["is_chart"]])})
 
 
 @login_required

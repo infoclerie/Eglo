@@ -1,60 +1,78 @@
 {% extends "base.html" %}{% load ui static %}
 {% block title %}Ana Panel{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>Merhaba {{ request.user.first_name|default:request.user.username }}</h1><p>Şirketin bugünkü durumu tek ekranda.</p></div>
+<div class="page-head"><div><h1>Merhaba {{ request.user.first_name|default:request.user.username }}</h1><p>{% now "j F Y, l" %} · Şirketin bugünkü durumu tek ekranda.</p></div>
   <div class="inline" style="flex:0 0 auto"><a class="btn" href="{% url 'core:appearance' %}">{% icon "settings" %}Görünüm</a>
-  <button class="btn" type="button" id="edit-toggle">{% icon "admin" %}<span>Paneli düzenle</span></button></div></div>
+  <button class="btn btn-primary" type="button" id="edit-toggle">{% icon "admin" %}<span>Paneli düzenle</span></button></div></div>
 
-<div class="edit-bar">{% icon "swap" %} Kartları ve uygulamaları sürükleyip bırakarak sıralayın, × ile gizleyin. Sıra otomatik kaydedilir.
-  <span style="flex:1"></span><button class="btn btn-sm" type="button" id="layout-reset">Varsayılan düzen</button>
-  <button class="btn btn-sm btn-primary" type="button" id="edit-done">Bitti</button></div>
+<div class="edit-panel card">
+  <div class="card-head"><h2>{% icon "admin" %} Paneli düzenle</h2><div class="inline" style="flex:0 0 auto">
+    <button class="btn btn-sm" type="button" id="layout-reset">Varsayılan düzen</button><button class="btn btn-sm btn-primary" type="button" id="edit-done">Bitti</button></div></div>
+  <div class="card-pad"><p class="muted small" style="margin:0 0 10px">Göstermek istediklerinizi işaretleyin. Kartları ve grafikleri sürükleyerek sıralayın — değişiklikler otomatik kaydedilir.</p>
+    <div class="pick-grid">{% for w in catalog %}<label class="pick"><input type="checkbox" data-key="{{ w.key }}" {% if w in charts or w in widgets %}checked{% endif %}>
+      <span>{% if w.is_chart %}📊{% else %}🔢{% endif %} {{ w.title }}</span></label>{% endfor %}</div></div>
+</div>
 
-<div class="apps sortable scroll-x" id="apps" style="margin-bottom:26px">
+<div class="apps sortable scroll-x" id="apps" style="margin-bottom:24px">
   {% for g in erp_nav %}{% with first=g.items.0 %}
   <a class="app-tile" data-key="{{ g.code }}" href="{{ first.url }}"><span class="ic" style="background:{{ g.color }}">{% icon g.icon %}</span>{{ g.name }}</a>
   {% endwith %}{% endfor %}
 </div>
 
-<h2>Göstergeler ve uyarılar</h2>
-<div class="grid grid-kpi sortable" id="widgets">
+{% if widgets %}<h2>Göstergeler ve uyarılar</h2>
+<div class="grid grid-kpi sortable" id="widgets" style="margin-bottom:24px">
   {% for w in widgets %}
-  <a class="card kpi {{ w.level }}" data-key="{{ w.key }}" href="{{ w.url }}"><button class="hide-btn" type="button" title="Gizle">×</button>
+  <a class="card kpi {{ w.level }}" data-key="{{ w.key }}" href="{{ w.url }}">
     <div class="t">{{ w.title }}</div><div class="v">{{ w.value }}</div></a>
   {% endfor %}
-</div>
-{% if hidden %}<div class="hidden-list" id="hidden-list"><span class="muted small" style="align-self:center">Gizlenen kartlar:</span>
-  {% for w in hidden %}<button class="chip" type="button" data-show="{{ w.key }}">+ {{ w.title }}</button>{% endfor %}</div>{% endif %}
+</div>{% endif %}
+
+{% if charts %}<h2>Grafikler</h2>
+<div class="chart-grid sortable" id="charts">
+  {% for c in charts %}<div class="card chart-card{% if c.wide %} wide{% endif %}" data-key="{{ c.key }}">
+    <div class="card-head"><h2>{{ c.title }}</h2></div><div class="chart-box"><canvas id="ch-{{ forloop.counter }}"></canvas></div></div>{% endfor %}
+</div>{% endif %}
 
 <script src="{% static 'vendor/sortable.min.js' %}"></script>
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
 <script>
 (function () {
   const csrf = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "";
-  const apps = document.getElementById("apps"), widgets = document.getElementById("widgets");
+  const C = {{ chart_json|safe }};
+  const css = getComputedStyle(document.documentElement), brand = css.getPropertyValue("--brand").trim() || "#5b3a6e";
+  const palette = [brand, "#0f9d8a", "#e07a2e", "#2563c9", "#d9485f", "#7a5af8", "#b26a00", "#128a52", "#6a7184"];
+  Chart.defaults.font.family = css.getPropertyValue("--font"); Chart.defaults.color = "#6a7184";
+  C.forEach((c, i) => {
+    const el = document.getElementById("ch-" + (i + 1)); if (!el) return;
+    const empty = !c.data.length || c.data.every(v => !v);
+    if (empty) { el.parentElement.innerHTML = '<div class="empty">Bu dönemde veri yok.</div>'; return; }
+    new Chart(el, {type: c.type, data: {labels: c.labels, datasets: [{data: c.data, label: "",
+        backgroundColor: c.type === "line" ? brand + "22" : (c.type === "doughnut" ? palette : brand), borderColor: c.type === "doughnut" ? "#fff" : brand,
+        fill: c.type === "line", tension: .35, pointRadius: 0, borderWidth: 2, borderRadius: 6}]},
+      options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: c.type === "doughnut", position: "bottom"},
+        tooltip: {callbacks: {label: x => " " + Number(x.parsed.y ?? x.parsed).toLocaleString("tr-TR", {maximumFractionDigits: 2})}}},
+        scales: c.type === "doughnut" ? {} : {y: {beginAtZero: true, ticks: {callback: v => Number(v).toLocaleString("tr-TR")}}, x: {grid: {display: false}}}}});
+  });
+  const lists = ["apps", "widgets", "charts"].map(id => document.getElementById(id)).filter(Boolean);
+  const keys = el => el ? [...el.children].map(c => c.dataset.key).filter(Boolean) : [];
   let hidden = {{ hidden_keys|safe }};
-  const keys = el => [...el.children].map(c => c.dataset.key).filter(Boolean);
-  function save(extra) {
-    return fetch("{% url 'core:save_layout' %}", {method: "POST", headers: {"Content-Type": "application/json", "X-CSRFToken": csrf},
-      body: JSON.stringify(Object.assign({apps: keys(apps), widgets: keys(widgets), hidden: hidden}, extra || {}))});
-  }
-  const opts = {animation: 160, delay: 180, delayOnTouchOnly: true, ghostClass: "sortable-ghost", chosenClass: "sortable-chosen",
-                disabled: true, onEnd: () => save()};
-  const s1 = Sortable.create(apps, opts), s2 = Sortable.create(widgets, opts);
+  const save = extra => fetch("{% url 'core:save_layout' %}", {method: "POST", headers: {"Content-Type": "application/json", "X-CSRFToken": csrf},
+    body: JSON.stringify(Object.assign({apps: keys(document.getElementById("apps")),
+      widgets: keys(document.getElementById("charts")).concat(keys(document.getElementById("widgets"))), hidden}, extra || {}))});
+  const sorts = lists.map(l => Sortable.create(l, {animation: 160, delay: 180, delayOnTouchOnly: true, disabled: true, onEnd: () => save()}));
   function setEditing(on) {
-    document.body.classList.toggle("editing", on);
-    s1.option("disabled", !on); s2.option("disabled", !on);
+    document.body.classList.toggle("editing", on); sorts.forEach(s => s.option("disabled", !on));
     document.querySelector("#edit-toggle span").textContent = on ? "Düzenleniyor…" : "Paneli düzenle";
   }
   document.getElementById("edit-toggle").onclick = () => setEditing(!document.body.classList.contains("editing"));
   document.getElementById("edit-done").onclick = () => setEditing(false);
-  document.addEventListener("click", e => {
-    if (!document.body.classList.contains("editing")) return;
-    const hb = e.target.closest(".hide-btn");
-    if (hb) { e.preventDefault(); const card = hb.closest("[data-key]"); hidden.push(card.dataset.key); card.remove(); save(); return; }
-    if (e.target.closest(".sortable a")) e.preventDefault();  // düzenlerken link açılmasın
-  }, true);
-  document.querySelectorAll("[data-show]").forEach(b => b.onclick = () => {
-    hidden = hidden.filter(k => k !== b.dataset.show); save().then(() => location.reload()); });
+  document.addEventListener("click", e => { if (document.body.classList.contains("editing") && e.target.closest(".sortable a")) e.preventDefault(); }, true);
+  document.querySelectorAll(".pick input").forEach(cb => cb.onchange = () => {
+    hidden = cb.checked ? hidden.filter(k => k !== cb.dataset.key) : hidden.concat([cb.dataset.key]);
+    save().then(() => { sessionStorage.setItem("erpEditing", "1"); location.reload(); });
+  });
   document.getElementById("layout-reset").onclick = () => save({reset: true}).then(() => location.reload());
+  if (sessionStorage.getItem("erpEditing")) { sessionStorage.removeItem("erpEditing"); setEditing(true); }
 })();
 </script>
 {% endblock %}

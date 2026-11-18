@@ -21,6 +21,7 @@ DEFAULT_MODULES = [
     "accounting",
     "integrations",
     "portal",
+    "crm",
 ]
 
 

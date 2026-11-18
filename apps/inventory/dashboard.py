@@ -21,3 +21,19 @@ def widgets(request):
          "url": reverse("admin:inventory_stockcount_changelist"),
          "level": "warning" if StockCount.objects.filter(status="submitted").exists() else "ok"},
     ]
+
+
+def charts(request):
+    """Stok değeri (maliyet × fiziksel stok) — ürün grubuna göre."""
+    from collections import defaultdict
+    from decimal import Decimal
+
+    from django.db.models import Sum
+
+    from apps.catalog.models import Product
+    groups = defaultdict(Decimal)
+    labels = dict(Product.GROUP)
+    for p in Product.objects.annotate(q=Sum("quants__quantity")).exclude(q=None):
+        groups[labels.get(p.group, p.group)] += (p.q or 0) * p.cost
+    return [{"key": "inventory.chart-stok-degeri", "title": "Stok değeri (maliyet, TL)", "type": "bar",
+             "labels": list(groups), "data": [float(v) for v in groups.values()]}]

@@ -1,0 +1,32 @@
+{% extends "base.html" %}{% load ui static %}
+{% block title %}Satış fırsatları{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Satış fırsatları</h1><p>Kartları sürükleyerek aşamasını değiştirin. "Teklif gönderildi"ye geçen fırsat için 3 gün sonra otomatik takip görevi açılır.</p></div>
+  <div class="inline" style="flex:0 0 auto"><a class="btn" href="?{% if not request.GET.mine %}mine=1{% endif %}">{% if request.GET.mine %}Tüm fırsatlar{% else %}Sadece benimkiler{% endif %}</a>
+  <a class="btn btn-primary" href="{% url 'admin:crm_opportunity_add' %}">+ Yeni fırsat</a></div></div>
+<div class="kanban">
+{% for c in cols %}
+  <section class="kcol"><header><b>{{ c.label }}</b><span class="muted small">{{ c.items|length }} · {{ c.total|floatformat:0 }} TL</span></header>
+    <div class="klist" data-stage="{{ c.code }}">
+    {% for o in c.items %}<a class="kcard card" data-id="{{ o.pk }}" href="{% url 'admin:crm_opportunity_change' o.pk %}">
+      <b>{{ o.title }}</b><div class="small muted">{{ o.name|default:"—" }}</div>
+      <div class="small" style="margin-top:6px;display:flex;justify-content:space-between"><span>{{ o.expected_amount|floatformat:0 }} TL · %{{ o.probability }}</span>
+      <span class="muted">{{ o.next_action_date|date:"d.m"|default:"" }}</span></div></a>{% endfor %}
+    </div></section>
+{% endfor %}
+</div>
+<style>
+.kanban { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 10px; }
+.kcol { background: var(--neutral-bg); border-radius: var(--radius); padding: 10px; min-height: 300px; display: flex; flex-direction: column; }
+.kcol header { display: flex; flex-direction: column; gap: 2px; padding: 4px 4px 10px; }
+.klist { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 60px; }
+.kcard { padding: 12px; color: inherit; text-decoration: none !important; cursor: grab; }
+</style>
+<script src="{% static 'vendor/sortable.min.js' %}"></script>
+<script>
+const csrf = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "";
+document.querySelectorAll(".klist").forEach(l => Sortable.create(l, {group: "opps", animation: 150, delay: 150, delayOnTouchOnly: true,
+  onAdd: e => fetch("{% url 'crm:move' %}", {method: "POST", headers: {"Content-Type": "application/json", "X-CSRFToken": csrf},
+    body: JSON.stringify({id: e.item.dataset.id, stage: e.to.dataset.stage})}).then(r => { if (!r.ok) location.reload(); })}));
+</script>
+{% endblock %}

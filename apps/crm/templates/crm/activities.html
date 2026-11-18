@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Takiplerim{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Takiplerim</h1><p>Telefon, ziyaret, teklif ve numune takipleri. Tarihi gelenler üstte.</p></div>
+  <a class="btn btn-primary" href="{% url 'admin:crm_activity_add' %}">+ Yeni aktivite</a></div>
+<h2>Bugün / gecikmiş ({{ due|length }})</h2>
+<div class="card" style="margin-bottom:18px"><div class="table-wrap"><table class="table"><thead><tr><th>Tarih</th><th>Tür</th><th>Konu</th><th>Cari / fırsat</th><th></th></tr></thead><tbody>
+{% for a in due %}<tr class="row-danger"><td>{{ a.due_date|date:"d.m.Y" }}</td><td>{{ a.get_kind_display }}</td><td><b>{{ a.subject }}</b><div class="small muted">{{ a.notes|truncatechars:90 }}</div></td>
+<td>{{ a.partner|default:a.opportunity|default:"—" }}</td><td class="num"><form method="post">{% csrf_token %}<button class="btn btn-sm btn-ok" name="done" value="{{ a.pk }}">Tamamlandı</button></form></td></tr>
+{% empty %}<tr><td colspan="5"><div class="empty">{% icon "check" %}<div>Bugün için takip yok.</div></div></td></tr>{% endfor %}</tbody></table></div></div>
+<h2>Yaklaşan</h2>
+<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Tarih</th><th>Tür</th><th>Konu</th><th>Cari / fırsat</th></tr></thead><tbody>
+{% for a in upcoming %}<tr><td>{{ a.due_date|date:"d.m.Y"|default:"—" }}</td><td>{{ a.get_kind_display }}</td><td><a href="{% url 'admin:crm_activity_change' a.pk %}">{{ a.subject }}</a></td><td>{{ a.partner|default:a.opportunity|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="4"><div class="empty">Yaklaşan takip yok.</div></td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}
