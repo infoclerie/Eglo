@@ -106,3 +106,5 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
   Uyumsoft'ta "otomatik gönder" kapatılırsa her fatura önizlenip elle gönderilir. Gönderilmiş faturada Uyumsoft doğrulama linki.
 - Ana panel: aktif ürün, stoktaki ürün/adet, kanal başına "bugün sipariş" kartları; boş grafiklerde açıklama; TL biçimi (core/formats.py).
 - Test: 135.
+
+- Aktif kullanıcılar `/ayarlar/aktif-kullanicilar/` (core.UserActivity + UserActivityMiddleware; IP = X-Forwarded-For ilk değeri, Caddy arkasında). ikas stok: v2 `listProductStockLocation`. Test: 137.
