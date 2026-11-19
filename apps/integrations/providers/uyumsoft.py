@@ -159,7 +159,8 @@ class UyumsoftEInvoice(Provider):
         Field("series_earsiv", "e-Arşiv seri ön eki", step="settings", default="EGA", help="3 harf, e-Fatura serisinden farklı olmalı"),
         Field("efatura_profile", "e-Fatura senaryosu", step="settings", kind="choice", default="TICARIFATURA",
               choices=[("TICARIFATURA", "Ticari fatura (alıcı kabul/ret yapabilir)"), ("TEMELFATURA", "Temel fatura")]),
-        Field("auto_send", "Sevk edilen siparişin faturasını otomatik gönder", step="settings", kind="bool", default=True, required=False),
+        Field("auto_send", "Sevk edilen siparişin faturasını otomatik gönder", step="settings", kind="bool", default=True, required=False,
+              help="Kapalıysa faturalar 'Gönderime hazır' bekler; fatura ekranında önizleyip 'Uyumsoft'a gönder' dersiniz."),
         Field("fetch_inbox", "Gelen e-faturaları otomatik çek", step="settings", kind="bool", default=True, required=False),
         Field("fetch_interval", "Gelen fatura kontrol aralığı (dakika)", step="settings", kind="int", default=30),
     ]

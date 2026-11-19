@@ -76,6 +76,9 @@ class HepsiburadaClient:
     def delivered(self, package_number):
         return self._req("oms", "POST", f"/packages/merchantid/{{m}}/packagenumber/{package_number}/deliver", json={})
 
+    def listings(self, offset=0, limit=100):
+        return self._req("listing", "GET", "/listings/merchantid/{m}", params={"offset": offset, "limit": limit})
+
     def inventory(self, items):
         return self._req("listing", "POST", "/listings/merchantid/{m}/inventory-uploads", json=items)
 
@@ -146,7 +149,7 @@ class Hepsiburada(Provider):
               choices=[("live", "Canlı (gerçek mağaza)"), ("test", "Test (SIT — Hepsiburada test hesabı)")]),
         Field("import_orders", "Yeni siparişleri otomatik al", step="settings", kind="bool", default=True, required=False),
         Field("auto_confirm", "Gelen siparişte stoğu otomatik ayır (toplamaya düşsün)", step="settings", kind="bool", default=True, required=False),
-        Field("order_interval", "Sipariş kontrol aralığı (dakika)", step="settings", kind="int", default=10),
+        Field("order_interval", "Sipariş kontrol aralığı (dakika)", step="settings", kind="int", default=5),
         Field("push_stock", "Stok ve fiyatı Hepsiburada'ya gönder", step="settings", kind="bool", default=False, required=False,
               help="İlk kurulumda kapalı başlatın; ürün eşleştirmelerini kontrol ettikten sonra açın."),
         Field("stock_interval", "Stok/fiyat gönderim aralığı (dakika)", step="settings", kind="int", default=30),
@@ -189,6 +192,8 @@ class Hepsiburada(Provider):
             return self._import_orders(account, c, int(job.payload.get("hours", 72)))
         if k == "hepsiburada.push_stock":
             return self._push_stock(account, c)
+        if k == "hepsiburada.import_products":
+            return self._match_listings(account, c, job.payload)
         if k == "hepsiburada.pull_settlement":
             return self._pull_settlement(account, c, job.payload)
         from ..models import ExternalOrder
@@ -280,6 +285,40 @@ class Hepsiburada(Provider):
             uploads.append(res.get("id", "") if isinstance(res, dict) else "")
         return {"products": len(items), "uploads": uploads}
 
+    def _match_listings(self, account, c, payload):
+        """
+        Hepsiburada listeleme API'si ürün adı/görsel vermez: listelerdeki satıcı SKU'su (merchantSku) sistemdeki SKU/barkodla
+        eşleştirilir ve Hepsiburada SKU'su eşleştirme tablosuna yazılır; isteğe bağlı açılış stoğu. Eşleşmeyenler listelenir.
+        """
+        from ..models import ChannelListing
+        from .common import import_options, new_stats
+        opts = import_options(account, payload)
+        stats, offset, total, unmatched = new_stats(), 0, 1, []
+        while offset < total:
+            res = c.listings(offset=offset)
+            rows = _listing_rows(res)
+            total = int((res.get("totalCount") if isinstance(res, dict) else 0) or len(rows) + offset)
+            for l in rows:
+                p = product_for(account, l.get("hepsiburadaSku"), l.get("merchantSku"))
+                if p is None:
+                    unmatched.append(l.get("merchantSku") or l.get("hepsiburadaSku"))
+                    continue
+                ChannelListing.objects.update_or_create(account=account, product=p, defaults={"external_barcode": l.get("hepsiburadaSku") or ""})
+                stats["updated"] += 1
+                loc = opts.get("location")
+                if loc is not None and l.get("availableStock"):
+                    from apps.inventory import services as inventory
+                    if not p.is_kit and inventory.stock_summary(p)["physical"] == 0:
+                        inventory.receive(p, Decimal(str(l["availableStock"])), loc, lot_no="HB-ACILIS" if p.track_lot else None,
+                                          reference=f"{account.name} açılış stoğu", move_type="count_adjust")
+                        stats["opening_stock"] += 1
+            if not rows:
+                break
+            offset += len(rows)
+        if unmatched:
+            stats["problems"] = [f"Sistemde bulunamayan satıcı SKU'ları ({len(unmatched)}): " + ", ".join(str(x) for x in unmatched[:15])]
+        return stats
+
     def _pull_settlement(self, account, c, payload):
         from apps.accounting.services import upsert_settlement
         today = timezone.localdate()
@@ -299,6 +338,15 @@ class Hepsiburada(Provider):
             s = upsert_settlement("hepsiburada", start, end, source="Hepsiburada finans servisi", **totals)
             out.append(str(s))
         return {"periods": out}
+
+
+def _listing_rows(res):
+    if isinstance(res, list):
+        return res
+    for k in ("listings", "items", "data", "content"):
+        if isinstance(res.get(k), list):
+            return res[k]
+    return []
 
 
 def weeks_back(today, weeks=2):

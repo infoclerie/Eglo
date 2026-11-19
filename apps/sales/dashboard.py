@@ -1,3 +1,4 @@
+from apps.core.formats import tl
 from django.urls import reverse
 from django.utils import timezone
 
@@ -12,7 +13,7 @@ def widgets(request):
     pool = reverse("sales:pool")
     return [
         {"title": "Bugünkü sipariş", "value": todays.count(), "url": pool, "level": "ok"},
-        {"title": "Bugünkü ciro (KDV dahil)", "value": f"{total:,.2f} TL", "url": pool, "level": "ok"},
+        {"title": "Bugünkü ciro (KDV dahil)", "value": tl(total), "url": pool, "level": "ok"},
         {"title": "Sevkiyat bekleyen sipariş", "value": waiting, "url": pool, "level": "warning" if waiting else "ok"},
     ]
 
@@ -40,9 +41,10 @@ def charts(request):
     top = sorted(top.items(), key=lambda x: -x[1])[:8]
     return [
         {"key": "sales.chart-ciro-30", "title": "Son 30 gün ciro (KDV dahil)", "type": "line", "wide": True,
-         "labels": [d.strftime("%d.%m") for d in days], "data": [float(v) for v in days.values()]},
+         "labels": [d.strftime("%d.%m") for d in days], "data": [float(v) for v in days.values()],
+         "empty": "Son 30 günde sipariş yok. Kanallardan sipariş geldikçe burada görünür."},
         {"key": "sales.chart-kanal", "title": "Kanallara göre satış (30 gün)", "type": "doughnut",
-         "labels": list(by_channel), "data": [float(v) for v in by_channel.values()]},
+         "labels": list(by_channel), "data": [float(v) for v in by_channel.values()], "empty": "Henüz kanal satışı yok."},
         {"key": "sales.chart-urun", "title": "En çok satan ürünler (adet, 30 gün)", "type": "bar",
-         "labels": [n[:28] for n, _ in top], "data": [float(q) for _, q in top]},
+         "labels": [n[:28] for n, _ in top], "data": [float(q) for _, q in top], "empty": "Henüz satış yok."},
     ]

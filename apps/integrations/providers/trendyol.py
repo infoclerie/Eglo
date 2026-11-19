@@ -62,6 +62,10 @@ class TrendyolClient:
         return self._req("PUT", "/order/sellers/{seller}/shipment-packages/" + str(package_id) + "/tracking-details",
                          json={"cargoSenderNumber": tracking_number, "providerCode": provider_code})
 
+    def approved_products(self, page=0, size=100):
+        """Onaylı ürünler v2: GET /product/sellers/{id}/products/approved (page × size ≤ 10.000)."""
+        return self._req("GET", "/product/sellers/{seller}/products/approved", params={"page": page, "size": size})
+
     def settlements(self, start, end, types, page=0, size=1000):
         """Cari hesap ekstresi: satış, iade, indirim, kupon... (aralık ≤ 15 gün). Taban /integration/finance/che"""
         return self._req("GET", "/finance/che/sellers/{seller}/settlements", params={
@@ -147,6 +151,8 @@ class Trendyol(Provider):
             return self._import_orders(account, c, int(job.payload.get("hours", 48)))
         if job.kind == "trendyol.push_stock":
             return self._push_stock(account, c)
+        if job.kind == "trendyol.import_products":
+            return self._import_products(account, c, job.payload)
         if job.kind == "trendyol.pull_settlement":
             return self._pull_settlement(account, c, job.payload)
         if job.kind == "trendyol.tracking":
@@ -306,3 +312,38 @@ def classify_ty(rec):
         return [("returns", -credit)]
     return []
 
+
+def _import_products(self, account, c, payload):
+    """Trendyol onaylı ürünleri → ürün kartı (her varyant ayrı), görseller, eşleştirme, isteğe bağlı açılış stoğu. Fiyat KDV dahil."""
+    from .common import ensure_channel, import_options, new_stats, upsert_product
+    channel = ensure_channel("trendyol", "Trendyol")
+    opts = import_options(account, payload)
+    stats, page, pages = new_stats(), 0, 1
+    while page < pages and page * 100 < 10000:
+        res = c.approved_products(page=page)
+        pages = int(res.get("totalPages") or 1)
+        for content in res.get("content") or []:
+            variants = content.get("variants") or []
+            images = [im.get("url") for im in content.get("images") or [] if im.get("url")]
+            images = [("https://cdn.dsmcdn.com" + u) if u.startswith("/") else u for u in images]
+            for v in variants:
+                attrs = ", ".join(a.get("attributeValue", "") for a in v.get("attributes") or [] if a.get("attributeValue"))
+                name = content.get("title") or v.get("barcode")
+                if len(variants) > 1 and attrs:
+                    name = f"{name} ({attrs})"
+                price = v.get("price") or {}
+                try:
+                    upsert_product(account, channel, {
+                        "sku": v.get("stockCode") or v.get("barcode"), "barcode": v.get("barcode"), "external": v.get("barcode"),
+                        "name": name, "description": content.get("description"), "brand": (content.get("brand") or {}).get("name"),
+                        "category": (content.get("category") or {}).get("name"), "vat": v.get("vatRate"),
+                        "list_incl": price.get("listPrice"), "sale_incl": price.get("salePrice"),
+                        "stock": (v.get("stock") or {}).get("quantity"), "images": images, "active": True}, opts, stats)
+                except Exception as exc:  # noqa: BLE001
+                    stats["problems"].append(f"{v.get('barcode')}: {exc}")
+        page += 1
+    stats["problems"] = stats["problems"][:20]
+    return stats
+
+
+Trendyol._import_products = _import_products

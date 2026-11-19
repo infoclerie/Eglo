@@ -92,3 +92,17 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 
 ## Yapay zekâ asistanı (Kasım 2026)
 - assistant modülü + integrations/providers/ai.py (Claude, OpenAI uyumlu). Bkz. apps/assistant/MODULE.md. Canlı API anahtarıyla henüz denenmedi (istek biçimleri sahte yanıtlarla test edildi). Test: 128.
+
+## Kasım 2026 (3)
+- Kanal paneli sadeleştirildi: "Şimdi güncelle" (sipariş + açıksa stok + hakediş), otomatik işler tablosu, sayfa 5 dk'da yenilenir.
+- Ürün aktarımı ortak: `providers/common.upsert_product` (ikas, Trendyol `/product/sellers/{id}/products/approved`), fotoğraf
+  indirme (`fetch_image`, kaynak adresiyle tekrar indirmez), HTML açıklama temizliği. Hepsiburada: listing → SKU eşleştirme
+  (HB API ürün adı/görsel vermez). ikas görsel adresi `cdn.myikas.com/images/{merchantId}/{imageId}/image_1080.webp` —
+  dokümanda yok, canlıda doğrulanmalı.
+- İşlem geçmişi `/islem-gecmisi/` (core.activity): AuditLog + 'core.collect_activity' olayıyla entegrasyon/stok/sipariş satırları.
+  Gürültülü teknik modeller audit.SKIP_MODELS'ta.
+- Fatura: notlar (yazıyla tutar "Yalnız #…#", e-Arşiv'de "İrsaliye yerine geçer."), alıcı ilçe/il adresin son satırından,
+  boş TCKN → 11111111111. Önizleme `/accounting/invoices/<id>/onizleme/` (GİB görünümüne yakın, yazdırılabilir, "Doğru, gönder").
+  Uyumsoft'ta "otomatik gönder" kapatılırsa her fatura önizlenip elle gönderilir. Gönderilmiş faturada Uyumsoft doğrulama linki.
+- Ana panel: aktif ürün, stoktaki ürün/adet, kanal başına "bugün sipariş" kartları; boş grafiklerde açıklama; TL biçimi (core/formats.py).
+- Test: 135.

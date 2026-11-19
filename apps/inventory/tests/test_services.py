@@ -61,7 +61,13 @@ class ReceiveAndMoveTests(Base):
 
     def test_audit_log_written(self):
         self.recv(1, self.r1, "L1", 400)
-        self.assertTrue(AuditLog.objects.filter(model="inventory.StockMove", action="create").exists())
+        self.assertTrue(AuditLog.objects.filter(model="inventory.Lot", action="create").exists())
+        # stok hareketleri kendi kalıcı kaydıdır; işlem geçmişi ekranına doğrudan gelir
+        import datetime as dt
+
+        from apps.core.activity import collect
+        today = dt.date.today()
+        self.assertTrue(any(r["source"] == "stok" for r in collect(today - dt.timedelta(days=1), today + dt.timedelta(days=1))))
 
 
 class ReservationTests(Base):

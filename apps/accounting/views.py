@@ -118,3 +118,27 @@ def profitability(request):
     tot = {k: sum((r.get(k, 0) for r in rows), 0) for k in ("revenue", "product_cost", "commission", "shipping", "contribution")}
     return render(request, "accounting/profitability.html", {"rows": rows, "tot": tot, "start": start, "end": end,
                                                              "channels": SalesChannel.objects.all(), "channel": channel})
+
+
+@login_required
+@permission_required("accounting.view_invoice", raise_exception=True)
+def invoice_preview(request, pk):
+    """Göndermeden önce faturanın GİB görünümüne yakın önizlemesi (yazdırılabilir). 'Gönder' buradan da yapılır."""
+    from apps.core.models import Setting
+
+    from .textnum import amount_words
+    from .ubl import buyer_address_parts, invoice_notes
+    inv = get_object_or_404(Invoice.objects.select_related("sales_order"), pk=pk)
+    company = services.company_info()
+    street, district, city = buyer_address_parts(inv)
+    lines = list(inv.lines.select_related("product"))
+    vat_groups = {}
+    for l in lines:
+        vat_groups[l.vat_rate] = vat_groups.get(l.vat_rate, 0) + l.vat_amount
+    return render(request, "accounting/invoice_preview.html", {
+        "inv": inv, "c": company, "street": street, "district": district, "city": city, "lines": lines,
+        "vat_groups": sorted(vat_groups.items()), "notes": [n for n in invoice_notes(inv) if not n.startswith("Yalnız")],
+        "words": amount_words(inv.total, inv.currency), "now": timezone.localtime(),
+        "missing": [label for key, label in (("title", "Unvan"), ("vkn", "VKN"), ("tax_office", "Vergi dairesi"), ("street", "Adres"), ("city", "İl"))
+                    if not company.get(key)],
+        "verify_url": f"https://edonusum.uyum.com.tr/Genel/Fatura/{inv.uuid}" if inv.status in ("sent", "accepted", "delivered") else ""})

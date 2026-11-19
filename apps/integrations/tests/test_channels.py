@@ -3,7 +3,7 @@ from decimal import Decimal as D
 from unittest import mock
 
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from apps.accounting.models import MarketplaceSettlement
 from apps.accounting.tests.test_accounting import COMPANY
@@ -239,7 +239,8 @@ class IkasProductImportAndPanelTests(ErpFixture, TestCase):
     def test_import_products_from_panel(self):
         from apps.catalog.models import Product, ProductPrice
         page = self.client.get(f"/integrations/kanal/{self.acc.pk}/")
-        self.assertContains(page, "Ürünleri ikas'tan aktar")
+        self.assertContains(page, "Ürünleri ikas Mağaza")
+        self.assertContains(page, "Şimdi güncelle")
         self.assertContains(page, "Satış kanalları")  # sol menü grubu
         with mock.patch("apps.integrations.providers.ikas.requests.Session", return_value=self.fake()):
             r = self.client.post(f"/integrations/kanal/{self.acc.pk}/", {"action": "products", "update_existing": "on", "import_stock": "on",
@@ -258,3 +259,70 @@ class IkasProductImportAndPanelTests(ErpFixture, TestCase):
     def test_panel_for_other_categories_redirects(self):
         mail = IntegrationAccount.objects.create(provider="smtp_email", name="Mail")
         self.assertEqual(self.client.get(f"/integrations/kanal/{mail.pk}/").status_code, 302)
+
+
+
+class TrendyolProductImportTests(ErpFixture, TestCase):
+    def setUp(self):
+        self.setup_erp()
+        self.acc = IntegrationAccount(provider="trendyol", name="Trendyol", environment="live", config={"seller_id": "9", "api_key": "K"})
+        self.acc.set_secrets({"api_secret": "S"})
+        self.acc.save()
+        self.client.force_login(self.boss)
+
+    def test_import_with_images_and_html_description(self):
+        from apps.catalog.models import Product
+        content = {"totalPages": 1, "content": [{"title": "Clerie Krem", "description": "<p>Nemlendirir</p><ul><li>Hafif</li></ul>",
+                    "brand": {"name": "Clerie"}, "category": {"name": "Krem"}, "images": [{"url": "/mediacenter/1.jpg"}],
+                    "variants": [{"barcode": "869000000099", "stockCode": "CLR-KRM-50", "vatRate": 20,
+                                  "price": {"salePrice": 180, "listPrice": 240}, "stock": {"quantity": 12}, "attributes": []}]}]}
+        http = mock.Mock(request=mock.Mock(return_value=resp(content)))
+        from io import BytesIO
+
+        from PIL import Image
+        buf = BytesIO()
+        Image.new("RGB", (40, 40), "blue").save(buf, "JPEG")
+        img = mock.Mock(status_code=200, content=buf.getvalue())
+        with mock.patch("apps.integrations.providers.trendyol.requests.Session", return_value=http), \
+                mock.patch("requests.get", return_value=img) as g, override_settings(MEDIA_ROOT=__import__("tempfile").mkdtemp()):
+            r = self.client.post(f"/integrations/kanal/{self.acc.pk}/", {"action": "products", "update_existing": "on", "import_images": "on",
+                                                                        "import_stock": "on", "location": self.r1.pk}, follow=True)
+            self.assertContains(r, "1 yeni ürün")
+            p = Product.objects.get(sku="CLR-KRM-50")
+            self.assertEqual((p.barcode, p.list_price, p.description), ("869000000099", D("200.00"), "Nemlendirir\n• Hafif"))
+            self.assertEqual(g.call_args.args[0], "https://cdn.dsmcdn.com/mediacenter/1.jpg")
+            self.assertEqual(p.images.count(), 1)
+        from apps.inventory import services as inventory
+        self.assertEqual(inventory.stock_summary(p)["available"], 12)
+        self.assertEqual(http.request.call_args_list[0].args[1], "https://apigw.trendyol.com/integration/product/sellers/9/products/approved")
+
+    def test_sync_button_and_activity_log(self):
+        http = mock.Mock(request=mock.Mock(return_value=resp({"totalPages": 1, "content": []})))
+        with mock.patch("apps.integrations.providers.trendyol.requests.Session", return_value=http):
+            r = self.client.post(f"/integrations/kanal/{self.acc.pk}/", {"action": "sync"}, follow=True)
+        self.assertContains(r, "Güncellendi")
+        log = self.client.get(f"/islem-gecmisi/?kaynak=entegrasyon&baglanti={self.acc.pk}")
+        self.assertContains(log, "import_orders")
+        self.assertContains(self.client.get("/islem-gecmisi/?kaynak=stok"), "SRM")
+        x = self.client.get("/islem-gecmisi/?format=xlsx")
+        self.assertEqual(x.status_code, 200)
+        self.client.force_login(self.clerk)
+        self.assertEqual(self.client.get("/islem-gecmisi/").status_code, 403)
+
+
+class HepsiburadaMatchTests(ErpFixture, TestCase):
+    def test_match_listings(self):
+        self.setup_erp()
+        acc = IntegrationAccount(provider="hepsiburada", name="HB", config={"merchant_id": "M-1", "user_agent": "x"})
+        acc.set_secrets({"service_key": "K"})
+        acc.save()
+        body = {"totalCount": 2, "listings": [{"hepsiburadaSku": "HBV111", "merchantSku": "SRM", "availableStock": 4},
+                                               {"hepsiburadaSku": "HBV9", "merchantSku": "YOK-1"}]}
+        fake = mock.Mock(request=mock.Mock(side_effect=lambda m, url, **kw: resp(body if kw["params"]["offset"] == 0 else {"listings": []})))
+        job = services.enqueue(acc, "hepsiburada.import_products", "t", {})
+        with mock.patch("apps.integrations.providers.hepsiburada.requests.Session", return_value=fake):
+            services.run_job(job)
+        job.refresh_from_db()
+        self.assertEqual(job.status, "success", job.last_error)
+        self.assertEqual(acc.listings.get().external_barcode, "HBV111")
+        self.assertIn("YOK-1", job.result["problems"][0])

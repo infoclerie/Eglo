@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}İşlem geçmişi{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>İşlem geçmişi</h1><p>Arka planda olan her şey: kim neyi değiştirdi, entegrasyonlar ne çekti/gönderdi, stok nasıl hareket etti, sipariş durumları.</p></div>
+  <a class="btn" href="?{{ request.GET.urlencode }}&format=xlsx">{% icon "chart" %}Excel</a></div>
+<form method="get" class="card card-pad inline report-filter" style="margin-bottom:16px;flex-wrap:wrap;align-items:flex-end">
+  <label>Başlangıç<input type="date" name="start" value="{{ start|date:'Y-m-d' }}"></label><label>Bitiş<input type="date" name="end" value="{{ end|date:'Y-m-d' }}"></label>
+  <label>Kaynak<select name="kaynak"><option value="">Tümü</option>{% for k, v in sources.items %}<option value="{{ k }}" {% if source == k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+  <label>Kullanıcı<select name="kullanici"><option value="">Tümü</option>{% for u in users %}<option value="{{ u.pk }}" {% if user_id == u.pk|stringformat:'s' %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
+  <label style="flex:1;min-width:200px">Ara<input name="q" value="{{ q }}" placeholder="Sipariş no, ürün, cari, hata metni…"></label>
+  {% if request.GET.baglanti %}<input type="hidden" name="baglanti" value="{{ request.GET.baglanti }}">{% endif %}
+  <button class="btn btn-primary">Filtrele</button></form>
+<div class="card"><div class="table-wrap"><table class="table" data-grid="off"><thead><tr><th>Zaman</th><th>Kaynak</th><th>Kullanıcı</th><th>İşlem</th><th>Açıklama</th></tr></thead><tbody>
+{% for r in rows %}<tr class="{% if r.level == 'danger' %}row-danger{% endif %}"><td style="white-space:nowrap">{{ r.at|date:"d.m.Y H:i:s" }}</td>
+<td><span class="badge {% if r.source == 'entegrasyon' %}info{% elif r.source == 'stok' %}ok{% endif %}">{{ sources|get:r.source }}</span></td>
+<td>{{ r.user|default:"sistem" }}</td><td>{{ r.action }}</td>
+<td>{% if r.url %}<a href="{{ r.url }}">{{ r.text }}</a>{% else %}{{ r.text }}{% endif %}{% if r.detail %}<div class="small muted">{{ r.detail|truncatechars:300 }}</div>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="5"><div class="empty">Bu filtreyle kayıt yok.</div></td></tr>{% endfor %}</tbody></table></div></div>
+{% if rows|length >= limit %}<p class="small muted">En yeni {{ limit }} kayıt gösteriliyor; tarih aralığını daraltın veya Excel'e aktarın.</p>{% endif %}
+{% endblock %}

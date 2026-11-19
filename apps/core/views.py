@@ -181,3 +181,45 @@ def backup_download(request, filename):
         from django.http import Http404
         raise Http404
     return FileResponse(path.open("rb"), as_attachment=True, filename=filename)
+
+
+@login_required
+def activity(request):
+    """Tüm işlemlerin geçmişi (kayıt değişikliği, entegrasyon, stok, sipariş) — filtre ve Excel."""
+    import datetime as dt
+
+    from django.contrib.auth.models import User
+    from django.core.exceptions import PermissionDenied
+    from django.utils import timezone
+
+    from . import activity as act
+    if not (request.user.is_superuser or request.user.has_perm("core.view_auditlog")):
+        raise PermissionDenied
+    today = timezone.localdate()
+
+    def d(key, default):
+        try:
+            return dt.date.fromisoformat(request.GET.get(key, ""))
+        except ValueError:
+            return default
+    start, end = d("start", today - dt.timedelta(days=6)), d("end", today)
+    source, q = request.GET.get("kaynak", ""), request.GET.get("q", "").strip()
+    user_id = request.GET.get("kullanici") or None
+    rows = act.collect(start, end, q, user_id, source, {"account": request.GET.get("baglanti")})
+    if request.GET.get("format") == "xlsx":
+        from django.http import HttpResponse
+        from openpyxl import Workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "İşlem geçmişi"
+        ws.append(["Zaman", "Kaynak", "Kullanıcı", "İşlem", "Açıklama", "Ayrıntı"])
+        for r in rows:
+            ws.append([timezone.localtime(r["at"]).replace(tzinfo=None), act.SOURCES.get(r["source"], r["source"]), str(r["user"] or "sistem"),
+                       r["action"], r["text"], r.get("detail", "")])
+        resp = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        resp["Content-Disposition"] = f'attachment; filename="islem_gecmisi_{today:%Y%m%d}.xlsx"'
+        wb.save(resp)
+        return resp
+    return render(request, "core/activity.html", {"rows": rows, "start": start, "end": end, "source": source, "q": q,
+                                                  "user_id": user_id, "sources": act.SOURCES, "users": User.objects.order_by("username"),
+                                                  "limit": act.LIMIT})

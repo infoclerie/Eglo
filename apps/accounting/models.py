@@ -105,6 +105,9 @@ class InvoiceLine(models.Model):
     vat_amount = models.DecimalField("KDV tutarı", **MONEY)
     po_line = models.ForeignKey("purchase.PurchaseOrderLine", null=True, blank=True, on_delete=models.PROTECT)
 
+    def __str__(self):
+        return f"{self.description} × {self.quantity.normalize():f}"
+
     class Meta:
         verbose_name, verbose_name_plural = "Fatura satırı", "Fatura satırları"
 

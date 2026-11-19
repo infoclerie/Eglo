@@ -276,6 +276,7 @@ def listings(request, pk):
 
 # ---------------------------------------------------------------- kanal paneli (Trendyol / Hepsiburada / ikas)
 CHANNEL_ACTIONS = {"orders": ("import_orders", "Siparişler çekildi"), "stock": ("push_stock", "Stok ve fiyat gönderildi"),
+                   "match": ("import_products", "Ürünler eşleştirildi"),
                    "settlement": ("pull_settlement", "Hakediş kayıtları çekildi"), "products": ("import_products", "Ürünler aktarıldı")}
 OPEN_STATUSES = ["reserved", "picking", "picked", "packed", "invoiced"]
 
@@ -288,7 +289,8 @@ def _result_text(job):
     r = job.result or {}
     parts = []
     labels = {"new_orders": "yeni sipariş", "already_imported": "zaten alınmış", "products": "ürün", "created": "yeni ürün",
-              "updated": "güncellenen", "opening_stock": "açılış stoğu girilen", "not_in_ikas": "ikas'ta bulunamayan", "skipped": "atlanan"}
+              "updated": "güncellenen", "opening_stock": "açılış stoğu girilen", "not_in_ikas": "ikas'ta bulunamayan", "skipped": "atlanan",
+              "photos": "fotoğraf"}
     for k, label in labels.items():
         if r.get(k) not in (None, 0, []):
             parts.append(f"{r[k]} {label}")
@@ -320,11 +322,26 @@ def channel(request, pk):
         if action == "test":
             ok, msg = services.test_account(acc)
             (messages.success if ok else messages.error)(request, msg)
+        elif action == "sync":
+            done = []
+            steps = [("import_orders", "siparişler")]
+            if acc.config.get("push_stock"):
+                steps.append(("push_stock", "stok"))
+            if acc.config.get("pull_settlement") and acc.provider in ("trendyol", "hepsiburada"):
+                steps.append(("pull_settlement", "hakediş"))
+            for suffix, label in steps:
+                job = services.enqueue(acc, f"{acc.provider}.{suffix}", "elle güncelle", {"hours": 72},
+                                       key=f"{acc.pk}:{suffix}:sync:{timezone.now().timestamp()}")
+                services.run_job(job)
+                job.refresh_from_db()
+                done.append(f"{label}: {_result_text(job) if job.status == 'success' else 'HATA – ' + job.last_error[:150]}")
+            messages.info(request, "Güncellendi · " + " · ".join(done))
         elif action in CHANNEL_ACTIONS:
             suffix, done = CHANNEL_ACTIONS[action]
             payload = {"hours": int(request.POST.get("hours") or 72)}
-            if action == "products":
+            if action in ("products", "match"):
                 payload = {"update_existing": bool(request.POST.get("update_existing")), "import_stock": bool(request.POST.get("import_stock")),
+                           "import_images": bool(request.POST.get("import_images")),
                            "location_id": request.POST.get("location") or None, "vat_rate": request.POST.get("vat_rate") or 20}
             job = services.enqueue(acc, f"{acc.provider}.{suffix}", "manuel", payload,
                                    key=f"{acc.pk}:{suffix}:manual:{timezone.now().timestamp()}")
@@ -349,13 +366,27 @@ def channel(request, pk):
         j.summary = _result_text(j) if j.status == "success" else (j.last_error or "")[:240]
     last_failed = acc.jobs.filter(status__in=["failed", "pending"]).exclude(last_error="").order_by("-created_at").first()
     flags = [(f.label, bool(acc.config.get(f.name))) for f in p.fields if f.step == "settings" and f.kind == "bool"]
+
+    def last(suffix):
+        return acc.jobs.filter(kind=f"{acc.provider}.{suffix}").exclude(status="pending").order_by("-created_at").first()
+    lines = [{"label": "Sipariş alma", "on": bool(acc.config.get("import_orders")), "every": acc.config.get("order_interval") or 5,
+              "job": last("import_orders")},
+             {"label": "Stok ve fiyat gönderimi", "on": bool(acc.config.get("push_stock")), "every": acc.config.get("stock_interval") or 15,
+              "job": last("push_stock")}]
+    if acc.provider in ("trendyol", "hepsiburada"):
+        lines.append({"label": "Hakediş çekimi", "on": bool(acc.config.get("pull_settlement")), "every": 360, "job": last("pull_settlement")})
+    for ln in lines:
+        j = ln["job"]
+        ln["text"] = (_result_text(j) if j and j.status == "success" else (j.last_error[:160] if j else "henüz çalışmadı"))
+    last_sync = acc.jobs.filter(status="success").order_by("-finished_at").first()
     settlement = None
     if acc.provider in ("trendyol", "hepsiburada"):
         from apps.accounting.models import MarketplaceSettlement
         settlement = MarketplaceSettlement.objects.filter(channel__code=code).order_by("-period_end").first()
     return render(request, "integrations/channel.html", {
         "acc": acc, "p": p, "kpi": kpi, "jobs": jobs, "flags": flags, "last_failed": last_failed, "settlement": settlement,
+        "lines": lines, "last_sync": last_sync, "attention": kpi["unconfirmed"] + acc.jobs.filter(status="failed").count(),
         "listing_count": acc.listings.count(), "sellable": sellable,
-        "recent": acc.external_orders.select_related("order").order_by("-created_at")[:10],
+        "recent": acc.external_orders.select_related("order").order_by("-created_at")[:6],
         "locations": Location.objects.filter(active=True).exclude(kind__in=Location.VIRTUAL_KINDS).order_by("code"),
         "can_change": request.user.has_perm(PERM), "has_settlement": acc.provider in ("trendyol", "hepsiburada")})

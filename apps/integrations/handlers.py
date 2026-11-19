@@ -116,3 +116,28 @@ def stop_pending_after_restore(**kw):
     from .models import IntegrationJob
     IntegrationJob.objects.filter(status__in=("pending", "running")).update(
         status="failed", last_error="Yedekten geri dönüldü; otomatik durduruldu. Gerekirse 'Yeniden dene'.", finished_at=timezone.now())
+
+
+@subscribe("core.collect_activity")
+def activity_rows(start, end, q, user_id, source, extra, **kw):
+    """İşlem geçmişi ekranına entegrasyon işleri (otomatik çalışır; kullanıcı 'sistem')."""
+    if source not in ("", "entegrasyon") or user_id:
+        return []
+    from django.db.models import Q
+    from django.urls import reverse
+
+    from .models import IntegrationJob
+    qs = IntegrationJob.objects.select_related("account").filter(created_at__date__gte=start, created_at__date__lte=end).exclude(status="pending")
+    if extra.get("account"):
+        qs = qs.filter(account_id=extra["account"])
+    if q:
+        qs = qs.filter(Q(kind__icontains=q) | Q(ref__icontains=q) | Q(last_error__icontains=q) | Q(account__name__icontains=q))
+    out = []
+    for j in qs.order_by("-created_at")[:300]:
+        res = j.result or {}
+        detail = j.last_error if j.status == "failed" else ", ".join(f"{k}: {v}" for k, v in res.items() if v not in (None, [], {}, ""))[:300]
+        out.append({"at": j.finished_at or j.created_at, "source": "entegrasyon", "user": None,
+                    "action": j.get_status_display(), "text": f"{j.account.name} · {j.kind.split('.', 1)[-1]} · {j.ref}",
+                    "detail": detail, "url": reverse("integrations:account", args=[j.account_id]),
+                    "level": "danger" if j.status == "failed" else ""})
+    return out

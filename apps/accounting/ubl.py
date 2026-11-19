@@ -71,6 +71,31 @@ def _tax_total(parent, groups, currency):
     return tt
 
 
+def buyer_address_parts(inv):
+    """Alıcı adresi → (sokak, ilçe, il). İlçe/il boşsa adresin son satırındaki 'İlçe / İl' kalıbından çıkarılır."""
+    lines = [l.strip() for l in (inv.buyer_address or "").splitlines() if l.strip()]
+    district, city = inv.buyer_district, inv.buyer_city
+    if lines and "/" in lines[-1] and len(lines[-1]) < 60:
+        d, _, c = lines[-1].rpartition("/")
+        district, city = district or d.strip(), city or c.strip()
+        lines = lines[:-1]
+    return (" ".join(lines) or "-"), district or "-", city or "-"
+
+
+def invoice_notes(inv):
+    """Fatura notları: sipariş no, 'Yalnız #...#' yazıyla tutar, e-Arşiv'de 'İrsaliye yerine geçer.'"""
+    from apps.core.models import Setting
+
+    from .textnum import amount_words
+    notes = []
+    if inv.sales_order_id:
+        notes.append(f"Sipariş no: {inv.sales_order.number}" + (f" / {inv.sales_order.external_ref}" if inv.sales_order.external_ref else ""))
+    notes.append(f"Yalnız #{amount_words(inv.total, inv.currency)}#")
+    if inv.doc_type == "earsiv" and Setting.get("accounting.irsaliye_note", True) and inv.lines.filter(product__isnull=False).exists():
+        notes.append("İrsaliye yerine geçer.")
+    return notes
+
+
 def build_invoice(inv, company):
     """Fatura modelinden UBL-TR Invoice elementi (ElementTree) üretir."""
     cur = inv.currency
@@ -84,9 +109,8 @@ def build_invoice(inv, company):
     _sub(root, CBC + "IssueDate", inv.issue_date.isoformat())
     _sub(root, CBC + "IssueTime", timezone.localtime().strftime("%H:%M:%S"))
     _sub(root, CBC + "InvoiceTypeCode", "IADE" if inv.kind.endswith("return") else "SATIS")
-    if inv.sales_order_id:
-        _sub(root, CBC + "Note", f"Sipariş no: {inv.sales_order.number}"
-             + (f" / {inv.sales_order.external_ref}" if inv.sales_order.external_ref else ""))
+    for note in invoice_notes(inv):
+        _sub(root, CBC + "Note", note)
     _sub(root, CBC + "DocumentCurrencyCode", cur)
     _sub(root, CBC + "LineCountNumeric", inv.lines.count())
     if inv.sales_order_id:
@@ -109,8 +133,9 @@ def build_invoice(inv, company):
 
     _party(root, "AccountingSupplierParty", company["vkn"], company["title"], company.get("tax_office"),
            company.get("street"), company.get("district"), company.get("city"), company.get("email"), company.get("phone"))
-    _party(root, "AccountingCustomerParty", inv.buyer_vkn, inv.buyer_title, inv.buyer_tax_office, inv.buyer_address,
-           inv.buyer_district, inv.buyer_city, inv.buyer_email)
+    street, district, city = buyer_address_parts(inv)
+    _party(root, "AccountingCustomerParty", inv.buyer_vkn or "11111111111", inv.buyer_title, inv.buyer_tax_office, street,
+           district, city, inv.buyer_email)
 
     lines = list(inv.lines.all())
     groups = {}

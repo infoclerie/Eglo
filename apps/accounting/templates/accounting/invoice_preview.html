@@ -1,0 +1,55 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ inv.number|default:"Taslak" }} önizleme</title>
+<style>
+ body{font-family:Arial,Helvetica,sans-serif;color:#222;background:#eef0f4;margin:0;padding:20px}
+ .bar{max-width:900px;margin:0 auto 12px;display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+ .bar .warn{background:#fff7ed;border:1px solid #fdba74;color:#9a3412;padding:8px 12px;border-radius:8px;font-size:13px}
+ .btn{background:#fff;border:1px solid #ccc;border-radius:8px;padding:9px 16px;font-size:14px;cursor:pointer;text-decoration:none;color:#222}
+ .btn.ok{background:#128a52;border-color:#128a52;color:#fff}
+ .page{max-width:900px;margin:0 auto;background:#fff;padding:36px 40px;box-shadow:0 4px 18px rgba(0,0,0,.08);font-size:13px}
+ .top{display:grid;grid-template-columns:1fr 200px 1fr;gap:16px;align-items:start}
+ .box{border-top:4px solid #111;border-bottom:4px solid #111;padding:10px 0;line-height:1.45}
+ .title{text-align:center;font-size:20px;font-weight:bold;align-self:center;color:#444}
+ .meta{border-collapse:collapse;width:100%;font-size:12px}.meta td{border:1px solid #333;padding:3px 6px}.meta td:first-child{font-weight:bold;width:46%}
+ .ettn{margin:8px 0 14px;font-weight:bold}
+ table.lines{border-collapse:collapse;width:100%;margin-top:6px}table.lines th,table.lines td{border:1px solid #222;padding:4px 6px}
+ table.lines th{background:#f3f3f3;font-size:12px}td.n{text-align:right;white-space:nowrap}
+ .totals{margin:14px 0 0 auto;border-collapse:collapse;min-width:360px}.totals td{border:1px solid #222;padding:4px 8px}.totals td:first-child{font-weight:bold;text-align:right}
+ .notes{border:2px solid #222;margin-top:18px;padding:14px;min-height:70px;line-height:1.6}
+ .foot{text-align:right;font-weight:bold;color:#555;margin-top:14px;line-height:2}
+ .draft{position:fixed;top:40%;left:0;right:0;text-align:center;font-size:90px;color:rgba(200,0,0,.08);transform:rotate(-20deg);pointer-events:none;font-weight:bold}
+ @media print{body{background:#fff;padding:0}.bar{display:none}.page{box-shadow:none;max-width:none;padding:0}}
+</style></head><body>
+<div class="bar">
+  <div>{% if missing %}<span class="warn">Şirket bilgisinde eksik: {{ missing|join:", " }} — Entegrasyonlar › Uyumsoft › Ayarlar.</span>{% endif %}</div>
+  <div style="display:flex;gap:8px">
+    <button class="btn" onclick="window.print()">Yazdır / PDF</button>
+    {% if verify_url %}<a class="btn" href="{{ verify_url }}" target="_blank" rel="noopener">Uyumsoft'taki resmi görüntü ↗</a>{% endif %}
+    {% if inv.direction == "out" and inv.status == "ready" or inv.direction == "out" and inv.status == "error" %}{% if perms.accounting.change_invoice %}
+    <form method="post" action="{% url 'accounting:invoice' inv.pk %}" onsubmit="return confirm('Fatura Uyumsoft üzerinden GİB\'e gönderilecek. Onaylıyor musunuz?')">{% csrf_token %}<input type="hidden" name="action" value="send"><button class="btn ok">Doğru, Uyumsoft'a gönder</button></form>{% endif %}{% endif %}
+    <a class="btn" href="{% url 'accounting:invoice' inv.pk %}">Faturaya dön</a></div></div>
+{% if inv.status == "draft" or inv.status == "ready" %}<div class="draft">ÖNİZLEME</div>{% endif %}
+<div class="page">
+ <div class="top">
+  <div class="box"><b>{{ c.title|default:"(şirket unvanı)" }}</b><br>{{ c.street }}<br>{{ c.district }}{% if c.district %}/ {% endif %}{{ c.city }}<br>Vergi Dairesi: {{ c.tax_office }}<br>VKN: {{ c.vkn }}</div>
+  <div class="title">{% if inv.doc_type == "earsiv" %}e-Arşiv Fatura{% else %}e-Fatura{% endif %}</div>
+  <div><table class="meta"><tbody>
+   <tr><td>Özelleştirme No:</td><td>TR1.2</td></tr><tr><td>Senaryo:</td><td>{{ inv.profile }}</td></tr>
+   <tr><td>Fatura Tipi:</td><td>{% if inv.kind == "sale" %}SATIS{% else %}IADE{% endif %}</td></tr><tr><td>Fatura No:</td><td>{{ inv.number|default:"(kesilince)" }}</td></tr>
+   <tr><td>Fatura Tarihi:</td><td>{{ inv.issue_date|date:"d-m-Y" }}</td></tr><tr><td>Düzenleme Tarihi:</td><td>{{ inv.issue_date|date:"d-m-Y" }}</td></tr>
+   <tr><td>Düzenleme Saati:</td><td>{{ now|date:"H:i:s" }}</td></tr></tbody></table></div>
+ </div>
+ <div class="box" style="max-width:50%;margin-top:18px"><b>SAYIN</b><br>{{ inv.buyer_title }}<br>{{ district }}/ {{ city }}<br>{{ street }}<br>Türkiye
+  {% if inv.buyer_tax_office %}<br>Vergi Dairesi: {{ inv.buyer_tax_office }}{% endif %}<br>{% if inv.buyer_vkn|length == 11 or not inv.buyer_vkn %}TCKN: {{ inv.buyer_vkn|default:"11111111111" }}{% else %}VKN: {{ inv.buyer_vkn }}{% endif %}</div>
+ <div class="ettn">ETTN: {{ inv.uuid }}</div>
+ <table class="lines"><thead><tr><th>Sıra No</th><th>Mal Hizmet</th><th>Miktar</th><th>Birim Fiyat</th><th>İskonto Oranı</th><th>İskonto Tutarı</th><th>KDV Oranı</th><th>KDV Tutarı</th><th>Mal Hizmet Tutarı</th></tr></thead><tbody>
+ {% for l in lines %}<tr><td>{{ forloop.counter }}</td><td>{{ l.description }}</td><td class="n">{{ l.quantity|floatformat:"-3" }} {% if l.unit_code == "C62" %}Adet{% elif l.unit_code == "KGM" %}Kg{% elif l.unit_code == "LTR" %}Lt{% else %}{{ l.unit_code }}{% endif %}</td>
+ <td class="n">{{ l.unit_price|floatformat:2 }} TL</td><td></td><td></td><td class="n">%{{ l.vat_rate|floatformat:2 }}</td><td class="n">{{ l.vat_amount|floatformat:2 }} TL</td><td class="n">{{ l.net_amount|floatformat:2 }} TL</td></tr>{% endfor %}
+ </tbody></table>
+ <table class="totals"><tbody>
+  <tr><td>Mal Hizmet Toplam Tutarı</td><td class="n">{{ inv.subtotal|floatformat:2 }} TL</td></tr><tr><td>Toplam İskonto</td><td class="n">0,00 TL</td></tr>
+  {% for rate, amt in vat_groups %}<tr><td>Hesaplanan KDV(%{{ rate|floatformat:2 }})</td><td class="n">{{ amt|floatformat:2 }} TL</td></tr>{% endfor %}
+  <tr><td>Vergiler Dahil Toplam Tutar</td><td class="n">{{ inv.total|floatformat:2 }} TL</td></tr><tr><td>Ödenecek Tutar</td><td class="n">{{ inv.total|floatformat:2 }} TL</td></tr></tbody></table>
+ <div class="notes">{% for n in notes %}{% if n != "İrsaliye yerine geçer." %}{{ n }}<br>{% endif %}{% endfor %}Yalnız #{{ words }}#</div>
+ <div class="foot">{% if inv.doc_type == "earsiv" %}e-Arşiv izni kapsamında elektronik ortamda iletilmiştir.{% endif %}{% if "İrsaliye yerine geçer." in notes %}<br>İRSALİYE YERİNE GEÇER.{% endif %}</div>
+</div></body></html>

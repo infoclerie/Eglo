@@ -47,7 +47,7 @@
   C.forEach((c, i) => {
     const el = document.getElementById("ch-" + (i + 1)); if (!el) return;
     const empty = !c.data.length || c.data.every(v => !v);
-    if (empty) { el.parentElement.innerHTML = '<div class="empty">Bu dönemde veri yok.</div>'; return; }
+    if (empty) { const d = document.createElement("div"); d.className = "empty"; d.textContent = c.empty || "Bu dönemde veri yok."; el.parentElement.replaceChildren(d); return; }
     new Chart(el, {type: c.type, data: {labels: c.labels, datasets: [{data: c.data, label: "",
         backgroundColor: c.type === "line" ? brand + "22" : (c.type === "doughnut" ? palette : brand), borderColor: c.type === "doughnut" ? "#fff" : brand,
         fill: c.type === "line", tension: .35, pointRadius: 0, borderWidth: 2, borderRadius: 6}]},

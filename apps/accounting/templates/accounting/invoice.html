@@ -23,7 +23,9 @@
     <h2>İşlemler</h2>
     <div class="form">
       {% if inv.status == "draft" and inv.direction == "out" %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="issue"><button class="btn btn-primary btn-lg">{% icon "check" %}Faturayı kes (numara ver)</button></form>{% endif %}
-      {% if inv.direction == "out" and inv.status == "ready" or inv.direction == "out" and inv.status == "error" %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="send"><button class="btn btn-ok btn-lg">{% icon "plug" %}Entegratöre gönder (e-Fatura / e-Arşiv)</button></form>{% endif %}
+      {% if inv.direction == "out" and inv.number %}<a class="btn btn-lg" href="{% url 'accounting:invoice_preview' inv.pk %}" target="_blank">🧾 Faturayı önizle</a>{% endif %}
+      {% if inv.direction == "out" and inv.status == "ready" or inv.direction == "out" and inv.status == "error" %}<form method="post" onsubmit="return confirm('Fatura Uyumsoft üzerinden GİB\'e gönderilecek. Önizlemeyi kontrol ettiniz mi?')">{% csrf_token %}<input type="hidden" name="action" value="send"><button class="btn btn-ok btn-lg">{% icon "plug" %}Uyumsoft'a gönder</button></form>{% endif %}
+      {% if inv.status == "sent" or inv.status == "accepted" %}<a class="btn" href="https://edonusum.uyum.com.tr/Genel/Fatura/{{ inv.uuid }}" target="_blank" rel="noopener">Uyumsoft doğrulama sayfası ↗</a>{% endif %}
       {% if inv.direction == "out" %}<a class="btn" href="{% url 'accounting:invoice_xml' inv.pk %}">UBL-TR XML indir</a>{% endif %}
       {% if inv.partner and inv.open_amount > 0 and inv.status != "draft" and inv.status != "cancelled" %}
       <form method="post" class="form" style="border-top:1px solid var(--line);padding-top:14px">{% csrf_token %}<input type="hidden" name="action" value="payment">
