@@ -148,3 +148,18 @@ class UserPreference(models.Model):
             return None
         obj, _ = cls.objects.get_or_create(user=user)
         return obj
+
+
+class UserActivity(models.Model):
+    """Kullanıcının son görüldüğü an, IP adresi ve cihazı (Aktif kullanıcılar ekranı). Dakikada en fazla bir kez güncellenir."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, verbose_name="Kullanıcı", on_delete=models.CASCADE, related_name="activity")
+    ip = models.GenericIPAddressField("IP adresi", null=True, blank=True)
+    user_agent = models.CharField("Tarayıcı / cihaz", max_length=300, blank=True)
+    path = models.CharField("Son sayfa", max_length=300, blank=True)
+    last_seen = models.DateTimeField("Son görülme", db_index=True)
+    login_at = models.DateTimeField("Giriş zamanı", null=True, blank=True)
+    login_ip = models.GenericIPAddressField("Giriş IP", null=True, blank=True)
+
+    class Meta:
+        verbose_name, verbose_name_plural = "Kullanıcı etkinliği", "Kullanıcı etkinlikleri"

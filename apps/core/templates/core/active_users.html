@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Aktif kullanıcılar{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Aktif kullanıcılar</h1><p>Şu an çevrimiçi: <b>{{ online }}</b> kişi · <span class="dot on"></span> son 5 dakikada işlem yaptı · sayfa her dakika yenilenir.</p></div>
+  <form method="get" class="inline"><select name="saat" onchange="this.form.submit()">
+    <option value="1" {% if hours == 1 %}selected{% endif %}>Son 1 saat</option><option value="24" {% if hours == 24 %}selected{% endif %}>Son 24 saat</option><option value="168" {% if hours == 168 %}selected{% endif %}>Son 7 gün</option></select></form></div>
+<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Kullanıcı</th><th>Durum</th><th>IP adresi</th><th>Cihaz</th><th>Son sayfa</th><th>Giriş</th></tr></thead><tbody>
+{% for r in rows %}<tr><td><b>{{ r.a.user.get_full_name|default:r.a.user.username }}</b><div class="small muted">{{ r.a.user.username }}{% if r.a.user.is_superuser %} · yönetici{% endif %}</div></td>
+<td>{% if r.online %}<span class="badge ok">Çevrimiçi</span>{% else %}<span class="badge">{% if r.mins < 60 %}{{ r.mins }} dk önce{% else %}{{ r.a.last_seen|date:"d.m H:i" }}{% endif %}</span>{% endif %}</td>
+<td><code>{{ r.a.ip|default:"—" }}</code>{% if r.a.login_ip and r.a.login_ip != r.a.ip %}<div class="small muted">girişte: {{ r.a.login_ip }}</div>{% endif %}</td>
+<td>{{ r.device }}</td><td class="small">{{ r.a.path|truncatechars:40 }}</td><td class="small">{{ r.a.login_at|date:"d.m.Y H:i"|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="6"><div class="empty">Bu sürede giriş yapan kullanıcı yok.</div></td></tr>{% endfor %}</tbody></table></div></div>
+<script>setTimeout(function () { location.reload(); }, 60000);</script>
+{% endblock %}

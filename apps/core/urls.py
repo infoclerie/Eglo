@@ -10,5 +10,6 @@ urlpatterns = [
     path("api/kurlar/", views.rates, name="rates"),
     path("ayarlar/yedekler/", views.backups, name="backups"),
     path("islem-gecmisi/", views.activity, name="activity"),
+    path("ayarlar/aktif-kullanicilar/", views.active_users, name="active_users"),
     path("ayarlar/yedekler/indir/<str:filename>", views.backup_download, name="backup_download"),
 ]

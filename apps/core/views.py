@@ -223,3 +223,30 @@ def activity(request):
     return render(request, "core/activity.html", {"rows": rows, "start": start, "end": end, "source": source, "q": q,
                                                   "user_id": user_id, "sources": act.SOURCES, "users": User.objects.order_by("username"),
                                                   "limit": act.LIMIT})
+
+
+def _device(ua):
+    ua = ua or ""
+    os_ = next((n for k, n in (("iPhone", "iPhone"), ("iPad", "iPad"), ("Android", "Android"), ("Windows", "Windows"),
+                                ("Mac OS", "Mac"), ("Linux", "Linux")) if k in ua), "Bilinmiyor")
+    br = next((n for k, n in (("Edg/", "Edge"), ("OPR/", "Opera"), ("Chrome/", "Chrome"), ("Firefox/", "Firefox"), ("Safari/", "Safari")) if k in ua), "")
+    return f"{br} · {os_}".strip(" ·")
+
+
+@login_required
+@superuser_required
+def active_users(request):
+    """Aktif kullanıcılar: son görülme, IP adresi, cihaz, son sayfa. Yeşil = son 5 dakikada işlem yaptı."""
+    import datetime as dt
+
+    from django.utils import timezone
+
+    from .models import UserActivity
+    hours = int(request.GET.get("saat") or 24)
+    now = timezone.now()
+    rows = []
+    for a in UserActivity.objects.select_related("user").filter(last_seen__gte=now - dt.timedelta(hours=hours)).order_by("-last_seen"):
+        mins = int((now - a.last_seen).total_seconds() // 60)
+        rows.append({"a": a, "online": mins < 5, "mins": mins, "device": _device(a.user_agent)})
+    return render(request, "core/active_users.html", {"rows": rows, "hours": hours,
+                                                      "online": sum(1 for r in rows if r["online"])})

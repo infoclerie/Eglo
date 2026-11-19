@@ -9,7 +9,7 @@ from django.db.models.signals import post_delete, post_save
 from .middleware import get_current_user
 
 # Gürültü yapan / teknik kayıtlar işlem geçmişine yazılmaz
-SKIP_MODELS = {"core.AuditLog", "core.Sequence", "core.UserPreference", "chat.Presence", "chat.Participant",
+SKIP_MODELS = {"core.AuditLog", "core.UserActivity", "core.Sequence", "core.UserPreference", "chat.Presence", "chat.Participant",
                "notifications.Notification", "assistant.AssistantMessage", "integrations.IntegrationJob", "integrations.SyncLog",
                "inventory.Quant", "inventory.Reservation", "inventory.StockMove", "sales.OrderStatusLog"}
 
