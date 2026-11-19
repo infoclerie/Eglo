@@ -7,4 +7,5 @@ MANIFEST = {
     "icon": "users",
     "color": "#0f766e",
     "menu": [("Bayi kullanıcıları", "admin:portal_portalaccess_changelist", "users")],
+    "reset_master": [{'label': 'Bayi portal erişimleri', 'desc': 'Hangi kullanıcının hangi bayi adına girdiği bağlantıları.', 'models': ['portal.PortalAccess']}],
 }

@@ -85,7 +85,7 @@ class BackupTests(ErpFixture, TransactionTestCase):
         catalog.add_image(self.serum, jpg())
         o = sales.create_order(self.web, [(self.serum, 2)])
         sales.confirm(o)
-        groups = {g["label"]: g["key"] for g in bk.reset_groups()}
+        groups = {g["label"]: g["key"] for g in bk.reset_groups() if g["kind"] == "test"}
         r = self.client.post("/ayarlar/yedekler/", {"action": "reset", "groups": [groups["Satış siparişleri"]], "confirm": "TEMİZLE"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(SalesOrder.objects.count(), 1)  # sevkiyat bağlı → hiçbir şey silinmedi
@@ -100,3 +100,36 @@ class BackupTests(ErpFixture, TransactionTestCase):
     def test_only_superuser(self):
         self.client.force_login(self.clerk)
         self.assertNotEqual(self.client.get("/ayarlar/yedekler/").status_code, 200)
+
+
+@override_settings(MEDIA_ROOT=TMP + "/media2", BACKUP_ROOT=TMP + "/bk2")
+class FullResetTests(ErpFixture, TransactionTestCase):
+    def setUp(self):
+        self.setup_erp()
+        self.client.force_login(self.boss)
+
+    def test_everything_except_users(self):
+        from django.contrib.auth.models import User
+
+        from apps.accounting.services import record_incoming_invoice
+        from apps.catalog.models import Product
+        from apps.inventory.models import Warehouse
+        from apps.notifications.models import NotificationRule
+        from apps.partners.models import Partner
+        catalog.add_image(self.serum, jpg())
+        sales.confirm(sales.create_order(self.web, [(self.serum, 1)]))
+        record_incoming_invoice({"uuid": "6f1d3c2a-1111-4c8e-9a8b-0d4c5e6f7a81", "number": "ABC2026000000001", "total": 10})
+        Partner.objects.create(name="Tedarikçi", kind="supplier")
+        keys = [g["key"] for g in bk.reset_groups()]
+        self.assertTrue(any(":master:" in k for k in keys))
+        self.client.post("/ayarlar/yedekler/", {"action": "reset", "groups": keys, "confirm": "TEMİZLE"})
+        self.assertEqual((Product.objects.count(), Partner.objects.count(), Warehouse.objects.count()), (0, 0, 0))
+        from apps.accounting.models import Invoice
+        self.assertEqual(Invoice.objects.count(), 0)
+        self.assertFalse(Path(TMP, "media2", "urunler").exists())
+        self.assertEqual(User.objects.count(), 2)  # kullanıcılar kalır
+        self.assertTrue(NotificationRule.objects.exists())  # varsayılan bildirim kuralları geri yazıldı
+        self.assertTrue(self.client.login(username="boss", password="x" * 12))
+        self.assertEqual(self.client.get("/").status_code, 200)
+        self.assertContains(self.client.get("/ayarlar/yedekler/"), "Her şeyi seç")
+        self.assertTrue(bk.list_backups()[0]["name"].startswith("Temizlik öncesi"))

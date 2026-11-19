@@ -38,12 +38,29 @@
     <div class="inline" style="justify-content:flex-end"><button type="button" class="btn" onclick="document.getElementById('restore').close()">Vazgeç</button><button class="btn btn-danger btn-lg">Geri dön</button></div></form>
 </dialog>
 
-<h2>Test verilerini temizle</h2>
-<form method="post" class="card card-pad form" onsubmit="return confirm('Seçilen kayıtlar silinecek. Öncesi otomatik yedeklenir. Devam?')">{% csrf_token %}<input type="hidden" name="action" value="reset">
-  <p class="muted" style="margin:0">Canlıya geçmeden önce deneme kayıtlarını siler. <b>Kalanlar:</b> ürün kartları ve fotoğraflar, cariler, depo/lokasyonlar, fiyatlar, reçeteler, kullanıcılar, entegrasyon ve bildirim ayarları. Belge numaraları (SIP-, SVK-, fatura...) baştan başlar.</p>
-  <div class="reset-groups">{% for g in groups %}<label class="reset-group"><input type="checkbox" name="groups" value="{{ g.key }}" checked><span><b>{{ g.label }}</b><small>{{ g.desc }}</small></span></label>{% endfor %}</div>
+<h2>Verileri temizle</h2>
+<form method="post" class="card card-pad form" id="resetform" onsubmit="return confirmReset()">{% csrf_token %}<input type="hidden" name="action" value="reset">
+  <p class="muted" style="margin:0">İşlem öncesi otomatik yedek alınır; yanlış silerseniz yukarıdaki listeden geri dönebilirsiniz. <b>Kullanıcılar ve roller hiçbir zaman silinmez.</b> Belge numaraları (SIP-, SVK-, fatura...) baştan başlar.</p>
+  <div class="inline" style="flex-wrap:wrap">
+    <button type="button" class="btn btn-sm" onclick="pick('test')">Tüm test kayıtlarını seç</button>
+    <button type="button" class="btn btn-sm" onclick="pick('all')">Her şeyi seç (sıfırdan başla)</button>
+    <button type="button" class="btn btn-sm" onclick="pick('none')">Seçimi kaldır</button>
+  </div>
+  <h3 class="preset-group" style="margin:6px 0 0">1. Test kayıtları — hareketler</h3>
+  <p class="small muted" style="margin:0">Canlıya geçmeden önce deneme kayıtlarını siler. Ürünler, cariler, depolar, ayarlar kalır.</p>
+  <div class="reset-groups">{% for g in test_groups %}<label class="reset-group"><input type="checkbox" name="groups" value="{{ g.key }}" data-kind="test"><span><b>{{ g.label }}</b><small>{{ g.desc }}</small></span></label>{% endfor %}</div>
+  <h3 class="preset-group" style="margin:6px 0 0">2. Ana veriler — tanımlar</h3>
+  <p class="small muted" style="margin:0">Yalnız tamamen baştan başlamak istiyorsanız seçin. Ürün ve cari silinirse onlara bağlı test kayıtlarını da seçmeniz gerekir.</p>
+  <div class="reset-groups">{% for g in master_groups %}<label class="reset-group master"><input type="checkbox" name="groups" value="{{ g.key }}" data-kind="master"><span><b>{{ g.label }}</b><small>{{ g.desc }}</small></span></label>{% endfor %}</div>
   <div style="max-width:320px"><label for="tc">Onay için <b>TEMİZLE</b> yazın</label><input id="tc" name="confirm" autocomplete="off" required></div>
   <div><button class="btn btn-danger btn-lg">Seçilenleri temizle</button></div>
 </form>
+<script>
+function pick(m){document.querySelectorAll('#resetform input[name=groups]').forEach(c=>{c.checked=m==='all'||(m==='test'&&c.dataset.kind==='test');});}
+function confirmReset(){const sel=[...document.querySelectorAll('#resetform input[name=groups]:checked')];
+  if(!sel.length){alert('Temizlenecek en az bir grup seçin.');return false;}
+  const master=sel.filter(c=>c.dataset.kind==='master').length;
+  return confirm(sel.length+' grup silinecek'+(master?' ('+master+' tanesi ANA VERİ: ürün, cari, depo vb.)':'')+'. Öncesi otomatik yedeklenir. Devam?');}
+</script>
 <script>function openRestore(f,n,d){document.getElementById("rf").value=f;document.getElementById("rn").textContent=n;document.getElementById("rd").textContent=d;document.getElementById("rc").value="";document.getElementById("restore").showModal();}</script>
 {% endblock %}

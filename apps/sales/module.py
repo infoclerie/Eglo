@@ -8,4 +8,5 @@ MANIFEST = {
     "color": "#d9485f",
     "menu": [("Sipariş Havuzu", "sales:pool", "cart"), ("Yeni Sipariş", "admin:sales_salesorder_add", "cart"), ("Kampanyalar", "admin:sales_campaign_changelist", "tag")],
     "reset_data": [{'label': 'Satış siparişleri', 'desc': 'Tüm siparişler ve durum geçmişi (kampanya tanımları kalır).', 'models': ['sales.OrderStatusLog', 'sales.SalesOrderLine', 'sales.SalesOrder'], 'sequences': ['sales.']}],
+    "reset_master": [{'label': 'Satış kampanyası tanımları', 'desc': 'İndirim / X al Y öde kampanya kuralları.', 'models': ['sales.Campaign']}],
 }

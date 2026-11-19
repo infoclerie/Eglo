@@ -9,4 +9,5 @@ MANIFEST = {
     "menu": [("Üretim emirleri", "production:list", "box"), ("Yeni üretim emri", "production:new", "plus"),
              ("Reçeteler", "admin:production_billofmaterials_changelist", "settings")],
     "reset_data": [{'label': 'Üretim emirleri', 'desc': 'Üretim emirleri (reçeteler kalır).', 'models': ['production.ProductionOrder'], 'sequences': ['production.']}],
+    "reset_master": [{'label': 'Reçeteler', 'desc': 'Ürün reçeteleri (BOM).', 'models': ['production.BomLine', 'production.BillOfMaterials']}],
 }

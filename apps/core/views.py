@@ -153,13 +153,16 @@ def backups(request):
                     raise _VE("Onay için kutuya TEMİZLE yazın.")
                 res = bk.reset_test_data(request.POST.getlist("groups"), request.user)
                 total = sum(res["counts"].values())
-                messages.success(request, f"{total} test kaydı silindi. Öncesi yedeklendi: {res['safety']}")
+                detail = ", ".join(f"{k}: {v}" for k, v in res["counts"].items() if v)
+                messages.success(request, f"{total} kayıt silindi ({detail or 'silinecek kayıt yoktu'}). Öncesi yedeklendi: {res['safety']}")
         except _VE as exc:
             messages.error(request, " ".join(exc.messages))
         return redirect("core:backups")
     import shutil
     usage = shutil.disk_usage(bk.root())
-    return render(request, "core/backups.html", {"items": bk.list_backups(), "groups": bk.reset_groups(),
+    groups = bk.reset_groups()
+    return render(request, "core/backups.html", {"items": bk.list_backups(), "test_groups": [g for g in groups if g["kind"] == "test"],
+                                                 "master_groups": [g for g in groups if g["kind"] == "master"],
                                                  "free_gb": round(usage.free / 1024 ** 3, 1)})
 
 

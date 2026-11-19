@@ -198,13 +198,21 @@ def restore_backup(filename=None, path=None, user=None, safety_backup=True):
 
 # ---------------------------------------------------------------- test verilerini temizle
 def reset_groups():
-    """Modüllerin MANIFEST['reset_data'] tanımları: [(anahtar, etiket, açıklama, modeller, numara serileri)]"""
+    """
+    Modüllerin temizlenebilir veri grupları:
+      MANIFEST['reset_data']   → hareket / test kayıtları (kind="test")
+      MANIFEST['reset_master'] → ana veriler: ürün, cari, depo, reçete, bağlantılar... (kind="master")
+    Her grup: label, desc, models (silme sırası), sequences (sıfırlanacak numara serisi önekleri), media (silinecek klasörler).
+    Kullanıcılar ve roller hiçbir grupta yoktur.
+    """
     from apps.core.registry import load_manifests
     out = []
     for code, m in load_manifests().items():
-        for i, g in enumerate(m.get("reset_data", [])):
-            out.append({"key": f"{code}:{i}", "label": g["label"], "desc": g.get("desc", ""), "models": g["models"],
-                        "sequences": g.get("sequences", []), "module": m["name"]})
+        for kind, key in (("test", "reset_data"), ("master", "reset_master")):
+            for i, g in enumerate(m.get(key, [])):
+                out.append({"key": f"{code}:{kind}:{i}", "kind": kind, "label": g["label"], "desc": g.get("desc", ""),
+                            "models": g["models"], "sequences": g.get("sequences", []), "media": g.get("media", []),
+                            "module": m["name"]})
     return out
 
 
@@ -247,5 +255,16 @@ def reset_test_data(keys, user=None):
     except ValidationError:
         (root() / safety).unlink(missing_ok=True)
         raise
+    media = Path(settings.MEDIA_ROOT)
+    for g in groups:
+        for folder in g["media"]:
+            target = (media / folder).resolve()
+            if media.resolve() in target.parents and target.exists():
+                shutil.rmtree(target)
     publish("core.test_data_reset", groups=[g["key"] for g in groups])
+    try:  # bildirim kuralları silindiyse varsayılanları geri yaz
+        from apps.notifications.services import ensure_default_rules
+        ensure_default_rules()
+    except ImportError:
+        pass
     return {"safety": safety, "counts": counts}
