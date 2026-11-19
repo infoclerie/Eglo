@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Yeni üretim emri{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Yeni üretim emri</h1><p>Reçete ve miktarı seçin; malzeme ihtiyacı bir sonraki ekranda hesaplanır.</p></div>
+  <a class="btn" href="{% url 'production:list' %}">Vazgeç</a></div>
+<div class="card card-pad" style="max-width:760px"><form method="post" class="form">{% csrf_token %}
+{% for f in form %}<div>{{ f.label_tag }}{{ f }}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>{% endfor %}
+<div class="inline" style="justify-content:flex-end"><button class="btn btn-primary btn-lg">Emri oluştur →</button></div></form></div>
+{% endblock %}

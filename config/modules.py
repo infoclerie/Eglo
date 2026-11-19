@@ -24,6 +24,9 @@ DEFAULT_MODULES = [
     "crm",
     "notifications",
     "chat",
+    "production",
+    "reports",
+    "imports",
 ]
 
 

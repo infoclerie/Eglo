@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% load ui l10n %}
+{% block title %}{{ o.number }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ o.number }} · {{ o.product.name }}</h1>
+  <p>{{ o.get_kind_display }}{% if o.subcontractor %} — {{ o.subcontractor }}{% endif %} · Reçete {{ o.bom.code }} · {{ o.warehouse }}</p></div>
+  <div class="inline">{{ o.status|badge:o.get_status_display }}<a class="btn" href="{% url 'production:list' %}">Listeye dön</a></div></div>
+<div class="steps">{% for c, l in o.STATUS %}{% if c != "cancelled" and c != "rejected" %}{% if o.kind == "subcontract" and c == "in_progress" %}{% elif o.kind == "internal" and c == "at_subcontractor" %}{% else %}<div class="step {% if c == o.status %}current{% endif %}">{{ l }}</div>{% endif %}{% endif %}{% endfor %}</div>
+<div class="grid grid-kpi" style="margin-bottom:16px">
+  <div class="card kpi"><div class="t">Planlanan</div><div class="v">{{ o.planned_qty|floatformat:"-3" }}</div></div>
+  <div class="card kpi"><div class="t">Üretilen</div><div class="v">{{ o.produced_qty|floatformat:"-3" }}</div></div>
+  <div class="card kpi"><div class="t">Kayıp / fire</div><div class="v">%{{ o.waste_pct }}</div></div>
+  <div class="card kpi"><div class="t">Birim maliyet</div><div class="v">{{ o.unit_cost|floatformat:2 }} ₺</div></div>
+  <div class="card kpi"><div class="t">LOT</div><div class="v">{{ o.lot_no|default:"—" }}</div></div>
+</div>
+
+{% if rows %}<h2>Malzeme ihtiyacı</h2>
+<div class="card" style="margin-bottom:16px"><div class="table-wrap"><table class="table"><thead><tr><th>Malzeme</th><th class="num">Gereken</th><th class="num">Kullanılabilir</th><th class="num">Eksik</th></tr></thead><tbody>
+{% for r in rows %}<tr class="{% if r.shortage %}row-danger{% endif %}"><td>{{ r.component.name }}<div class="small muted">{{ r.component.sku }}</div></td><td class="num">{{ r.required|floatformat:"-3" }}</td><td class="num">{{ r.available|floatformat:"-3" }}</td><td class="num">{% if r.shortage %}<b>{{ r.shortage|floatformat:"-3" }}</b>{% else %}—{% endif %}</td></tr>{% endfor %}
+</tbody></table></div></div>{% endif %}
+
+{% if consumed %}<h2>Sarf edilen malzeme (izlenebilirlik)</h2>
+<div class="card" style="margin-bottom:16px"><div class="table-wrap"><table class="table"><thead><tr><th>Malzeme</th><th>LOT</th><th class="num">Miktar</th></tr></thead><tbody>
+{% for p, lot, q in consumed %}<tr><td>{{ p.name }}</td><td>{{ lot.lot_no|default:"—" }}</td><td class="num">{{ q|floatformat:"-3" }}</td></tr>{% endfor %}
+</tbody></table></div><div class="card-pad small muted">Malzeme maliyeti: {{ o.material_cost|floatformat:2 }} ₺</div></div>{% endif %}
+
+{% if perms.production.change_productionorder %}<div class="card card-pad">
+<form method="post" class="form">{% csrf_token %}
+{% if o.status == "draft" %}<p class="muted" style="margin:0">Malzemeler son kullanma tarihi en yakından başlanarak (FEFO) ayrılır.</p>
+  <div class="inline"><button class="btn btn-primary btn-lg" name="action" value="confirm">Malzemeyi ayır</button><button class="btn" name="action" value="cancel">İptal et</button></div>
+{% elif o.status == "confirmed" %}<p class="muted" style="margin:0">{% if o.kind == "subcontract" %}Malzeme fasoncuya gönderilince basın; stoktan düşer.{% else %}Üretime başlayınca basın; ayrılan malzeme stoktan düşer.{% endif %}</p>
+  <div class="inline"><button class="btn btn-primary btn-lg" name="action" value="start">{% if o.kind == "subcontract" %}Fasoncuya gönder{% else %}Üretime başla{% endif %}</button><button class="btn" name="action" value="cancel">İptal et</button></div>
+{% elif o.status == "in_progress" or o.status == "at_subcontractor" %}
+  <div><label for="pq">Üretilen (sağlam) miktar</label><input id="pq" name="produced_qty" inputmode="decimal" value="{{ o.planned_qty|unlocalize }}" required><div class="helptext">Sayılan sağlam mamul adedi. Planlanandan azsa fark fire olarak raporlanır.</div></div>
+  <div class="inline"><button class="btn btn-primary btn-lg" name="action" value="finish">Üretimi bitir → karantina</button></div>
+{% elif o.status == "qc" %}
+  <div><label for="qn">Kalite kontrol notu</label><textarea id="qn" name="qc_note" rows="2"></textarea><div class="helptext">Analiz sonucu, numune no, kontrol eden. Redde zorunlu.</div></div>
+  <div class="inline"><button class="btn btn-ok btn-lg" name="action" value="qc_pass">Onayla → satışa uygun rafa</button><button class="btn btn-danger" name="action" value="qc_reject">Reddet (karantinada kalsın)</button></div>
+{% else %}<p class="muted" style="margin:0">{{ o.get_status_display }}.{% if o.qc_note %} Kalite notu: {{ o.qc_note }}{% endif %}</p>{% endif %}
+</form></div>{% endif %}
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Raporlar{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Raporlar</h1><p>Her rapor Excel'e aktarılabilir ve PDF olarak yazdırılabilir.</p></div></div>
+<div class="grid grid-2">{% for code, r in reports.items %}
+  <a class="card card-pad report-card" href="{% url 'reports:show' code %}"><span class="report-ico">{% icon r.icon %}</span>
+  <span><b>{{ r.title }}</b><small>{{ r.desc }}</small></span></a>{% endfor %}</div>
+{% endblock %}

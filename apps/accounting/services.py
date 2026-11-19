@@ -331,6 +331,28 @@ def settlement_estimate(channel, start, end):
             "service_fees": q2(prof.service_fee_per_order * n) if prof else ZERO}
 
 
+SETTLEMENT_FIELDS = ("gross_sales", "commission", "shipping", "ads", "campaign_share", "returns", "service_fees", "bank_received")
+
+
+def upsert_settlement(channel_code, start, end, source="", **amounts):
+    """
+    Pazaryerinden çekilen hakediş tutarlarını dönem kaydına yazar (aynı kanal+dönem varsa günceller).
+    Entegrasyon modülü çağırır. Bankaya yatan tutar API'den gelmediyse elle girilen değer korunur.
+    """
+    from apps.catalog.models import SalesChannel
+    channel = SalesChannel.objects.get_or_create(code=channel_code, defaults={"name": channel_code.title()})[0]
+    s, _ = MarketplaceSettlement.objects.get_or_create(channel=channel, period_start=start, period_end=end)
+    for f in SETTLEMENT_FIELDS:
+        if f in amounts and (f != "bank_received" or amounts[f]):
+            setattr(s, f, q2(Decimal(str(amounts[f]))))
+    stamp = f"{source} · güncellendi {timezone.localtime():%d.%m.%Y %H:%M}" if source else ""
+    s.note = "\n".join([x for x in (s.note or "").splitlines() if not x.startswith(source)] + [stamp]).strip() if source else s.note
+    s.save()
+    if s.bank_received:
+        reconcile(s)
+    return s
+
+
 def reconcile(settlement, tolerance=Decimal("1.00")):
     settlement.status = "matched" if abs(settlement.difference) <= tolerance else "mismatch"
     settlement.save(update_fields=["status", "updated_at"])

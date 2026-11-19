@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ rep.title }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ rep.title }}</h1><p>{{ rep.desc }}</p></div>
+  <div class="inline no-print"><a class="btn" href="?{{ request.GET.urlencode }}&format=xlsx">{% icon "chart" %}Excel</a>
+  <button class="btn" type="button" onclick="window.print()">PDF / Yazdır</button><a class="btn" href="{% url 'reports:index' %}">Raporlar</a></div></div>
+<form class="card card-pad inline no-print report-filter" method="get" style="margin-bottom:16px;flex-wrap:wrap;align-items:flex-end">
+  {% if "period" in rep.params %}<label>Başlangıç<input type="date" name="start" value="{{ p.start|date:'Y-m-d' }}"></label>
+  <label>Bitiş<input type="date" name="end" value="{{ p.end|date:'Y-m-d' }}"></label>{% endif %}
+  {% if "warehouse" in rep.params %}<label>Depo<select name="warehouse"><option value="">Tümü</option>{% for w in warehouses %}<option value="{{ w.pk }}" {% if p.warehouse == w.pk|stringformat:'s' %}selected{% endif %}>{{ w }}</option>{% endfor %}</select></label>{% endif %}
+  {% if "channel" in rep.params %}<label>Kanal<select name="channel"><option value="">Tümü</option>{% for c in channels %}<option value="{{ c.pk }}" {% if p.channel == c.pk|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>{% endif %}
+  {% if "days" in rep.params %}<label>Kaç gün içinde<input type="number" name="days" min="1" value="{{ p.days }}" style="width:110px"></label>{% endif %}
+  <button class="btn btn-primary">Uygula</button></form>
+<div class="print-only small">Eglo Kozmetik · {{ rep.title }}{% if "period" in rep.params %} · {{ p.start|date:"d.m.Y" }}–{{ p.end|date:"d.m.Y" }}{% endif %} · {{ generated|date:"d.m.Y H:i" }}</div>
+{% if data.chart and data.rows %}<div class="card card-pad" style="margin-bottom:16px"><h2 style="margin-top:0">{{ data.chart.title }}</h2><div style="height:260px"><canvas id="rchart"></canvas></div></div>{% endif %}
+<div class="card"><div class="table-wrap"><table class="table"><thead><tr>{% for k, label, kind in data.columns %}<th class="{% if kind != 'text' %}num{% endif %}">{{ label }}</th>{% endfor %}</tr></thead><tbody>
+{% for r in data.rows %}<tr>{% for k, label, kind in data.columns %}{% with v=r|get:k %}<td class="{% if kind != 'text' %}num{% endif %}">{% if kind == "money" %}{{ v|floatformat:2 }}{% elif kind == "qty" %}{{ v|floatformat:"-2" }}{% elif kind == "pct" %}%{{ v|floatformat:1 }}{% elif kind == "date" %}{{ v|date:"d.m.Y" }}{% else %}{{ v }}{% endif %}</td>{% endwith %}{% endfor %}</tr>
+{% empty %}<tr><td colspan="{{ data.columns|length }}"><div class="empty">Bu filtreyle kayıt yok.</div></td></tr>{% endfor %}</tbody>
+{% if data.rows and data.totals %}<tfoot><tr>{% for k, label, kind in data.columns %}{% with v=data.totals|get:k %}<th class="{% if kind != 'text' %}num{% endif %}">{% if forloop.first %}Toplam{% elif v is not None and v != "" %}{% if kind == "money" %}{{ v|floatformat:2 }}{% elif kind == "pct" %}%{{ v|floatformat:1 }}{% else %}{{ v|floatformat:"-2" }}{% endif %}{% endif %}</th>{% endwith %}{% endfor %}</tr></tfoot>{% endif %}
+</table></div></div>
+{% if data.note %}<p class="small muted" style="margin-top:10px">{{ data.note }}</p>{% endif %}
+{% if data.chart and data.rows %}{{ data.chart|json_script:"chartdata" }}
+<script src="/static/vendor/chart.umd.min.js"></script>
+<script>(function(){const c=JSON.parse(document.getElementById("chartdata").textContent);const brand=getComputedStyle(document.documentElement).getPropertyValue("--brand").trim()||"#0f766e";
+const pal=[brand,"#f27a1a","#ff6000","#2563c9","#128a52","#be185d","#7c3aed","#0e7490","#a16207","#64748b"];
+new Chart(document.getElementById("rchart"),{type:c.type,data:{labels:c.labels,datasets:[{data:c.data,backgroundColor:c.type==="doughnut"?pal:brand,borderRadius:6}]},
+options:{maintainAspectRatio:false,plugins:{legend:{display:c.type==="doughnut",position:"right"}},scales:c.type==="doughnut"?{}:{y:{beginAtZero:true}}}});})();</script>{% endif %}
+{% endblock %}

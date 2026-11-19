@@ -62,6 +62,18 @@ class TrendyolClient:
         return self._req("PUT", "/order/sellers/{seller}/shipment-packages/" + str(package_id) + "/tracking-details",
                          json={"cargoSenderNumber": tracking_number, "providerCode": provider_code})
 
+    def settlements(self, start, end, types, page=0, size=1000):
+        """Cari hesap ekstresi: satış, iade, indirim, kupon... (aralık ≤ 15 gün). Taban /integration/finance/che"""
+        return self._req("GET", "/finance/che/sellers/{seller}/settlements", params={
+            "transactionTypes": ",".join(types), "startDate": int(start.timestamp() * 1000),
+            "endDate": int(end.timestamp() * 1000), "page": page, "size": size})
+
+    def other_financials(self, start, end, types, page=0, size=1000):
+        """Ödemeler (PaymentOrder), kesinti faturaları (DeductionInvoices) vb."""
+        return self._req("GET", "/finance/che/sellers/{seller}/otherfinancials", params={
+            "transactionTypes": ",".join(types), "startDate": int(start.timestamp() * 1000),
+            "endDate": int(end.timestamp() * 1000), "page": page, "size": size})
+
     def price_inventory(self, items):
         return self._req("POST", "/inventory/sellers/{seller}/products/price-and-inventory", json={"items": items})
 
@@ -97,6 +109,9 @@ class Trendyol(Provider):
         Field("stock_buffer", "Güvenlik payı (her üründen düşülecek adet)", step="settings", kind="int", default=0, required=False,
               help="Fazla satışı önlemek için Trendyol'da gösterilen stoktan düşülür."),
         Field("send_status", "Toplama ve fatura durumunu Trendyol'a bildir", step="settings", kind="bool", default=True, required=False),
+        Field("send_tracking", "Kendi kargo anlaşmamla gönderiyorum (takip numarasını Trendyol'a ilet)", step="settings", kind="bool",
+              default=False, required=False, help="Trendyol Express / Trendyol anlaşmalı kargo kullanılıyorsa kapalı kalsın."),
+        Field("pull_settlement", "Hakediş / cari hesap ekstresini çek", step="settings", kind="bool", default=True, required=False),
     ]
 
     @staticmethod
@@ -121,6 +136,8 @@ class Trendyol(Provider):
             jobs.append(("trendyol.import_orders", "siparişler", {"hours": 48}, c.get("order_interval") or 5))
         if c.get("push_stock"):
             jobs.append(("trendyol.push_stock", "stok-fiyat", {}, c.get("stock_interval") or 15))
+        if c.get("pull_settlement"):
+            jobs.append(("trendyol.pull_settlement", "hakediş", {}, 360))
         return jobs
 
     # ------------------------------------------------------------ işler
@@ -130,6 +147,13 @@ class Trendyol(Provider):
             return self._import_orders(account, c, int(job.payload.get("hours", 48)))
         if job.kind == "trendyol.push_stock":
             return self._push_stock(account, c)
+        if job.kind == "trendyol.pull_settlement":
+            return self._pull_settlement(account, c, job.payload)
+        if job.kind == "trendyol.tracking":
+            from ..models import ExternalOrder
+            ext = ExternalOrder.objects.get(pk=job.payload["external_order_id"])
+            c.update_tracking(ext.external_id, job.payload["tracking_no"], job.payload.get("provider_code", ""))
+            return {"package": ext.external_id, "tracking": job.payload["tracking_no"]}
         if job.kind == "trendyol.update_status":
             from ..models import ExternalOrder
             ext = ExternalOrder.objects.get(pk=job.payload["external_order_id"])
@@ -221,3 +245,64 @@ class Trendyol(Provider):
             res = c.price_inventory(items[i:i + 1000])
             batches.append(res.get("batchRequestId", ""))
         return {"products": len(items), "batches": batches}
+
+    def _pull_settlement(self, account, c, payload):
+        """Haftalık hakediş: satış/iade/indirim/kupon/kargo + ödeme ve kesinti faturaları → muhasebe hakediş kaydı."""
+        from apps.accounting.services import upsert_settlement
+        from .hepsiburada import weeks_back
+        tz = timezone.get_current_timezone()
+        out = []
+        for start, end in weeks_back(timezone.localdate(), int(payload.get("weeks", 2))):
+            s_dt = dt.datetime.combine(start, dt.time.min, tzinfo=tz)
+            e_dt = dt.datetime.combine(end, dt.time.max, tzinfo=tz)
+            totals = {k: Decimal("0") for k in ("gross_sales", "commission", "shipping", "campaign_share", "returns",
+                                                  "service_fees", "bank_received")}
+            for rec in self._pages(c.settlements, s_dt, e_dt, SETTLEMENT_TYPES):
+                for key, val in classify_ty(rec):
+                    totals[key] += val
+            for rec in self._pages(c.other_financials, s_dt, e_dt, ["PaymentOrder", "DeductionInvoices"]):
+                amt = Decimal(str(rec.get("debt") or rec.get("credit") or 0))
+                if rec.get("transactionType") == "PaymentOrder":
+                    totals["bank_received"] += abs(amt)
+                else:
+                    totals["service_fees"] += abs(amt)
+            out.append(str(upsert_settlement("trendyol", start, end, source="Trendyol cari hesap ekstresi", **totals)))
+        return {"periods": out}
+
+    @staticmethod
+    def _pages(fn, start, end, types):
+        page, pages = 0, 1
+        while page < pages:
+            res = fn(start, end, types, page=page)
+            pages = int(res.get("totalPages") or 1)
+            yield from res.get("content") or []
+            page += 1
+
+
+SETTLEMENT_TYPES = ["Sale", "Return", "Discount", "DiscountCancel", "Coupon", "CouponCancel", "DeliveryFee",
+                    "DeliveryFeeCancel", "ManualRefund", "ManualRefundCancel"]
+
+
+def classify_ty(rec):
+    """Trendyol ekstre satırı → [(hakediş alanı, tutar)]. Komisyon satış/iade satırının commissionAmount alanından gelir."""
+    t = rec.get("transactionType")
+    debt, credit = Decimal(str(rec.get("debt") or 0)), Decimal(str(rec.get("credit") or 0))
+    comm = Decimal(str(rec.get("commissionAmount") or 0))
+    if t == "Sale":
+        return [("gross_sales", credit), ("commission", comm)]
+    if t == "Return":
+        return [("returns", debt), ("commission", -comm)]
+    if t in ("Discount", "Coupon"):
+        return [("campaign_share", debt)]
+    if t in ("DiscountCancel", "CouponCancel"):
+        return [("campaign_share", -credit)]
+    if t == "DeliveryFee":
+        return [("shipping", debt)]
+    if t == "DeliveryFeeCancel":
+        return [("shipping", -credit)]
+    if t == "ManualRefund":
+        return [("returns", debt)]
+    if t == "ManualRefundCancel":
+        return [("returns", -credit)]
+    return []
+

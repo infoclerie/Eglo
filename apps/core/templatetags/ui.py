@@ -39,6 +39,7 @@ STATUS_LEVEL = {
     "waiting": "warning", "draft": "", "approval": "warning", "approved": "info", "sent": "info", "partial": "warning",
     "received": "ok", "closed": "", "requested": "warning", "inspected": "warning", "completed": "ok",
     "rejected": "danger", "submitted": "warning", "applied": "ok", "pending": "warning",
+    "qc": "warning", "at_subcontractor": "info", "in_progress": "info", "done": "ok",
     # SKT
     "ok": "ok", "info": "info", "warning": "warning", "critical": "danger", "expired": "danger",
 }

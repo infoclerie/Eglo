@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Üretim emirleri{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Üretim emirleri</h1><p>İç üretim ve fason. Mamul önce karantinaya girer, kalite onayıyla satışa açılır.</p></div>
+  <a class="btn btn-primary" href="{% url 'production:new' %}">+ Yeni üretim emri</a></div>
+<div class="inline" style="margin-bottom:12px;flex-wrap:wrap">
+  <a class="btn btn-sm {% if status == 'open' %}btn-primary{% endif %}" href="?durum=open">Açık</a>
+  {% for c, l in statuses %}<a class="btn btn-sm {% if status == c %}btn-primary{% endif %}" href="?durum={{ c }}">{{ l }}</a>{% endfor %}
+  <a class="btn btn-sm {% if status == 'all' %}btn-primary{% endif %}" href="?durum=all">Tümü</a></div>
+<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Emir</th><th>Mamul</th><th>Tür</th><th class="num">Planlanan</th><th class="num">Üretilen</th><th>LOT</th><th>Tarih</th><th>Durum</th></tr></thead><tbody>
+{% for o in orders %}<tr><td><a href="{% url 'production:detail' o.pk %}"><b>{{ o.number }}</b></a></td><td>{{ o.product.name }}<div class="small muted">{{ o.product.sku }}</div></td>
+<td>{{ o.get_kind_display }}{% if o.subcontractor %}<div class="small muted">{{ o.subcontractor }}</div>{% endif %}</td>
+<td class="num">{{ o.planned_qty|floatformat:"-3" }}</td><td class="num">{{ o.produced_qty|floatformat:"-3" }}</td><td>{{ o.lot_no|default:"—" }}</td>
+<td>{{ o.planned_date|date:"d.m.Y"|default:"—" }}</td><td>{{ o.status|badge:o.get_status_display }}</td></tr>
+{% empty %}<tr><td colspan="8"><div class="empty">{% icon "box" %}<div>Kayıt yok. Önce <a href="{% url 'admin:production_billofmaterials_add' %}">reçete</a> tanımlayın, sonra üretim emri açın.</div></div></td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

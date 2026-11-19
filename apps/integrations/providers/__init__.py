@@ -66,13 +66,13 @@ def _load():
     if _REGISTRY:
         return _REGISTRY
     from .notify import NetgsmSms, SmtpEmail
+    from .hepsiburada import Hepsiburada
+    from .ikas import Ikas
     from .trendyol import Trendyol
     from .uyumsoft import UyumsoftEInvoice
-    items = [UyumsoftEInvoice(), Trendyol(), SmtpEmail(), NetgsmSms()]
+    items = [UyumsoftEInvoice(), Trendyol(), Hepsiburada(), Ikas(), SmtpEmail(), NetgsmSms()]
     for code, name, cat, color, icon, desc in [
-        ("hepsiburada", "Hepsiburada", "marketplace", "#ff6000", "cart", "Sipariş, stok, fiyat, iade"),
         ("amazon", "Amazon", "marketplace", "#232f3e", "cart", "Sipariş ve stok senkronu"),
-        ("website", "Web sitesi", "ecommerce", "#2563c9", "cart", "Web sitesi siparişleri ve stok"),
         ("yurtici", "Yurtiçi Kargo", "cargo", "#1d4ed8", "truck", "Etiket, takip numarası, teslim durumu"),
         ("aras", "Aras Kargo", "cargo", "#d71920", "truck", "Etiket, takip numarası, teslim durumu"),
         ("mng", "MNG Kargo", "cargo", "#0b5394", "truck", "Etiket, takip numarası, teslim durumu"),

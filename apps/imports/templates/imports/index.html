@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Excel ile toplu yükleme{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Excel ile toplu yükleme</h1><p>1) Şablonu indirin · 2) Doldurun · 3) Yükleyin, önizlemeyi kontrol edin · 4) Onaylayın.</p></div></div>
+<div class="grid grid-2">{% for code, k in kinds.items %}
+<div class="card card-pad"><h2 style="margin-top:0">{{ k.title }}</h2><p class="muted">{{ k.desc }}</p>
+  <div class="inline"><a class="btn" href="{% url 'imports:template' code %}">{% icon "inbox" %}Şablonu indir</a>
+  <a class="btn btn-primary" href="{% url 'imports:upload' code %}">Dosya yükle →</a></div></div>{% endfor %}</div>
+{% endblock %}

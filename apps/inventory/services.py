@@ -132,7 +132,7 @@ def receive(product, quantity, location, lot_no=None, expiry_date=None, producti
             defaults={"expiry_date": expiry_date, "production_date": production_date, "producer": producer})
         if not created and expiry_date and lot.expiry_date and lot.expiry_date != expiry_date:
             raise ValidationError(f"LOT {lot_no} sistemde farklı SKT ile kayıtlı ({lot.expiry_date}).")
-    source = virtual_location("production" if move_type == "production_in" else "supplier")
+    source = virtual_location({"production_in": "production", "count_adjust": "adjustment"}.get(move_type, "supplier"))
     if unit_cost is not None:
         from apps.catalog.services import update_average_cost
         on_hand = Quant.objects.filter(product=product).aggregate(s=Sum("quantity"))["s"] or ZERO
