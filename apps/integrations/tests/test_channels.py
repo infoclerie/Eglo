@@ -326,3 +326,37 @@ class HepsiburadaMatchTests(ErpFixture, TestCase):
         self.assertEqual(job.status, "success", job.last_error)
         self.assertEqual(acc.listings.get().external_barcode, "HBV111")
         self.assertIn("YOK-1", job.result["problems"][0])
+
+
+
+class IkasStockPullTests(ErpFixture, TestCase):
+    def test_stock_pull_uses_stock_location_query(self):
+        from apps.catalog.models import Product
+        from apps.inventory import services as inventory
+        self.setup_erp()
+        cache.clear()
+        acc = IntegrationAccount(provider="ikas", name="ikas", config={"client_id": "C", "channel": "web"})
+        acc.set_secrets({"client_secret": "S"})
+        acc.save()
+        Product.objects.create(sku="CLR-YENI", name="Yeni", barcode="869000000077", track_lot=True)
+        products = [{"id": "p1", "name": "Yeni", "variants": [{"id": "v1", "sku": "CLR-YENI", "barcodeList": ["869000000077"], "prices": [], "stocks": None}]},
+                    {"id": "p2", "name": "Serum", "variants": [{"id": "v2", "sku": "SRM", "barcodeList": ["111"], "prices": [], "stocks": None}]}]
+
+        def post(url, data=None, json=None, headers=None, timeout=None):
+            if url.endswith("/oauth/token"):
+                return resp({"access_token": "T", "expires_in": 100})
+            if "listProductStockLocation" in json["query"]:
+                return resp({"data": {"listProductStockLocation": [{"variantId": "v1", "stockCount": 40, "stockLocationId": "L1"},
+                                                                    {"variantId": "v1", "stockCount": 5, "stockLocationId": "L2"},
+                                                                    {"variantId": "v2", "stockCount": 9, "stockLocationId": "L1"}]}})
+            return resp({"data": {"listProduct": {"hasNext": False, "data": products}}})
+        self.client.force_login(self.boss)
+        with mock.patch("apps.integrations.providers.ikas.requests.Session", return_value=mock.Mock(post=mock.Mock(side_effect=post))):
+            r = self.client.post(f"/integrations/kanal/{acc.pk}/", {"action": "stock_pull", "location": self.r1.pk}, follow=True)
+        self.assertContains(r, "Stoklar alındı")
+        self.assertContains(r, "toplam 45 adet stok girildi")
+        self.assertContains(r, "sistemde zaten stoğu olan")
+        p = Product.objects.get(sku="CLR-YENI")
+        self.assertEqual(inventory.stock_summary(p)["available"], 45)
+        self.assertEqual(p.lots.get().lot_no, "IKAS-ACILIS")
+        self.assertEqual(inventory.stock_summary(self.serum)["available"], 100)

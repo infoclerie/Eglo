@@ -41,6 +41,8 @@ PRODUCTS_FULL_Q = """query ListProduct($pagination: PaginationInput) {
     variants { id sku barcodeList isActive prices { sellPrice discountPrice buyPrice currency } stocks { stockCount stockLocationId }
       images { imageId isMain order } } } } }"""
 MERCHANT_Q = "query { getMerchant { id } }"
+# v2'de varyant stokları ürün listesinde dolu gelmeyebilir → ayrı sorgu (düz liste döner)
+STOCKS_Q = "query { listProductStockLocation { variantId stockCount stockLocationId deleted } }"
 STOCK_M = """mutation SaveVariantStocks($input: SaveVariantStocksInput!) {
   saveVariantStocks(input: $input) { errors { errorCode inputArrayIndex } } }"""
 PRICE_M = """mutation UpdateVariantPrices($input: UpdateVariantPricesInput!) {
@@ -288,6 +290,12 @@ class Ikas(Provider):
                 merchant = (c.gql(MERCHANT_Q).get("getMerchant") or {}).get("id", "")
             except IkasError:
                 merchant = ""
+        stock_map = {}
+        if opts["location"] is not None:
+            for row in c.gql(STOCKS_Q).get("listProductStockLocation") or []:
+                if row.get("deleted") or (loc_filter and row.get("stockLocationId") != loc_filter):
+                    continue
+                stock_map[row.get("variantId")] = stock_map.get(row.get("variantId"), Decimal(0)) + Decimal(str(row.get("stockCount") or 0))
         stats, page = new_stats(), 1
         while True:
             res = c.gql(PRODUCTS_FULL_Q, {"pagination": {"page": page, "limit": 50}})["listProduct"]
@@ -308,8 +316,9 @@ class Ikas(Provider):
                             "category": (((prod.get("categories") or [{}])[0] or {}).get("name") or "").strip(),
                             "list_incl": price.get("sellPrice"), "sale_incl": price.get("discountPrice"), "cost": price.get("buyPrice"),
                             "active": v.get("isActive", True),
-                            "stock": sum(Decimal(str(x.get("stockCount") or 0)) for x in (v.get("stocks") or [])
-                                         if not loc_filter or x.get("stockLocationId") == loc_filter),
+                            "stock": stock_map.get(v["id"]) if v["id"] in stock_map else sum(
+                                Decimal(str(x.get("stockCount") or 0)) for x in (v.get("stocks") or [])
+                                if not loc_filter or x.get("stockLocationId") == loc_filter),
                             "images": [ikas_image_url(merchant, im["imageId"]) for im in imgs if im.get("imageId") and merchant],
                         }, opts, stats)
                     except Exception as exc:  # noqa: BLE001

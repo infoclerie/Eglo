@@ -132,6 +132,7 @@ def upsert_product(account, channel, item, opts, stats):
         elif not opts.get("update_existing", True):
             stats["skipped"] += 1
             ChannelListing.objects.update_or_create(account=account, product=p, defaults={"external_barcode": item.get("external") or barcode or sku})
+            _opening_stock(account, p, item, opts, stats)
             return p
         p.name = (item.get("name") or p.name or sku)[:200]
         if barcode and (is_new or not p.barcode) and not Product.objects.filter(barcode=barcode).exclude(pk=p.pk).exists():
@@ -154,11 +155,7 @@ def upsert_product(account, channel, item, opts, stats):
             ProductPrice.objects.update_or_create(product=p, channel=channel, defaults={"price": excl(item["sale_incl"], p.vat_rate).quantize(CENT)})
         ChannelListing.objects.update_or_create(account=account, product=p, defaults={"external_barcode": item.get("external") or barcode or sku})
         stats["created" if is_new else "updated"] += 1
-        loc = opts.get("location")
-        if loc is not None and not p.is_kit and item.get("stock") and inventory.stock_summary(p)["physical"] == 0:
-            inventory.receive(p, Decimal(str(item["stock"])), loc, lot_no=f"{account.provider.upper()}-ACILIS" if p.track_lot else None,
-                              reference=f"{account.name} açılış stoğu", move_type="count_adjust")
-            stats["opening_stock"] += 1
+        _opening_stock(account, p, item, opts, stats)
     if opts.get("import_images", True):
         for url in (item.get("images") or [])[:6]:
             if fetch_image(p, url, session=opts.get("http")):
@@ -166,8 +163,28 @@ def upsert_product(account, channel, item, opts, stats):
     return p
 
 
+def _opening_stock(account, p, item, opts, stats):
+    """Açılış stoğu: yalnız sistemde fiziksel stoğu SIFIR olan ürüne, kanaldaki adet kadar giriş yapar."""
+    from apps.inventory import services as inventory
+    loc = opts.get("location")
+    if loc is None or p.is_kit:
+        return
+    qty = Decimal(str(item.get("stock") or 0))
+    if qty <= 0:
+        stats["stock_zero"] += 1
+        return
+    if inventory.stock_summary(p)["physical"] != 0:
+        stats["stock_exists"] += 1
+        return
+    inventory.receive(p, qty, loc, lot_no=f"{account.provider.upper()}-ACILIS" if p.track_lot else None,
+                      reference=f"{account.name} açılış stoğu", move_type="count_adjust")
+    stats["opening_stock"] += 1
+    stats["opening_units"] = float(stats["opening_units"]) + float(qty)  # iş sonucu JSON'a yazılır
+
+
 def new_stats():
-    return {"created": 0, "updated": 0, "skipped": 0, "opening_stock": 0, "photos": 0, "problems": []}
+    return {"created": 0, "updated": 0, "skipped": 0, "opening_stock": 0, "opening_units": 0, "stock_zero": 0,
+            "stock_exists": 0, "photos": 0, "problems": []}
 
 
 def import_options(account, payload):

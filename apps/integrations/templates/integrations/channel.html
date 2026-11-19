@@ -32,7 +32,15 @@
   <td>{{ e.order.status|badge:e.order.get_status_display }}</td><td class="num">{{ e.order.grand_total|floatformat:2 }} ₺</td></tr>
   {% empty %}<tr><td><div class="empty">Henüz bu kanaldan sipariş gelmedi.</div></td></tr>{% endfor %}</tbody></table></div></div>
 
-{% if can_change %}<details class="card card-pad" {% if listing_count < sellable or not sellable %}open{% endif %}>
+{% if can_change %}<div>
+{% if acc.provider != "hepsiburada" %}<form method="post" class="card card-pad form" style="margin-bottom:16px" onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').textContent='Stoklar alınıyor…'">{% csrf_token %}
+  <input type="hidden" name="action" value="stock_pull"><h2 style="margin:0">Stokları {{ acc.name }}'dan al</h2>
+  <p class="small muted" style="margin:0">{{ acc.name }}'daki stok adetleri, sistemde stoğu <b>sıfır</b> olan ürünlere açılış stoğu olarak girilir (bir kez yapılır). Sonrasında stok bu sistemde yönetilir ve {{ acc.name }}'a buradan gönderilir.</p>
+  <div class="inline" style="flex-wrap:wrap"><select name="location" style="flex:1;min-width:200px">{% for l in locations %}<option value="{{ l.pk }}">{{ l.code }} · {{ l.get_kind_display }}</option>{% empty %}<option value="">Önce depo tanımlayın</option>{% endfor %}</select>
+  <button class="btn btn-primary" {% if not locations %}disabled{% endif %}>⬇ Stokları al</button></div>
+  {% if not locations %}<div class="small">Depo yok: <a href="{% url 'inventory:summary' %}">Stok Durumu</a> › "Varsayılan depoyu oluştur".</div>{% endif %}
+</form>{% endif %}
+<details class="card card-pad" {% if listing_count < sellable or not sellable %}open{% endif %}>
   <summary><b>{% if acc.provider == "hepsiburada" %}Ürünleri eşleştir{% else %}Ürünleri {{ acc.name }}'dan aktar{% endif %}</b> <span class="small muted">— ürün kartı, fotoğraf, açılış stoğu</span></summary>
   <form method="post" class="form" style="margin-top:12px" onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').textContent='Aktarılıyor, bekleyin…'">{% csrf_token %}
   <input type="hidden" name="action" value="{% if acc.provider == 'hepsiburada' %}match{% else %}products{% endif %}">
@@ -44,7 +52,7 @@
     {% if not locations %}<div class="small">Depo yok: <a href="{% url 'inventory:summary' %}">Stok Durumu</a> › "Varsayılan depoyu oluştur".</div>{% endif %}</div>
   <input type="hidden" name="vat_rate" value="20">
   <button class="btn btn-primary">{% if acc.provider == "hepsiburada" %}Eşleştir{% else %}Ürünleri aktar{% endif %}</button></form>
-</details>{% endif %}
+</details></div>{% endif %}
 </div>
 <script>setTimeout(function () { if (!document.querySelector("form :focus")) location.reload(); }, 300000);</script>
 {% endblock %}

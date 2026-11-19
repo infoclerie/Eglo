@@ -276,7 +276,7 @@ def listings(request, pk):
 
 # ---------------------------------------------------------------- kanal paneli (Trendyol / Hepsiburada / ikas)
 CHANNEL_ACTIONS = {"orders": ("import_orders", "Siparişler çekildi"), "stock": ("push_stock", "Stok ve fiyat gönderildi"),
-                   "match": ("import_products", "Ürünler eşleştirildi"),
+                   "match": ("import_products", "Ürünler eşleştirildi"), "stock_pull": ("import_products", "Stoklar alındı"),
                    "settlement": ("pull_settlement", "Hakediş kayıtları çekildi"), "products": ("import_products", "Ürünler aktarıldı")}
 OPEN_STATUSES = ["reserved", "picking", "picked", "packed", "invoiced"]
 
@@ -290,10 +290,13 @@ def _result_text(job):
     parts = []
     labels = {"new_orders": "yeni sipariş", "already_imported": "zaten alınmış", "products": "ürün", "created": "yeni ürün",
               "updated": "güncellenen", "opening_stock": "açılış stoğu girilen", "not_in_ikas": "ikas'ta bulunamayan", "skipped": "atlanan",
-              "photos": "fotoğraf"}
+              "photos": "fotoğraf", "stock_zero": "kanalda stoğu 0 olan", "stock_exists": "sistemde zaten stoğu olan (dokunulmadı)"}
     for k, label in labels.items():
         if r.get(k) not in (None, 0, []):
             parts.append(f"{r[k]} {label}")
+    if r.get("opening_units"):
+        u = float(r["opening_units"])
+        parts.append(f"toplam {int(u) if u.is_integer() else u:,} adet stok girildi".replace(",", "."))
     if r.get("periods"):
         parts.append(f"{len(r['periods'])} dönem")
     for k in ("not_confirmed", "problems", "errors"):
@@ -339,7 +342,10 @@ def channel(request, pk):
         elif action in CHANNEL_ACTIONS:
             suffix, done = CHANNEL_ACTIONS[action]
             payload = {"hours": int(request.POST.get("hours") or 72)}
-            if action in ("products", "match"):
+            if action == "stock_pull":
+                payload = {"update_existing": False, "import_images": False, "import_stock": True,
+                           "location_id": request.POST.get("location") or None}
+            elif action in ("products", "match"):
                 payload = {"update_existing": bool(request.POST.get("update_existing")), "import_stock": bool(request.POST.get("import_stock")),
                            "import_images": bool(request.POST.get("import_images")),
                            "location_id": request.POST.get("location") or None, "vat_rate": request.POST.get("vat_rate") or 20}
