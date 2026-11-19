@@ -32,3 +32,15 @@ Basic auth (API Key/Secret) + `User-Agent: {SatıcıId} - SelfIntegration` (yoks
   fiyat = Trendyol kanal fiyatı × (1+KDV). Periyodik + stok değişiminde (dakikada en fazla bir) tetiklenir.
 - `trendyol.update_status`: toplama başlayınca `Picking`, fatura kesilince `Invoiced` (params.invoiceNumber).
 Sıradaki: kargo takip numarası bildirimi (`/tracking-details`), iade (claims), fatura linki gönderimi, hakediş raporu.
+
+## Pazaryeri / e-ticaret sağlayıcıları (Kasım 2026)
+- Ortak yardımcılar `providers/common.py` (ürün eşleştirme, KDV dönüşümü, sipariş kaydı, stok satırları).
+- **Hepsiburada** (`providers/hepsiburada.py`): Basic (Merchant ID : servis anahtarı) + User-Agent (entegratör adı).
+  oms-external (sipariş, paket, kargoda, teslim), listing-external (inventory-uploads), mpfinance-external (transactions → hakediş).
+  Akış: toplama başlayınca HB'de paket oluşur; "kendi kargom" açıksa sevkte takip no (intransit), teslimde deliver gönderilir.
+- **ikas** (`providers/ikas.py`): özel uygulama client_credentials → Admin GraphQL v2. Sipariş (listOrder), stok (saveVariantStocks),
+  fiyat (updateVariantPrices), sevkte fulfillOrder (müşteriye takip bilgisi). Kanal: "web" veya ayrı "ikas".
+- **Hakediş**: Trendyol `/finance/che/sellers/{id}/settlements` + `otherfinancials` (PaymentOrder = bankaya yatan),
+  Hepsiburada `/transactions` → `accounting.services.upsert_settlement` (haftalık dönem, Pzt–Paz). Ayarlardan "Hakediş çek".
+- Trendyol "kendi kargom" açıksa takip no `/shipment-packages/{id}/tracking-details` ile gider (kargo kodları handlers.TRENDYOL_CARGO).
+- Bu üç sağlayıcının canlı hesapla ilk doğrulaması yapılmalı (alan adları resmi dokümandan; test edilmedi).

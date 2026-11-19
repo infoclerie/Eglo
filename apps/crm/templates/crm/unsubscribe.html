@@ -1,0 +1,5 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Abonelik</title>
+<style>body{font-family:system-ui,sans-serif;background:#f4f5f8;display:grid;place-items:center;min-height:100vh;margin:0}.box{background:#fff;padding:32px;border-radius:14px;max-width:420px;box-shadow:0 4px 20px rgba(0,0,0,.06);text-align:center}button{background:#5b3a6e;color:#fff;border:0;padding:12px 20px;border-radius:10px;font-size:15px;cursor:pointer}</style></head>
+<body><div class="box">{% if done %}<h2>İşleminiz tamamlandı</h2><p>Artık ticari e-posta almayacaksınız. Sipariş ve kargo bilgilendirmeleri gönderilmeye devam eder.</p>
+{% elif ok %}<h2>Ticari e-posta aboneliği</h2><p>{{ partner.name }} için kampanya ve duyuru e-postalarını durdurmak istiyor musunuz?</p><form method="post">{% csrf_token %}<button>Abonelikten çık</button></form>
+{% else %}<h2>Bağlantı geçersiz</h2><p>Bağlantının süresi dolmuş veya hatalı.</p>{% endif %}</div></body></html>

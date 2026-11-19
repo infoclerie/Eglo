@@ -4,7 +4,8 @@ Bildirim sağlayıcıları.
 - SMS (Netgsm): https://api.netgsm.com.tr/sms/send/get  usercode, password, gsmno, message, msgheader, dil=TR
   Başarılı yanıt "00 <görevno>" veya "01/02 ..." ile başlar; 20/30/40/50/51/70/80/85 hata kodlarıdır.
   NOT: Canlı Netgsm hesabıyla ilk kurulumda doğrulanmalıdır (bu yazılım geliştirilirken hesap yoktu).
-  Ticari/pazarlama SMS'leri İYS izni gerektirir; sistem yalnızca bilgilendirme mesajı gönderir.
+  Ticari/pazarlama SMS'leri İYS izni gerektirir: CRM kampanyaları yalnız izinli carilere gider ve "iysfilter" (11 bireysel /
+  12 tacir) parametresiyle gönderilir; Netgsm İYS'de izni olmayan numaraya göndermez. Bildirimler (kargo vb.) işlemsel iletidir.
 """
 import smtplib
 import socket
@@ -120,8 +121,9 @@ class SmtpEmail(Provider):
     def handle(self, account, job):
         c = account.config
         sender = f"{c.get('from_name', '')} <{c.get('from_email') or c.get('username')}>"
+        headers = {"List-Unsubscribe": f"<{job.payload['unsubscribe']}>"} if job.payload.get("unsubscribe") else None
         msg = EmailMessage(job.payload.get("subject", ""), job.payload.get("body", ""), sender, [job.payload["to"]],
-                           connection=self._conn(c, account.get_secrets()))
+                           connection=self._conn(c, account.get_secrets()), headers=headers)
         msg.send(fail_silently=False)
         return {"sent_to": job.payload["to"]}
 
@@ -142,9 +144,12 @@ class NetgsmSms(Provider):
         Field("test_to", "Test SMS'i gidecek numara", step="settings", required=False, help="5XXXXXXXXX"),
     ]
 
-    def _send(self, config, secrets, to, text):
-        r = requests.get(self.URL, timeout=20, params={"usercode": config.get("usercode"), "password": secrets.get("password", ""),
-                                                       "gsmno": to, "message": text, "msgheader": config.get("header", ""), "dil": "TR"})
+    def _send(self, config, secrets, to, text, iysfilter=""):
+        params = {"usercode": config.get("usercode"), "password": secrets.get("password", ""),
+                  "gsmno": to, "message": text, "msgheader": config.get("header", ""), "dil": "TR"}
+        if iysfilter:  # ticari ileti: 11 = bireysel alıcı, 12 = tacir/esnaf alıcı (Netgsm İYS kontrolü yapar)
+            params["iysfilter"] = iysfilter
+        r = requests.get(self.URL, timeout=20, params=params)
         code = r.text.strip().split(" ")[0]
         if code in ("00", "01", "02"):
             return r.text.strip()
@@ -168,4 +173,5 @@ class NetgsmSms(Provider):
             enqueue(account, "notify.sms", "test", {"to": to, "text": "Eglo ERP SMS bildirimleri kuruldu."}, key=f"{account.pk}:sms-test:{to}")
 
     def handle(self, account, job):
-        return {"result": self._send(account.config, account.get_secrets(), job.payload["to"], job.payload["text"])}
+        return {"result": self._send(account.config, account.get_secrets(), job.payload["to"], job.payload["text"],
+                                     job.payload.get("iysfilter", ""))}

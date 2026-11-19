@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ c.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ c.name }}</h1><p>{{ c.get_channel_display }} · {% if seg_labels %}{{ seg_labels|join:", " }}{% else %}Tüm müşteriler{% endif %}{% if c.city %} · {{ c.city }}{% endif %} · {{ c.get_recipient_type_display }}</p></div>
+  <div class="inline">{{ c.status|badge:c.get_status_display }}{% if c.status == "draft" %}<a class="btn" href="{% url 'crm:campaign_edit' c.pk %}">Düzenle</a>{% endif %}<a class="btn" href="{% url 'crm:campaigns' %}">Kampanyalar</a></div></div>
+<div class="grid grid-kpi" style="margin-bottom:16px">
+  <div class="card kpi"><div class="t">{% if c.status == "sent" %}Gönderilen{% else %}Gönderilecek{% endif %}</div><div class="v">{{ counts.queued }}</div></div>
+  <div class="card kpi"><div class="t">İYS izni yok (atlanır)</div><div class="v">{{ counts.no_consent }}</div></div>
+  <div class="card kpi"><div class="t">{% if c.channel == "email" %}E-posta{% else %}Cep telefonu{% endif %} yok</div><div class="v">{{ counts.no_contact }}</div></div>
+</div>
+<div class="grid grid-2" style="margin-bottom:16px">
+<div class="card card-pad"><h2 style="margin-top:0">Önizleme</h2>{% if c.channel == "email" %}<div class="small muted">Konu</div><b>{{ preview_subject }}</b>{% endif %}
+  <pre class="msg-preview">{{ preview_body }}</pre>{% if c.channel == "email" %}<div class="small muted">E-postanın altına otomatik "abonelikten çık" bağlantısı eklenir.</div>{% else %}<div class="small muted">SMS, Netgsm'e ticari ileti (İYS kontrollü) olarak gönderilir; Netgsm İYS'de izni olmayan numaraya göndermez.</div>{% endif %}</div>
+{% if perms.crm.change_campaign %}<div class="card card-pad"><h2 style="margin-top:0">Gönderim</h2>
+  <form method="post" class="form">{% csrf_token %}<div><label for="tt">Önce kendinize deneme gönderin</label><input id="tt" name="test_to" placeholder="{% if c.channel == 'email' %}ornek@eglokozmetik.com{% else %}5XXXXXXXXX{% endif %}"><div class="helptext">Yalnız bu adrese tek ileti gider; kampanya gönderilmiş sayılmaz.</div></div><button class="btn">Deneme gönder</button></form>
+  {% if c.status == "draft" %}<form method="post" style="margin-top:16px" onsubmit="return confirm('{{ counts.queued }} alıcıya gönderilsin mi? Bu işlem geri alınamaz.')">{% csrf_token %}
+  <button class="btn btn-primary btn-lg" name="send" value="1" {% if not counts.queued %}disabled{% endif %}>{{ counts.queued }} alıcıya gönder</button></form>
+  {% else %}<p class="muted">{{ c.sent_at|date:"d.m.Y H:i" }} tarihinde {{ c.sent_by|default:"" }} tarafından gönderildi. İletim durumu: Entegrasyonlar › İşler.</p>{% endif %}
+</div>{% endif %}</div>
+<h2>Alıcılar ({{ total }})</h2>
+<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Cari</th><th>Alıcı</th><th>Durum</th></tr></thead><tbody>
+{% for p, to, st, label in rows %}<tr><td>{{ p.name }}<div class="small muted">{{ p.code }}</div></td><td>{{ to|default:"—" }}</td><td>{{ label }}</td></tr>
+{% empty %}<tr><td colspan="3"><div class="empty">Bu filtreye uyan müşteri yok.</div></td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

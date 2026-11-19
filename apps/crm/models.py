@@ -60,3 +60,45 @@ class Activity(BaseModel):
 
     def __str__(self):
         return self.subject
+
+
+class Campaign(BaseModel):
+    """Toplu e-posta / SMS kampanyası (ticari ileti). Yalnız İYS izni olan carilere gönderilir."""
+
+    CHANNEL = [("email", "E-posta"), ("sms", "SMS")]
+    STATUS = [("draft", "Taslak"), ("sent", "Gönderildi")]
+    RECIPIENT = [("11", "Bireysel (tüketici)"), ("12", "Tacir / esnaf (bayi, eczane, kurumsal)")]
+
+    name = models.CharField("Kampanya adı", max_length=150, help_text="Yalnız sizin göreceğiniz ad, ör. 'Kasım bayi indirimi'.")
+    channel = models.CharField("Kanal", max_length=5, choices=CHANNEL, default="email")
+    segments = models.JSONField("Segmentler", default=list, blank=True,
+                                help_text="Boş = tüm müşteriler. VIP, düzenli, yeni, uzun süredir almayan...")
+    city = models.CharField("İl filtresi", max_length=50, blank=True, help_text="Boş = tüm iller.")
+    recipient_type = models.CharField("Alıcı türü (İYS)", max_length=2, choices=RECIPIENT, default="12",
+                                      help_text="İYS'de izin bireysel ve tacir olarak ayrı tutulur.")
+    subject = models.CharField("E-posta konusu", max_length=200, blank=True)
+    body = models.TextField("Mesaj", help_text="{musteri}, {cari_kodu}, {firma} yazabilirsiniz; gönderimde doldurulur.")
+    status = models.CharField("Durum", max_length=6, choices=STATUS, default="draft")
+    sent_at = models.DateTimeField("Gönderim zamanı", null=True, blank=True)
+    sent_by = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Gönderen", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    queued = models.PositiveIntegerField("Kuyruğa alınan", default=0)
+    skipped = models.PositiveIntegerField("Atlanan (izin / iletişim yok)", default=0)
+
+    class Meta:
+        verbose_name, verbose_name_plural = "Kampanya", "Kampanyalar"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+
+class CampaignRecipient(models.Model):
+    STATUS = [("queued", "Gönderim kuyruğunda"), ("no_consent", "İYS izni yok"), ("no_contact", "E-posta / cep yok")]
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="recipients")
+    partner = models.ForeignKey(Partner, on_delete=models.CASCADE, related_name="+")
+    to = models.CharField("Alıcı", max_length=200, blank=True)
+    status = models.CharField("Durum", max_length=10, choices=STATUS)
+
+    class Meta:
+        verbose_name, verbose_name_plural = "Kampanya alıcısı", "Kampanya alıcıları"
+        unique_together = [("campaign", "partner")]

@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{% if obj %}{{ obj.name }} düzenle{% else %}Yeni kampanya{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{% if obj %}{{ obj.name }} düzenle{% else %}Yeni kampanya{% endif %}</h1><p>Kaydettikten sonra alıcı listesini ve önizlemeyi görürsünüz; gönderim ayrı bir onayla yapılır.</p></div>
+  <a class="btn" href="{% url 'crm:campaigns' %}">Vazgeç</a></div>
+<div class="card card-pad" style="max-width:820px"><form method="post" class="form">{% csrf_token %}
+{% for f in form %}<div>{{ f.label_tag }}{% if f.name == "segments" %}<div class="seg-boxes">{{ f }}</div>{% else %}{{ f }}{% endif %}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>{% endfor %}
+<div id="smscount" class="small muted"></div>
+<div class="inline" style="justify-content:flex-end"><button class="btn btn-primary btn-lg">Kaydet ve önizle →</button></div></form></div>
+<script>(function(){const ch=document.getElementById("id_channel"),b=document.getElementById("id_body"),s=document.getElementById("id_subject"),out=document.getElementById("smscount");
+function u(){const sms=ch.value==="sms";s.closest("div").style.display=sms?"none":"";out.textContent=sms?(b.value.length+" karakter · yaklaşık "+Math.max(1,Math.ceil(b.value.length/155))+" SMS"):"";}
+ch.addEventListener("change",u);b.addEventListener("input",u);u();})();</script>
+{% endblock %}

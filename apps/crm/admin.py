@@ -31,3 +31,21 @@ class ActivityAdmin(admin.ModelAdmin):
     list_filter = ("kind", "done", "owner")
     search_fields = ("subject", "partner__name", "notes")
     autocomplete_fields = ["partner"]
+
+
+from .models import Campaign, CampaignRecipient  # noqa: E402
+
+
+class CampaignRecipientInline(admin.TabularInline):
+    model = CampaignRecipient
+    extra = 0
+    readonly_fields = ("partner", "to", "status")
+    can_delete = False
+
+
+@admin.register(Campaign)
+class CampaignAdmin(admin.ModelAdmin):
+    list_display = ("name", "channel", "status", "queued", "skipped", "sent_at")
+    list_filter = ("channel", "status")
+    readonly_fields = ("status", "sent_at", "sent_by", "queued", "skipped")
+    inlines = [CampaignRecipientInline]

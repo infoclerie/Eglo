@@ -42,13 +42,12 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
   bağlanmadı. İlk canlı bağlantıda **stok/fiyat gönderimi kapalı** başlatılmalı (kullanıcıya söylendi).
 
 ## 5. Sıradaki işler (öncelik sırası)
-1. Trendyol canlı bağlantı kontrolü; kargo takip no bildirimi (`/tracking-details`), iadeler (claims), fatura linki.
-2. **Hepsiburada** sağlayıcısı (`providers/` altında Trendyol örneğiyle aynı yapı + sihirbaz alanları).
-3. **Kargo firması API'leri** (Yurtiçi, Aras, MNG): gönderi oluşturma + takip no; yazdırılabilir etiket hazır (`shipping`). Firma anlaşma/API bilgileri kullanıcıdan alınacak.
-4. CRM ve bayi portalı hazır; kalan: SMS/e-posta kampanya gönderimi (İYS).
-5. **Üretim / fason** (§10): reçete (BOM), üretim emri, hammadde sarfı (`production_consume` hareket türü hazır), kalite kontrol → karantina.
-6. **Raporlar** (§11): Excel/PDF, stok yaşlandırma, devir hızı, kanal ciro grafikleri; bildirimler (§15, e-posta).
-7. Excel ile toplu ürün/fiyat/stok içe aktarma (§16).
+1. Canlı doğrulama: Hepsiburada (Merchant ID + servis anahtarı + User-Agent), ikas (özel uygulama), Trendyol/HB hakediş çekimi.
+   Mevcut Trendyol bağlantısında "Hakediş çek" ayarı kapalı gelir → Ayarları düzenle'den açılmalı.
+2. **Kargo firması API'leri** (Yurtiçi, Aras, MNG): gönderi oluşturma + takip no; etiket hazır. Testler kullanıcı tarafından ertelendi.
+3. Telefon kamerasıyla barkod okuma (el terminalinin 2. aşaması; şu an USB okuyucu, `static/js/scanner.js`).
+4. Amazon, banka hesap hareketleri, pazaryeri iade (claims) çekimi, Trendyol fatura linki.
+5. Rapor ekleri: palet doluluk, satın alma performansı; resmi muhasebe fişi aktarımı.
 
 ## 6. Çalışma şekli
 - Kurallar `AGENTS.md`'de. Kısaca: modül sınırı, stok sadece `inventory/services.py`'den, onaylı işlemler `approvals`, formül + test,
@@ -72,3 +71,10 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 - chat modülü: yoklama (polling) ile çalışır, sunucuya ek kurulum yok. Yeşil/kırmızı nokta = son 60 sn içinde aktif mi.
 - Test sayısı: 95.
 - E-posta sihirbazı: ilk adımda servis kartları (notify.MAIL_PRESETS: Gmail, Workspace, M365, Outlook.com, Yandex, Zoho, Yahoo, iCloud, hosting/cPanel, Brevo, SES, SendGrid, Mailgun, Mailjet, Diğer). Seçim sunucu/port/güvenliği doldurur, servis notu gösterilir; SMTP hataları friendly_smtp_error ile Türkçeleştirilir. Yeni servis = listeye bir satır. Microsoft 365: Aralık 2026 sonundan itibaren SMTP AUTH (şifreyle giriş) varsayılan kapalı, yönetici açabilir.
+
+## Kasım 2026 (2) eklenenler
+- Entegrasyonlar: Hepsiburada, ikas, Trendyol+HB hakediş çekimi (accounting.upsert_settlement). Bkz. apps/integrations/MODULE.md.
+- Yeni modüller: production (üretim/fason), reports (raporlar), imports (Excel toplu yükleme). CRM'e İYS uyumlu kampanyalar.
+- Yeni rol: "Üretim sorumlusu". Kullanıcı kararı: kampanya kurgusu (Trendyol kampanyaya katılım vb.) pazaryeri panelinde kalır;
+  sonuçları (satış, kesinti, hakediş) bu sisteme gelir.
+- Test sayısı: 115.

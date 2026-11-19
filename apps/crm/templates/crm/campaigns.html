@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Kampanyalar{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Kampanyalar</h1><p>Segmentlere toplu e-posta / SMS. Yalnız İYS izni işaretli carilere gönderilir.</p></div>
+  <a class="btn btn-primary" href="{% url 'crm:campaign_new' %}">+ Yeni kampanya</a></div>
+<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Kampanya</th><th>Kanal</th><th>Durum</th><th class="num">Gönderilen</th><th class="num">Atlanan</th><th>Tarih</th></tr></thead><tbody>
+{% for c in items %}<tr><td><a href="{% url 'crm:campaign' c.pk %}"><b>{{ c.name }}</b></a></td><td>{{ c.get_channel_display }}</td><td>{{ c.status|badge:c.get_status_display }}</td>
+<td class="num">{{ c.queued }}</td><td class="num">{{ c.skipped }}</td><td>{{ c.sent_at|date:"d.m.Y H:i"|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="6"><div class="empty">{% icon "inbox" %}<div>Henüz kampanya yok.</div></div></td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}
