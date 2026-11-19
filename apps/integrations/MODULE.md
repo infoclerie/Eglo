@@ -44,3 +44,11 @@ Sıradaki: kargo takip numarası bildirimi (`/tracking-details`), iade (claims),
   Hepsiburada `/transactions` → `accounting.services.upsert_settlement` (haftalık dönem, Pzt–Paz). Ayarlardan "Hakediş çek".
 - Trendyol "kendi kargom" açıksa takip no `/shipment-packages/{id}/tracking-details` ile gider (kargo kodları handlers.TRENDYOL_CARGO).
 - Bu üç sağlayıcının canlı hesapla ilk doğrulaması yapılmalı (alan adları resmi dokümandan; test edilmedi).
+
+## Kanal paneli ve ikas ürün aktarımı
+- Sol menüde "Satış kanalları" grubu (`nav.py`, MANIFEST `nav_hook`): her aktif pazaryeri / e-ticaret bağlantısı için
+  `/integrations/kanal/<id>/` paneli: bugünkü/aylık sipariş, sevk bekleyen, stok ayrılamayan, eşleşen ürün sayısı, son hata
+  (eşleşmeyen ürün çözüm bağlantısıyla), otomatik ayarların açık/kapalı durumu, son siparişler, son işlemler, hızlı işlemler
+  (sipariş çek, stok gönder, hakediş çek, test).
+- ikas: "Ürünleri ikas'tan aktar" (`ikas.import_products`): her varyant ayrı ürün kartı; SKU (yoksa barkod) eşleşirse günceller;
+  fiyat KDV dahil → liste fiyatı KDV hariç, indirimli fiyat kanal fiyatı; isteğe bağlı açılış stoğu (yalnız stoğu sıfır ürünlere).

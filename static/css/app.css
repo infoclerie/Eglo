@@ -336,3 +336,7 @@ body.erp .ai-qtext { font-weight: 600; margin-bottom: 6px; }
 body.erp .ai-typing { color: var(--muted); animation: aiblink 1.2s infinite; }
 @keyframes aiblink { 50% { opacity: .4; } }
 @media (max-width: 640px) { body.erp .ai-form { flex-wrap: wrap; } body.erp .ai-form .btn { width: 100%; } }
+body.erp .ch-logo { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; color: #fff; }
+body.erp .ch-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+body.erp .flag-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: 14px; }
+body.erp .kpi.warning { border-left: 4px solid #d97706; } body.erp .kpi.danger { border-left: 4px solid #dc2626; }

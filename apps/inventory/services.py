@@ -15,7 +15,7 @@ from apps.core.approvals import request_approval
 from apps.core.events import publish
 from apps.core.models import Sequence, Setting
 
-from .models import Location, Lot, Quant, Reservation, StockCount, StockCountLine, StockMove
+from .models import Location, Lot, Quant, Reservation, StockCount, StockCountLine, StockMove, Warehouse
 
 D = Decimal
 ZERO = D("0")
@@ -381,3 +381,25 @@ def apply_count(count, user=None):
     count.save(update_fields=["status", "updated_at"])
     publish("inventory.count_applied", count=count)
     return count
+
+
+# ---------------------------------------------------------------- ilk kurulum
+DEFAULT_AREAS = [("A-KABUL", "Mal kabul alanı", "receiving"), ("A-SEVK", "Sevkiyat alanı", "shipping"),
+                 ("A-IADE", "İade alanı", "return_check"), ("A-KARANTINA", "Karantina alanı", "quarantine"),
+                 ("A-HASAR", "Hasarlı ürün alanı", "damaged"), ("A-NUMUNE", "Numune alanı", "sample")]
+
+
+@transaction.atomic
+def ensure_default_warehouse(aisles=2, racks=3, levels=2):
+    """Hiç depo yoksa 'A · Ana depo' ve temel alanlarla örnek raf lokasyonlarını (A-01-01-01 ...) oluşturur. Döner: (depo, yeni_mi)"""
+    if Warehouse.objects.exists():
+        return Warehouse.objects.order_by("code").first(), False
+    wh = Warehouse.objects.create(code="A", name="Ana depo")
+    for code, name, kind in DEFAULT_AREAS:
+        Location.objects.create(code=code, warehouse=wh, name=name, kind=kind)
+    for a in range(1, aisles + 1):
+        for r in range(1, racks + 1):
+            for lv in range(1, levels + 1):
+                Location.objects.create(code=f"A-{a:02d}-{r:02d}-{lv:02d}", warehouse=wh, kind="storage",
+                                        aisle=f"{a:02d}", rack=f"{r:02d}", level=f"{lv:02d}")
+    return wh, True

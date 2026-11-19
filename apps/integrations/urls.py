@@ -9,4 +9,5 @@ urlpatterns = [
     path("<int:pk>/", views.account_detail, name="account"),
     path("<int:pk>/listings/", views.listings, name="listings"),
     path("jobs/", views.jobs, name="jobs"),
+    path("kanal/<int:pk>/", views.channel, name="channel"),
 ]

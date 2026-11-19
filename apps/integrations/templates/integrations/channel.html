@@ -1,0 +1,60 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ acc.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div style="display:flex;gap:14px;align-items:center"><span class="ch-logo" style="background:{{ p.color }}">{% icon p.icon %}</span>
+  <div><h1>{{ acc.name }}</h1><p>{{ p.name }} · {% if acc.active %}<span class="badge ok">Bağlı</span>{% else %}<span class="badge">Kapalı</span>{% endif %}
+  {% if acc.last_test_at %} · son test {{ acc.last_test_at|date:"d.m.Y H:i" }} {% if acc.last_test_ok %}✓{% else %}✗{% endif %}{% endif %}</p></div></div>
+  <div class="inline" style="flex-wrap:wrap">{% if can_change %}<a class="btn" href="{% url 'integrations:wizard' p.code 'credentials' %}?edit={{ acc.pk }}">{% icon "settings" %}Ayarlar</a>{% endif %}
+  <a class="btn" href="{% url 'integrations:listings' acc.pk %}">Ürün eşleştirme</a><a class="btn" href="{% url 'integrations:account' acc.pk %}">Bağlantı ayrıntısı</a></div></div>
+
+<div class="grid grid-kpi" style="margin-bottom:16px">
+  <a class="card kpi" href="{% url 'sales:pool' %}"><div class="t">Bugün gelen sipariş</div><div class="v">{{ kpi.today }}</div></a>
+  <div class="card kpi"><div class="t">Bu ay sipariş / ciro (KDV dahil)</div><div class="v">{{ kpi.month_orders }} · {{ kpi.month_revenue|floatformat:0 }} ₺</div></div>
+  <a class="card kpi {% if kpi.to_ship %}warning{% endif %}" href="{% url 'sales:pool' %}"><div class="t">Sevk bekleyen</div><div class="v">{{ kpi.to_ship }}</div></a>
+  <a class="card kpi {% if kpi.unconfirmed %}danger{% endif %}" href="{% url 'sales:pool' %}"><div class="t">Stok ayrılamayan (yeni)</div><div class="v">{{ kpi.unconfirmed }}</div></a>
+  <a class="card kpi" href="{% url 'integrations:listings' acc.pk %}"><div class="t">Eşleştirilmiş ürün</div><div class="v">{{ listing_count }} / {{ sellable }}</div></a>
+</div>
+
+{% if last_failed %}<div class="alert danger">{% icon "alert" %}<div><b>Son hata ({{ last_failed.created_at|date:"d.m H:i" }}):</b> {{ last_failed.last_error|truncatechars:400 }}
+  {% if "eşleşmedi" in last_failed.last_error %}<br>Çözüm: <a href="{% url 'integrations:listings' acc.pk %}">Ürün eşleştirme</a> ekranında bu ürünlerin {{ acc.name }} barkodu/SKU'sunu yazın{% if acc.provider == "ikas" %} veya aşağıdan "Ürünleri ikas'tan aktar" deyin{% endif %}.{% endif %}</div></div>{% endif %}
+
+<div class="grid grid-2" style="margin-bottom:16px">
+<div class="card card-pad"><h2 style="margin-top:0">Hızlı işlemler</h2>
+  {% if can_change %}<form method="post" class="ch-actions">{% csrf_token %}
+    <button class="btn btn-primary" name="action" value="orders">⬇ Siparişleri şimdi çek</button>
+    <button class="btn" name="action" value="stock">⬆ Stok ve fiyatı şimdi gönder</button>
+    {% if has_settlement %}<button class="btn" name="action" value="settlement">₺ Hakedişi çek</button>{% endif %}
+    <button class="btn" name="action" value="test">Bağlantıyı test et</button></form>
+  <p class="small muted">Bu işlemler ayarlardaki zamanlamaya göre otomatik de çalışır; burada beklemeden çalıştırırsınız.</p>{% endif %}
+  <h3 class="preset-group">Otomatik ayarlar</h3>
+  <ul class="flag-list">{% for label, on in flags %}<li><span class="badge {% if on %}ok{% endif %}">{% if on %}Açık{% else %}Kapalı{% endif %}</span> {{ label }}</li>{% endfor %}</ul>
+</div>
+
+{% if acc.provider == "ikas" and can_change %}<form method="post" class="card card-pad form" onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').textContent='Aktarılıyor, bekleyin…'">{% csrf_token %}
+  <input type="hidden" name="action" value="products"><h2 style="margin-top:0">Ürünleri ikas'tan aktar</h2>
+  <p class="muted" style="margin:0">ikas'taki ürünler (her varyant ayrı kart) ürün kartlarına eklenir; SKU'su aynı olan ürün güncellenir ve otomatik eşleştirilir. ikas fiyatları KDV dahil kabul edilir.</p>
+  <label class="reset-group"><input type="checkbox" name="update_existing" checked><span><b>Var olan ürünleri güncelle</b><small>Ad, liste fiyatı, marka, kategori ikas'takiyle güncellenir.</small></span></label>
+  <label class="reset-group"><input type="checkbox" name="import_stock" id="imp-stock"><span><b>ikas stoğunu açılış stoğu olarak gir</b><small>Yalnız sistemde stoğu SIFIR olan ürünlere. LOT takipli ürünlere "IKAS-ACILIS" LOT'u yazılır; SKT'leri sonra sayımla düzeltin.</small></span></label>
+  <div><label for="loc">Stok girilecek lokasyon</label><select id="loc" name="location">{% for l in locations %}<option value="{{ l.pk }}">{{ l.code }} · {{ l.get_kind_display }}</option>{% empty %}<option value="">Önce depo tanımlayın</option>{% endfor %}</select>
+    {% if not locations %}<div class="small" style="margin-top:6px">Depo yok: <a href="{% url 'inventory:summary' %}">Stok Durumu</a> ekranındaki "Varsayılan depoyu oluştur" düğmesine basın.</div>{% endif %}</div>
+  <div style="max-width:200px"><label for="vat">Yeni ürünlerin KDV oranı %</label><input id="vat" name="vat_rate" value="20" inputmode="decimal"></div>
+  <button class="btn btn-primary btn-lg">Ürünleri aktar</button>
+</form>{% elif settlement %}<div class="card card-pad"><h2 style="margin-top:0">Son hakediş</h2>
+  <p class="muted" style="margin:0 0 8px">{{ settlement.period_start|date:"d.m" }}–{{ settlement.period_end|date:"d.m.Y" }} · {{ settlement.get_status_display }}</p>
+  <table class="table"><tbody><tr><td>Satış</td><td class="num">{{ settlement.gross_sales|floatformat:2 }}</td></tr><tr><td>Komisyon</td><td class="num">−{{ settlement.commission|floatformat:2 }}</td></tr>
+  <tr><td>Kargo</td><td class="num">−{{ settlement.shipping|floatformat:2 }}</td></tr><tr><td>Kampanya / iade / hizmet</td><td class="num">−{{ settlement.campaign_share|add:settlement.returns|add:settlement.service_fees|floatformat:2 }}</td></tr>
+  <tr><th>Beklenen net</th><th class="num">{{ settlement.expected_net|floatformat:2 }}</th></tr><tr><td>Bankaya yatan</td><td class="num">{{ settlement.bank_received|floatformat:2 }}</td></tr></tbody></table></div>{% endif %}
+</div>
+
+<div class="grid grid-2">
+<div><h2>Son siparişler</h2><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Sipariş</th><th>{{ acc.name }} no</th><th>Durum</th><th class="num">Tutar</th></tr></thead><tbody>
+{% for e in recent %}<tr><td><a href="{% url 'admin:sales_salesorder_change' e.order.pk %}">{{ e.order.number }}</a><div class="small muted">{{ e.order.order_date|date:"d.m H:i" }} · {{ e.order.customer_name|truncatechars:24 }}</div></td><td>{{ e.external_id }}</td>
+<td>{{ e.order.status|badge:e.order.get_status_display }}</td><td class="num">{{ e.order.grand_total|floatformat:2 }}</td></tr>
+{% empty %}<tr><td colspan="4"><div class="empty">Henüz bu kanaldan sipariş alınmadı.</div></td></tr>{% endfor %}</tbody></table></div></div></div>
+<div><h2>Son işlemler</h2><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Zaman</th><th>İş</th><th>Sonuç</th></tr></thead><tbody>
+{% for j in jobs %}<tr class="{% if j.status == 'failed' %}row-danger{% endif %}"><td>{{ j.created_at|date:"d.m H:i" }}</td><td>{{ j.kind|cut:acc.provider|cut:"." }}<div class="small muted">{{ j.ref }}</div></td>
+<td>{{ j.status|badge:j.get_status_display }}<div class="small">{{ j.summary|truncatechars:160 }}</div></td></tr>
+{% empty %}<tr><td colspan="3"><div class="empty">Henüz işlem yok.</div></td></tr>{% endfor %}</tbody></table></div></div>
+<a class="small" href="{% url 'integrations:jobs' %}">Tüm iş kuyruğu →</a></div>
+</div>
+{% endblock %}

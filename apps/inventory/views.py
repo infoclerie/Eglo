@@ -14,6 +14,11 @@ from .models import Location, Pallet, Quant
 @login_required
 @permission_required("inventory.view_quant", raise_exception=True)
 def summary(request):
+    if request.method == "POST" and request.POST.get("setup_warehouse") and request.user.has_perm("inventory.add_location"):
+        wh, new = services.ensure_default_warehouse()
+        messages.success(request, f"'{wh}' deposu ve raf lokasyonları oluşturuldu (A-01-01-01 …). Depo ve raf adlarını Yönetim › Lokasyonlar'dan değiştirebilirsiniz."
+                         if new else "Zaten tanımlı bir depo var.")
+        return redirect(request.path)
     products = Product.objects.filter(active=True).select_related("brand").order_by("sku")
     q = request.GET.get("q", "").strip()
     if q:
@@ -25,7 +30,9 @@ def summary(request):
         if request.GET.get("low") and not low:
             continue
         rows.append({"p": p, "s": s, "low": low})
-    return render(request, "inventory/summary.html", {"rows": rows, "q": q})
+    from .models import Warehouse
+    return render(request, "inventory/summary.html", {"rows": rows, "q": q, "no_warehouse": not Warehouse.objects.exists(),
+                                                      "no_products": not Product.objects.exists()})
 
 
 @login_required

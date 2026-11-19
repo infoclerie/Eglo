@@ -211,3 +211,50 @@ class IkasTests(ErpFixture, TestCase):
         self.assertEqual((inp["orderId"], inp["trackingInfoDetail"]["trackingNumber"], inp["trackingInfoDetail"]["cargoCompany"]),
                          ("o-1", "YK555", "Yurtiçi Kargo"))
         self.assertEqual(ExternalOrder.objects.get(order=o).status, "FULFILLED")
+
+
+class IkasProductImportAndPanelTests(ErpFixture, TestCase):
+    def setUp(self):
+        self.setup_erp()
+        cache.clear()
+        self.acc = IntegrationAccount(provider="ikas", name="ikas Mağaza", environment="live", config={"client_id": "CID", "channel": "web"})
+        self.acc.set_secrets({"client_secret": "SEC"})
+        self.acc.save()
+        self.client.force_login(self.boss)
+
+    def fake(self):
+        products = [
+            {"id": "p1", "name": "Clerie Şampuan", "description": "Saç", "brand": {"name": "Clerie"}, "categories": [{"name": "Saç bakım"}],
+             "variants": [{"id": "v1", "sku": "CLR-SMP-400", "barcodeList": ["8690000000031"], "isActive": True,
+                           "prices": [{"sellPrice": 240, "discountPrice": 216, "buyPrice": 60}], "stocks": [{"stockCount": 25, "stockLocationId": "L"}]}]},
+            {"id": "p2", "name": "Serum yeni ad", "brand": None, "categories": [],
+             "variants": [{"id": "v2", "sku": "SRM", "barcodeList": ["111"], "isActive": True, "prices": [{"sellPrice": 132}], "stocks": [{"stockCount": 9}]}]}]
+
+        def post(url, data=None, json=None, headers=None, timeout=None):
+            if url.endswith("/oauth/token"):
+                return resp({"access_token": "TOK", "expires_in": 14400})
+            return resp({"data": {"listProduct": {"hasNext": False, "data": products}}})
+        return mock.Mock(post=mock.Mock(side_effect=post))
+
+    def test_import_products_from_panel(self):
+        from apps.catalog.models import Product, ProductPrice
+        page = self.client.get(f"/integrations/kanal/{self.acc.pk}/")
+        self.assertContains(page, "Ürünleri ikas'tan aktar")
+        self.assertContains(page, "Satış kanalları")  # sol menü grubu
+        with mock.patch("apps.integrations.providers.ikas.requests.Session", return_value=self.fake()):
+            r = self.client.post(f"/integrations/kanal/{self.acc.pk}/", {"action": "products", "update_existing": "on", "import_stock": "on",
+                                                                        "location": self.r1.pk, "vat_rate": "20"}, follow=True)
+        self.assertContains(r, "Ürünler aktarıldı: 1 yeni ürün, 1 güncellenen, 1 açılış stoğu girilen")
+        p = Product.objects.get(sku="CLR-SMP-400")
+        self.assertEqual((p.name, p.barcode, p.list_price, p.brand.name, p.category.name), ("Clerie Şampuan", "8690000000031", D("200.00"), "Clerie", "Saç bakım"))
+        self.assertEqual(ProductPrice.objects.get(product=p, channel=self.web).price, D("180.00"))
+        from apps.inventory import services as inventory
+        self.assertEqual(inventory.stock_summary(p)["available"], 25)
+        self.serum.refresh_from_db()
+        self.assertEqual((self.serum.name, self.serum.list_price), ("Serum yeni ad", D("110.00")))
+        self.assertEqual(inventory.stock_summary(self.serum)["available"], 100)  # stoğu olan ürüne açılış girilmez
+        self.assertEqual(self.acc.listings.count(), 2)
+
+    def test_panel_for_other_categories_redirects(self):
+        mail = IntegrationAccount.objects.create(provider="smtp_email", name="Mail")
+        self.assertEqual(self.client.get(f"/integrations/kanal/{mail.pk}/").status_code, 302)

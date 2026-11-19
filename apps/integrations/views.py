@@ -211,7 +211,7 @@ def account_detail(request, pk):
             job.refresh_from_db()
             (messages.success if job.status == "success" else messages.error)(request, f"Durum sorgusu: {job.result or job.last_error}")
         elif action in ("orders", "stock"):
-            kind = "trendyol.import_orders" if action == "orders" else "trendyol.push_stock"
+            kind = f"{acc.provider}.import_orders" if action == "orders" else f"{acc.provider}.push_stock"
             job = services.enqueue(acc, kind, "manuel", {"hours": 72}, key=f"{acc.pk}:{kind}:manual:{timezone.now().timestamp()}")
             services.run_job(job)
             job.refresh_from_db()
@@ -272,3 +272,90 @@ def listings(request, pk):
         return redirect(request.path)
     rows = [{"p": p, "l": existing.get(p.pk)} for p in products]
     return render(request, "integrations/listings.html", {"acc": acc, "rows": rows})
+
+
+# ---------------------------------------------------------------- kanal paneli (Trendyol / Hepsiburada / ikas)
+CHANNEL_ACTIONS = {"orders": ("import_orders", "Siparişler çekildi"), "stock": ("push_stock", "Stok ve fiyat gönderildi"),
+                   "settlement": ("pull_settlement", "Hakediş kayıtları çekildi"), "products": ("import_products", "Ürünler aktarıldı")}
+OPEN_STATUSES = ["reserved", "picking", "picked", "packed", "invoiced"]
+
+
+def _channel_code(acc):
+    return (acc.config.get("channel") or "web") if acc.provider == "ikas" else acc.provider
+
+
+def _result_text(job):
+    r = job.result or {}
+    parts = []
+    labels = {"new_orders": "yeni sipariş", "already_imported": "zaten alınmış", "products": "ürün", "created": "yeni ürün",
+              "updated": "güncellenen", "opening_stock": "açılış stoğu girilen", "not_in_ikas": "ikas'ta bulunamayan", "skipped": "atlanan"}
+    for k, label in labels.items():
+        if r.get(k) not in (None, 0, []):
+            parts.append(f"{r[k]} {label}")
+    if r.get("periods"):
+        parts.append(f"{len(r['periods'])} dönem")
+    for k in ("not_confirmed", "problems", "errors"):
+        if r.get(k):
+            parts.append(f"uyarı: {'; '.join(str(x) for x in r[k][:3])}")
+    return ", ".join(parts) or "tamam"
+
+
+@login_required
+@permission_required("integrations.view_integrationaccount", raise_exception=True)
+def channel(request, pk):
+    from django.db.models import Sum
+
+    from apps.catalog.models import Product
+    from apps.inventory.models import Location
+    from apps.sales.models import SalesOrder
+    acc = get_object_or_404(IntegrationAccount, pk=pk)
+    p = acc.provider_obj
+    if p is None or p.category not in ("marketplace", "ecommerce"):
+        return redirect("integrations:account", pk=pk)
+    if request.method == "POST":
+        if not request.user.has_perm(PERM):
+            messages.error(request, "Bu işlem için entegrasyon yetkisi gerekir.")
+            return redirect("integrations:channel", pk=pk)
+        action = request.POST.get("action")
+        if action == "test":
+            ok, msg = services.test_account(acc)
+            (messages.success if ok else messages.error)(request, msg)
+        elif action in CHANNEL_ACTIONS:
+            suffix, done = CHANNEL_ACTIONS[action]
+            payload = {"hours": int(request.POST.get("hours") or 72)}
+            if action == "products":
+                payload = {"update_existing": bool(request.POST.get("update_existing")), "import_stock": bool(request.POST.get("import_stock")),
+                           "location_id": request.POST.get("location") or None, "vat_rate": request.POST.get("vat_rate") or 20}
+            job = services.enqueue(acc, f"{acc.provider}.{suffix}", "manuel", payload,
+                                   key=f"{acc.pk}:{suffix}:manual:{timezone.now().timestamp()}")
+            services.run_job(job)
+            job.refresh_from_db()
+            if job.status == "success":
+                messages.success(request, f"{done}: {_result_text(job)}")
+            else:
+                messages.error(request, f"İşlem tamamlanamadı: {job.last_error}")
+        return redirect("integrations:channel", pk=pk)
+
+    code = _channel_code(acc)
+    today = timezone.localdate()
+    orders = SalesOrder.objects.filter(channel__code=code)
+    month = orders.filter(order_date__date__gte=today.replace(day=1)).exclude(status="cancelled")
+    kpi = {"today": orders.filter(order_date__date=today).count(), "month_orders": month.count(),
+           "month_revenue": month.aggregate(s=Sum("grand_total"))["s"] or 0,
+           "to_ship": orders.filter(status__in=OPEN_STATUSES).count(), "unconfirmed": orders.filter(status="new").count()}
+    sellable = Product.objects.filter(active=True).exclude(kind__in=["raw", "packaging"]).count()
+    jobs = list(acc.jobs.order_by("-created_at")[:12])
+    for j in jobs:
+        j.summary = _result_text(j) if j.status == "success" else (j.last_error or "")[:240]
+    last_failed = acc.jobs.filter(status__in=["failed", "pending"]).exclude(last_error="").order_by("-created_at").first()
+    flags = [(f.label, bool(acc.config.get(f.name))) for f in p.fields if f.step == "settings" and f.kind == "bool"]
+    settlement = None
+    if acc.provider in ("trendyol", "hepsiburada"):
+        from apps.accounting.models import MarketplaceSettlement
+        settlement = MarketplaceSettlement.objects.filter(channel__code=code).order_by("-period_end").first()
+    return render(request, "integrations/channel.html", {
+        "acc": acc, "p": p, "kpi": kpi, "jobs": jobs, "flags": flags, "last_failed": last_failed, "settlement": settlement,
+        "listing_count": acc.listings.count(), "sellable": sellable,
+        "recent": acc.external_orders.select_related("order").order_by("-created_at")[:10],
+        "locations": Location.objects.filter(active=True).exclude(kind__in=Location.VIRTUAL_KINDS).order_by("code"),
+        "can_change": request.user.has_perm(PERM), "has_settlement": acc.provider in ("trendyol", "hepsiburada")})

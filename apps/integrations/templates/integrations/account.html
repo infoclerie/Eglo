@@ -2,7 +2,7 @@
 {% block title %}{{ acc.name }}{% endblock %}
 {% block content %}
 <div class="page-head"><div><h1>{{ acc.name }}</h1><p>{{ p.description }}</p></div>
-  <div class="inline" style="flex:0 0 auto"><a class="btn" href="{% url 'integrations:wizard' p.code 'credentials' %}?edit={{ acc.pk }}">{% icon "settings" %}Ayarları düzenle</a>
+  <div class="inline" style="flex:0 0 auto">{% if p.category == "marketplace" or p.category == "ecommerce" %}<a class="btn btn-primary" href="{% url 'integrations:channel' acc.pk %}">Kanal paneli</a>{% endif %}<a class="btn" href="{% url 'integrations:wizard' p.code 'credentials' %}?edit={{ acc.pk }}">{% icon "settings" %}Ayarları düzenle</a>
   <form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle"><button class="btn">{% if acc.active %}Durdur{% else %}Etkinleştir{% endif %}</button></form></div></div>
 <div class="grid grid-2" style="margin-bottom:16px">
   <div class="card card-pad">

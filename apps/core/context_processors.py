@@ -27,6 +27,20 @@ def erp(request):
             nav.append({"code": m["code"], "name": m["name"], "icon": m.get("icon", "box"),
                         "color": m.get("color", "#5b3a6e"), "items": items})
     user = getattr(request, "user", None)
+    # Modüllerin dinamik menü grupları: MANIFEST["nav_hook"] = "paket.modul.fonksiyon" → fonksiyon(request) → [grup]
+    from importlib import import_module
+    for m in load_manifests().values():
+        hook = m.get("nav_hook")
+        if hook and getattr(user, "is_authenticated", False):
+            mod, fn = hook.rsplit(".", 1)
+            try:
+                for g in getattr(import_module(mod), fn)(request) or []:
+                    g.setdefault("color", m.get("color", "#5b3a6e"))
+                    for it in g["items"]:
+                        it.setdefault("active", path.startswith(it["url"]))
+                    nav.append(g)
+            except Exception:  # noqa: BLE001 — menü hatası sayfayı düşürmesin
+                pass
     from .models import UserPreference
     from .theme import current
     pref = UserPreference.objects.filter(user=user).first() if getattr(user, "is_authenticated", False) else None

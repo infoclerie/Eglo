@@ -36,6 +36,9 @@ ORDERS_Q = """query ListOrder($orderedAt: DateFilterInput, $pagination: Paginati
 PRODUCTS_Q = """query ListProduct($pagination: PaginationInput) {
   listProduct(pagination: $pagination) { hasNext data { id variants { id sku barcodeList } } } }"""
 LOCATIONS_Q = "query { listStockLocation { id name } }"
+PRODUCTS_FULL_Q = """query ListProduct($pagination: PaginationInput) {
+  listProduct(pagination: $pagination) { hasNext data { id name description brand { name } categories { name }
+    variants { id sku barcodeList isActive prices { sellPrice discountPrice buyPrice currency } stocks { stockCount stockLocationId } } } } }"""
 STOCK_M = """mutation SaveVariantStocks($input: SaveVariantStocksInput!) {
   saveVariantStocks(input: $input) { errors { errorCode inputArrayIndex } } }"""
 PRICE_M = """mutation UpdateVariantPrices($input: UpdateVariantPricesInput!) {
@@ -164,6 +167,8 @@ class Ikas(Provider):
             return self._import_orders(account, c, int(job.payload.get("hours", 48)))
         if job.kind == "ikas.push_stock":
             return self._push_stock(account, c)
+        if job.kind == "ikas.import_products":
+            return self._import_products(account, c, job.payload)
         if job.kind == "ikas.fulfill":
             from ..models import ExternalOrder
             ext = ExternalOrder.objects.get(pk=job.payload["external_order_id"])
@@ -267,3 +272,83 @@ class Ikas(Provider):
                 res = c.gql(PRICE_M, {"input": {"variantPriceInputs": prices[i:i + 200]}})
                 errors += (res.get("updateVariantPrices") or {}).get("errors") or []
         return {"products": len(stocks), "not_in_ikas": missing, "errors": errors[:10]}
+
+    def _import_products(self, account, c, opts):
+        """
+        ikas ürünlerini (her varyant ayrı ürün kartı) sisteme alır. SKU'su (yoksa barkodu) eşleşen ürün GÜNCELLENİR.
+        opts: update_existing (ad/fiyat güncellensin), import_stock + location_id (eldeki stoğu sıfır olan ürünlere ikas stoğunu
+        açılış olarak gir), vat_rate (yeni ürünler için KDV %, varsayılan 20).
+        Fiyatlar ikas'ta KDV dahildir → liste fiyatı KDV hariç yazılır; indirimli fiyat kanal fiyatı olur.
+        """
+        from django.db import transaction
+
+        from apps.catalog.models import Brand, Category, Product, ProductPrice
+        from apps.inventory import services as inventory
+        from apps.inventory.models import Location
+
+        from ..models import ChannelListing
+        ch_code = account.config.get("channel") or "web"
+        channel = ensure_channel(ch_code, "Web sitesi" if ch_code == "web" else "ikas")
+        vat = Decimal(str(opts.get("vat_rate") or 20))
+        loc_filter = account.config.get("stock_location_id") or None
+        location = Location.objects.filter(pk=opts.get("location_id")).first() if opts.get("import_stock") else None
+        created = updated = skipped = stocked = 0
+        problems, page = [], 1
+        while True:
+            res = c.gql(PRODUCTS_FULL_Q, {"pagination": {"page": page, "limit": 50}})["listProduct"]
+            for prod in res.get("data") or []:
+                variants = [v for v in (prod.get("variants") or []) if not v.get("deleted")]
+                brand = ((prod.get("brand") or {}).get("name") or "").strip()
+                cat = (((prod.get("categories") or [{}])[0] or {}).get("name") or "").strip()
+                for n, v in enumerate(variants, start=1):
+                    barcodes = [b for b in (v.get("barcodeList") or []) if b]
+                    sku = (v.get("sku") or "").strip() or (barcodes[0] if barcodes else f"IKAS-{v['id'][:8]}")
+                    name = prod.get("name") or sku
+                    if len(variants) > 1:
+                        name = f"{name} ({v.get('sku') or n})"
+                    price = (v.get("prices") or [{}])[0] or {}
+                    try:
+                        with transaction.atomic():
+                            p = Product.objects.filter(sku=sku).first() or (
+                                Product.objects.filter(barcode=barcodes[0]).first() if barcodes else None)
+                            is_new = p is None
+                            if is_new:
+                                p = Product(sku=sku, vat_rate=vat)
+                            elif not opts.get("update_existing", True):
+                                skipped += 1
+                                continue
+                            p.name = name[:200]
+                            if barcodes and (is_new or not p.barcode) and not Product.objects.filter(barcode=barcodes[0]).exclude(pk=p.pk).exists():
+                                p.barcode = barcodes[0]
+                            if price.get("sellPrice") is not None:
+                                p.list_price = excl(price["sellPrice"], p.vat_rate).quantize(Decimal("0.01"))
+                            if price.get("buyPrice"):
+                                p.cost = Decimal(str(price["buyPrice"]))
+                            if brand:
+                                p.brand = Brand.objects.filter(name__iexact=brand).first() or Brand.objects.create(name=brand)
+                            if cat:
+                                p.category = Category.objects.filter(name__iexact=cat).first() or Category.objects.create(name=cat)
+                            if is_new:
+                                p.description = (prod.get("description") or "")[:5000]
+                                p.active = bool(v.get("isActive", True))
+                            p.save()
+                            if price.get("discountPrice"):
+                                ProductPrice.objects.update_or_create(product=p, channel=channel, defaults={
+                                    "price": excl(price["discountPrice"], p.vat_rate).quantize(Decimal("0.01"))})
+                            ChannelListing.objects.update_or_create(account=account, product=p, defaults={"external_barcode": v.get("sku") or (barcodes[0] if barcodes else "")})
+                            created += int(is_new)
+                            updated += int(not is_new)
+                            if location is not None and not p.is_kit:
+                                qty = sum(Decimal(str(s.get("stockCount") or 0)) for s in (v.get("stocks") or [])
+                                          if not loc_filter or s.get("stockLocationId") == loc_filter)
+                                if qty > 0 and inventory.stock_summary(p)["physical"] == 0:
+                                    inventory.receive(p, qty, location, lot_no="IKAS-ACILIS" if p.track_lot else None,
+                                                      reference="ikas açılış stoğu", move_type="count_adjust")
+                                    stocked += 1
+                    except Exception as exc:  # noqa: BLE001 — tek ürün hatası tüm aktarımı durdurmasın
+                        problems.append(f"{sku}: {exc}")
+            if not res.get("hasNext"):
+                break
+            page += 1
+        return {"created": created, "updated": updated, "skipped": skipped, "opening_stock": stocked, "problems": problems[:20]}
+

@@ -3,6 +3,9 @@
 {% block content %}
 <div class="page-head"><div><h1>Stok Durumu</h1><p>Satışa uygun stok = fiziksel − rezerve − karantina/hasarlı/iade − SKT'si geçmiş</p></div>
   <div><a class="btn" href="{% url 'inventory:receive' %}">{% icon "inbox" %}Mal kabul</a> <a class="btn" href="{% url 'inventory:transfer' %}">{% icon "swap" %}Transfer</a></div></div>
+{% if no_warehouse %}<div class="alert danger">{% icon "alert" %}<div><b>Henüz depo tanımlı değil.</b> Stok girebilmek için en az bir depo ve raf lokasyonu gerekir.
+  {% if perms.inventory.add_location %}<form method="post" style="margin-top:8px">{% csrf_token %}<button class="btn btn-primary" name="setup_warehouse" value="1">Varsayılan depoyu oluştur (Ana depo + raflar)</button></form>{% endif %}</div></div>{% endif %}
+{% if no_products %}<div class="alert">{% icon "box" %}<div><b>Henüz ürün yok.</b> Ürünleri <a href="/imports/">Excel ile toplu yükleyebilir</a>, ikas/pazaryeri bağlantısının kanal panelinden aktarabilir veya <a href="{% url 'admin:catalog_product_add' %}">tek tek ekleyebilirsiniz</a>.</div></div>{% endif %}
 <div class="card">
   <div class="card-head"><form method="get" class="inline" style="width:100%">
     <input type="search" name="q" value="{{ q }}" placeholder="SKU, ürün adı veya barkod">
