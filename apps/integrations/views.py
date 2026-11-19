@@ -43,6 +43,8 @@ def _form_class(provider, step, secrets_known=False):
                 data[key] = v
         if data.get("series_efatura") and data.get("series_efatura") == data.get("series_earsiv"):
             self.add_error("series_earsiv", "e-Arşiv serisi e-Fatura serisinden farklı olmalı.")
+        if "kvkk_ok" in self.fields and not data.get("kvkk_ok"):
+            self.add_error("kvkk_ok", "Devam etmek için bu kutuyu işaretleyin.")
         vkn = data.get("vkn")
         if vkn is not None and (not vkn.isdigit() or len(vkn) not in (10, 11)):
             self.add_error("vkn", "VKN 10, TCKN 11 haneli olmalı.")

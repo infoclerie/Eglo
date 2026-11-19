@@ -1,0 +1,7 @@
+{% load ui %}<div class="card card-pad ai-box" style="margin-bottom:24px" data-ai>
+  <form class="ai-form" autocomplete="off"><span class="ai-spark">✨</span>
+    <input class="ai-q" name="q" placeholder="Asistana sorun: Bu ay Trendyol cirosu ne? Stoğu azalan ürünler?" maxlength="2000">
+    <button class="btn btn-primary">Sor</button></form>
+  <div class="ai-chips">{% for s in ai_suggestions %}<button type="button" class="chip">{{ s }}</button>{% endfor %}<a class="small" href="{% url 'assistant:index' %}">Tüm konuşma →</a></div>
+  <div class="ai-out"></div>
+</div>

@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load ui static %}
+{% block title %}Asistana sor{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>✨ Asistana sor</h1><p>İşletme verilerinize Türkçe soru sorun. Asistan yalnız görüntüleme yetkiniz olan verilere bakar ve hiçbir kaydı değiştirmez.</p></div>
+  <form method="post" class="inline" onsubmit="return confirm('Konuşma geçmişiniz silinsin mi?')">{% csrf_token %}<span class="small muted">Bugün {{ used }}/{{ limit }} soru</span><button class="btn btn-sm" name="clear" value="1">Geçmişi temizle</button></form></div>
+{% if not ready %}<div class="alert danger">{% icon "alert" %}<div>Yapay zekâ bağlantısı henüz kurulmadı.{% if request.user.is_superuser %} <a href="{% url 'integrations:choose' %}">Entegrasyonlar › Yeni bağlantı › Yapay zekâ asistanı</a> bölümünden Claude veya OpenAI anahtarınızı girin.{% else %} Yöneticinize bildirin.{% endif %}</div></div>{% endif %}
+<div class="card card-pad ai-box ai-page" data-ai>
+  <div class="ai-thread">{% for m in items %}<div class="ai-msg {{ m.role }}"><div class="ai-bubble" {% if m.role == "assistant" %}data-md{% endif %}>{{ m.content }}</div>{% if m.tools_used %}<div class="ai-meta">Bakılan veriler: {% for t in m.tools_used %}{{ t.tool }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}</div>
+  {% empty %}<div class="empty ai-empty">✨<div>Örnek sorulardan birini seçin veya kendi sorunuzu yazın.</div></div>{% endfor %}</div>
+  <div class="ai-chips">{% for s in suggestions %}<button type="button" class="chip">{{ s }}</button>{% endfor %}</div>
+  <form class="ai-form" autocomplete="off"><input class="ai-q" name="q" placeholder="Sorunuzu yazın…" maxlength="2000" {% if not ready %}disabled{% endif %} autofocus><button class="btn btn-primary" {% if not ready %}disabled{% endif %}>Sor</button></form>
+  <p class="small muted" style="margin:8px 0 0">Cevaplar yapay zekâ tarafından üretilir; önemli kararlar öncesi ilgili rapordan doğrulayın. Müşteri iletişim bilgileri yapay zekâya gönderilmez.</p>
+</div>
+{% endblock %}

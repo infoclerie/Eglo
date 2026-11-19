@@ -3,6 +3,7 @@
   <form action="{% url 'inventory:scan' %}" method="get" class="top-search-form"><input class="top-search" type="search" name="code" placeholder="Barkod / SKU / lokasyon ara…"></form>
   <div class="fx" id="fx" title="Kurlar 5 dakikada bir güncellenir"></div>
   <div class="spacer"></div>
+  {% if perms.assistant.add_assistantmessage %}<a class="btn btn-sm" href="/assistant/" title="Yapay zekâ asistanı">✨</a>{% endif %}
   <div class="bell"><button class="btn btn-sm" type="button" id="bell-btn" title="Bildirimler">🔔<span class="chat-badge" id="bell-n" hidden></span></button>
     <div class="bell-pop" id="bell-pop" hidden></div></div>
   <div class="user"><span class="avatar">{{ request.user|initials }}</span><span class="hide-sm">{{ request.user.get_full_name|default:request.user.username }}</span>

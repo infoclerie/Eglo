@@ -27,6 +27,7 @@ DEFAULT_MODULES = [
     "production",
     "reports",
     "imports",
+    "assistant",
 ]
 
 

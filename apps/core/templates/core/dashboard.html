@@ -13,6 +13,8 @@
       <span>{% if w.is_chart %}📊{% else %}🔢{% endif %} {{ w.title }}</span></label>{% endfor %}</div></div>
 </div>
 
+{% if ai_enabled %}{% include "assistant/ask_box.html" %}{% endif %}
+
 <div class="apps sortable scroll-x" id="apps" style="margin-bottom:24px">
   {% for g in erp_nav %}{% with first=g.items.0 %}
   <a class="app-tile" data-key="{{ g.code }}" href="{{ first.url }}"><span class="ic" style="background:{{ g.color }}">{% icon g.icon %}</span>{{ g.name }}</a>

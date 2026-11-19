@@ -66,11 +66,12 @@ def _load():
     if _REGISTRY:
         return _REGISTRY
     from .notify import NetgsmSms, SmtpEmail
+    from .ai import ClaudeAI, OpenAIAI
     from .hepsiburada import Hepsiburada
     from .ikas import Ikas
     from .trendyol import Trendyol
     from .uyumsoft import UyumsoftEInvoice
-    items = [UyumsoftEInvoice(), Trendyol(), Hepsiburada(), Ikas(), SmtpEmail(), NetgsmSms()]
+    items = [UyumsoftEInvoice(), Trendyol(), Hepsiburada(), Ikas(), SmtpEmail(), NetgsmSms(), ClaudeAI(), OpenAIAI()]
     for code, name, cat, color, icon, desc in [
         ("amazon", "Amazon", "marketplace", "#232f3e", "cart", "Sipariş ve stok senkronu"),
         ("yurtici", "Yurtiçi Kargo", "cargo", "#1d4ed8", "truck", "Etiket, takip numarası, teslim durumu"),
@@ -94,5 +95,5 @@ def get_provider(code):
     return _load().get(code)
 
 
-CATEGORY_LABELS = {"einvoice": "e-Fatura / e-Arşiv", "notify_email": "Bildirim — e-posta", "notify_sms": "Bildirim — SMS", "marketplace": "Pazaryerleri", "ecommerce": "E-ticaret",
+CATEGORY_LABELS = {"ai": "Yapay zekâ asistanı", "einvoice": "e-Fatura / e-Arşiv", "notify_email": "Bildirim — e-posta", "notify_sms": "Bildirim — SMS", "marketplace": "Pazaryerleri", "ecommerce": "E-ticaret",
                    "cargo": "Kargo", "bank": "Banka"}

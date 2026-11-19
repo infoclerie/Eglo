@@ -313,3 +313,26 @@ body.erp .reset-group b { display: block; } body.erp .reset-group small { color:
 body.erp dialog::backdrop { background: rgba(15, 23, 42, .45); }
 body.erp .reset-group.master { border-style: dashed; }
 body.erp .reset-group:has(input:checked) { border-color: var(--danger, #b91c1c); background: #fef2f2; }
+
+/* Yapay zekâ asistanı */
+body.erp .ai-form { display: flex; gap: 10px; align-items: center; }
+body.erp .ai-form .ai-q { flex: 1; min-height: 46px; font-size: 15px; }
+body.erp .ai-spark { font-size: 22px; }
+body.erp .ai-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+body.erp .chip { border: 1px solid var(--line); background: var(--brand-50); color: var(--brand-600); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+body.erp .chip:hover { border-color: var(--brand); }
+body.erp .ai-out:not(:empty) { margin-top: 14px; }
+body.erp .ai-thread { max-height: 62vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 4px 2px 12px; }
+body.erp .ai-msg { display: flex; flex-direction: column; max-width: 860px; }
+body.erp .ai-msg.user { align-self: flex-end; align-items: flex-end; }
+body.erp .ai-bubble { padding: 10px 14px; border-radius: 14px; background: #f3f4f6; line-height: 1.55; overflow-x: auto; }
+body.erp .ai-msg.user .ai-bubble { background: var(--brand); color: #fff; }
+body.erp .ai-msg.error .ai-bubble { background: #fef2f2; color: #991b1b; }
+body.erp .ai-bubble p { margin: 0 0 6px; } body.erp .ai-bubble p:last-child { margin: 0; }
+body.erp .ai-bubble ul, body.erp .ai-bubble ol { margin: 4px 0 6px 18px; padding: 0; }
+body.erp .ai-bubble .table { font-size: 13px; background: #fff; }
+body.erp .ai-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+body.erp .ai-qtext { font-weight: 600; margin-bottom: 6px; }
+body.erp .ai-typing { color: var(--muted); animation: aiblink 1.2s infinite; }
+@keyframes aiblink { 50% { opacity: .4; } }
+@media (max-width: 640px) { body.erp .ai-form { flex-wrap: wrap; } body.erp .ai-form .btn { width: 100%; } }

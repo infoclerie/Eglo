@@ -62,7 +62,13 @@ def dashboard(request):
         items.sort(key=lambda w: order.get(w["key"], 999))
     hidden = set(pref.hidden_widgets or [])
     visible = [w for w in items if w["key"] not in hidden]
-    return render(request, "core/dashboard.html", {
+    from django.apps import apps as _apps
+    ai_enabled = _apps.is_installed("apps.assistant") and request.user.has_perm("assistant.add_assistantmessage")
+    ai_suggestions = []
+    if ai_enabled:
+        from apps.assistant.services import suggestions
+        ai_suggestions = suggestions(request.user)[:3]
+    return render(request, "core/dashboard.html", {"ai_enabled": ai_enabled, "ai_suggestions": ai_suggestions,
         "charts": [w for w in visible if w["is_chart"]], "widgets": [w for w in visible if not w["is_chart"]],
         "catalog": items, "hidden_keys": json.dumps(sorted(hidden)),
         "chart_json": json.dumps([{k: w[k] for k in ("key", "type", "labels", "data")} for w in visible if w["is_chart"]])})

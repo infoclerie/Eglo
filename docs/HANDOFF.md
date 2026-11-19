@@ -89,3 +89,6 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 - Komutlar: `create_backup`, `restore_backup <zip> --yes`; sunucuda `deploy/restore.sh` (taşıma adımları docs/DEPLOY.md).
 - Entegrasyon şifreleri DJANGO_SECRET_KEY'den türeyen anahtarla şifreli → taşımada .env'deki anahtar da taşınmalı (meta'da parmak izi).
 - Yedekten dönünce bekleyen entegrasyon işleri durdurulur (`core.restored` olayı). PostgreSQL ve SQLite'da test edildi. Test: 122.
+
+## Yapay zekâ asistanı (Kasım 2026)
+- assistant modülü + integrations/providers/ai.py (Claude, OpenAI uyumlu). Bkz. apps/assistant/MODULE.md. Canlı API anahtarıyla henüz denenmedi (istek biçimleri sahte yanıtlarla test edildi). Test: 128.
