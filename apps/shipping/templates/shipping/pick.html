@@ -42,7 +42,7 @@
   <div class="card-head"><h2>Toplama listesi</h2><span class="muted small">Beklenen ağırlık {{ sh.expected_weight_kg|floatformat:"-3" }} kg</span></div>
   <div class="table-wrap"><table class="table"><thead><tr><th>Lokasyon</th><th>Ürün</th><th>LOT</th><th class="num">Toplanan</th></tr></thead><tbody>
   {% for l in lines %}<tr{% if l.remaining <= 0 %} class="row-ok"{% endif %}><td><b>{{ l.location }}</b></td>
-  <td>{{ l.product.sku }}<div class="small muted">{{ l.product.barcode }}</div></td><td>{{ l.lot.lot_no|default:"—" }}</td>
+  <td><div style="display:flex;gap:10px;align-items:center">{% with m=l.product.main_image %}{% if m %}<a href="{{ m.image.url }}" target="_blank" rel="noopener"><img class="pthumb" src="{{ m.thumb.url|default:m.image.url }}" alt=""></a>{% endif %}{% endwith %}<div>{{ l.product.sku }}<div class="small muted">{{ l.product.barcode }}</div></div></div></td><td>{{ l.lot.lot_no|default:"—" }}</td>
   <td class="num"><b>{{ l.picked_quantity|floatformat:"-3" }}</b> / {{ l.quantity|floatformat:"-3" }}</td></tr>{% endfor %}
   </tbody></table></div>
   <div style="padding:14px 20px"><div class="progress"><span style="width:{{ progress }}%"></span></div><div class="small muted" style="margin-top:6px">%{{ progress }} toplandı</div></div>

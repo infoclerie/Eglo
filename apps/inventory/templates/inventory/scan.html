@@ -9,7 +9,11 @@
   <div class="card kpi ok"><div class="t">{{ product.sku }} · satışa uygun</div><div class="v">{{ summary.available|floatformat:"-3" }}</div></div>
   <div class="card kpi"><div class="t">Rezerve</div><div class="v">{{ summary.reserved|floatformat:"-3" }}</div></div>
   <div class="card kpi"><div class="t">Fiziksel toplam</div><div class="v">{{ summary.physical|floatformat:"-3" }}</div></div>
-</div><h2>{{ product.name }}</h2>{% endif %}
+</div>
+<div class="card card-pad" style="margin-bottom:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+  {% for i in images %}<a href="{{ i.image.url }}" target="_blank" rel="noopener"><img class="pthumb lg" src="{{ i.thumb.url|default:i.image.url }}" alt="{{ product.name }}"></a>{% empty %}<span class="pthumb lg pthumb-empty">📷</span>{% endfor %}
+  <div><h2 style="margin:0">{{ product.name }}</h2><a class="btn btn-sm" style="margin-top:8px" href="{% url 'catalog:photos' product.pk %}">📷 Fotoğraflar{% if images %} ({{ product.images.count }}){% else %} · ekle{% endif %}</a></div>
+</div>{% endif %}
 {% if location %}<h2>Lokasyon {{ location }} <span class="badge">{{ location.get_kind_display }}</span></h2>{% endif %}
 {% if pallet %}<h2>Palet {{ pallet }} · {{ pallet.location|default:"lokasyon yok" }}</h2>{% endif %}
 {% if quants %}

@@ -24,7 +24,11 @@ def receive(request, pk):
                                   expiry_date=parse_date(request.POST.get("expiry_date") or ""),
                                   production_date=parse_date(request.POST.get("production_date") or ""),
                                   user=request.user, waybill_no=request.POST.get("waybill", ""))
-            messages.success(request, f"{line.product.sku} teslim alındı.")
+            msg = f"{line.product.sku} teslim alındı."
+            if request.FILES.getlist("photos"):
+                from apps.catalog.views import save_photos
+                msg += f" {save_photos(request, line.product, f'Mal kabul {po.number}')} fotoğraf eklendi."
+            messages.success(request, msg)
         except (ValidationError, ValueError) as exc:
             messages.error(request, " ".join(getattr(exc, "messages", [str(exc)])))
         return redirect(request.path)

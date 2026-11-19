@@ -32,7 +32,8 @@ def xlsx_response(modeladmin, request, queryset):
     from openpyxl.styles import Font, PatternFill
     from openpyxl.utils import get_column_letter
     model = modeladmin.model
-    cols = [c for c in modeladmin.get_list_display(request) if c != "action_checkbox"]
+    cols = [c for c in modeladmin.get_list_display(request)
+            if c != "action_checkbox" and str(label_for_field(c, model, modeladmin)).strip()]  # başlıksız (fotoğraf) sütun atlanır
     wb = Workbook()
     ws = wb.active
     ws.title = str(model._meta.verbose_name_plural)[:31]

@@ -7,8 +7,9 @@
 <div class="prod-grid">
 {% for r in rows %}
   <div class="card prod">
+    {% with m=r.p.main_image %}{% if m %}<img src="{{ m.thumb.url|default:m.image.url }}" alt="{{ r.p.name }}" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;margin-bottom:8px;background:#f3f4f6">{% endif %}{% endwith %}
     <div class="small muted">{{ r.p.category|default:"" }}</div>
-    <b>{{ r.p.name }}</b><div class="small muted">{{ r.p.sku }}{% if r.p.units_per_case > 1 %} · koli içi {{ r.p.units_per_case }}{% endif %}</div>
+<b>{{ r.p.name }}</b><div class="small muted">{{ r.p.sku }}{% if r.p.units_per_case > 1 %} · koli içi {{ r.p.units_per_case }}{% endif %}</div>
     <div class="price">{{ r.price }} TL <span class="small muted" style="font-weight:500">+ KDV</span></div>
     <div><span class="badge {% if r.level == 'ok' %}ok{% elif r.level == 'low' %}warning{% else %}danger{% endif %}">{{ r.label }}</span></div>
     {% if r.level != 'out' %}<form method="post">{% csrf_token %}<input type="hidden" name="product" value="{{ r.p.pk }}">

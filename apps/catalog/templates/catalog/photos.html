@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ p.name }} · fotoğraflar{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ p.name }}</h1><p>{{ p.sku }}{% if p.barcode %} · {{ p.barcode }}{% endif %} — ürün fotoğrafları</p></div>
+  <div class="inline"><a class="btn" href="{% url 'inventory:scan' %}?code={{ p.sku|urlencode }}">Stok durumu</a><a class="btn" href="{% url 'admin:catalog_product_change' p.pk %}">Ürün kartı</a></div></div>
+{% if perms.catalog.add_productimage %}<form method="post" enctype="multipart/form-data" class="card card-pad" style="margin-bottom:16px">{% csrf_token %}
+  {% include "partials/photo_input.html" %}
+  <div class="inline" style="margin-top:10px;flex-wrap:wrap"><input name="note" placeholder="Not (isteğe bağlı): ön yüz, koli, etiket…" style="flex:1;min-width:220px"><button class="btn btn-primary">Yükle</button></div>
+</form>{% endif %}
+<div class="photo-grid">{% for i in images %}
+  <figure class="card photo-card{% if i.is_main %} main{% endif %}"><a href="{{ i.image.url }}" target="_blank" rel="noopener"><img src="{{ i.thumb.url|default:i.image.url }}" alt="{{ p.name }}" loading="lazy"></a>
+  <figcaption>{% if i.is_main %}<span class="badge ok">Ana görsel</span>{% endif %}<div class="small muted">{{ i.created_at|date:"d.m.Y H:i" }}{% if i.uploaded_by %} · {{ i.uploaded_by }}{% endif %}</div>{% if i.note %}<div class="small">{{ i.note }}</div>{% endif %}
+  {% if perms.catalog.add_productimage %}<form method="post" class="inline" style="margin-top:6px">{% csrf_token %}{% if not i.is_main %}<button class="btn btn-sm" name="main" value="{{ i.pk }}">Ana görsel yap</button>{% endif %}
+  <button class="btn btn-sm" name="delete" value="{{ i.pk }}" onclick="return confirm('Fotoğraf silinsin mi?')">Sil</button></form>{% endif %}</figcaption></figure>
+{% empty %}<div class="empty">{% icon "box" %}<div>Henüz fotoğraf yok. Telefonda "Fotoğraf çek" kamerayı açar.</div></div>{% endfor %}</div>
+{% endblock %}

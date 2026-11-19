@@ -4,8 +4,9 @@
 <div class="page-head"><div><h1>{{ title }}</h1></div></div>
 <div class="card card-pad" style="max-width:640px">
   {% if form.non_field_errors %}<div class="alert error" style="margin-bottom:14px">{% icon "alert" %}{{ form.non_field_errors|join:" " }}</div>{% endif %}
-  <form method="post" class="form">{% csrf_token %}
+  <form method="post" class="form"{% if photos %} enctype="multipart/form-data"{% endif %}>{% csrf_token %}
     {% for f in form %}<div>{{ f.label_tag }}{{ f }}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>{% endfor %}
+    {% if photos %}<div><label>Ürün fotoğrafı</label>{% include "partials/photo_input.html" %}<div class="helptext">İsteğe bağlı. Telefonda "Fotoğraf çek" kamerayı açar; birden fazla fotoğraf eklenebilir. Fotoğraflar ürün kartına kaydedilir.</div></div>{% endif %}
     <div><button class="btn btn-primary btn-lg">{% icon "check" %}Kaydet</button></div>
   </form>
 </div>

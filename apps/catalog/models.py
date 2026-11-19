@@ -1,3 +1,4 @@
+from django.conf import settings
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -95,6 +96,15 @@ class Product(BaseModel):
     def is_kit(self):
         return self.kind == "kit"
 
+    @property
+    def main_image(self):
+        """Ana fotoğraf (yoksa en son yüklenen) — ProductImage veya None."""
+        imgs = getattr(self, "_prefetched_objects_cache", {}).get("images")
+        if imgs is not None:
+            imgs = list(imgs)
+            return next((i for i in imgs if i.is_main), imgs[0] if imgs else None)
+        return self.images.order_by("-is_main", "-created_at").first()
+
     def price_for(self, channel):
         p = self.prices.filter(channel=channel).first()
         return p.price if p else self.list_price
@@ -130,3 +140,23 @@ class KitComponent(BaseModel):
             raise ValidationError("Set içine başka bir set eklenemez.")
         if self.quantity <= 0:
             raise ValidationError("Miktar sıfırdan büyük olmalı.")
+
+
+class ProductImage(models.Model):
+    """Ürün fotoğrafı (mal kabulde telefondan çekilebilir). Yüklenen görsel küçültülür; küçük önizleme ayrıca tutulur."""
+
+    product = models.ForeignKey(Product, verbose_name="Ürün", on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField("Fotoğraf", upload_to="urunler/%Y/%m/")
+    thumb = models.ImageField("Önizleme", upload_to="urunler/kucuk/%Y/%m/", blank=True)
+    is_main = models.BooleanField("Ana görsel", default=False, help_text="Listelerde ve bayi portalında görünen fotoğraf.")
+    note = models.CharField("Not", max_length=150, blank=True, help_text="Ör. mal kabul SAS-000012, ön yüz, koli görünümü.")
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Yükleyen", null=True, blank=True,
+                                    on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField("Yükleme zamanı", auto_now_add=True)
+
+    class Meta:
+        verbose_name, verbose_name_plural = "Ürün fotoğrafı", "Ürün fotoğrafları"
+        ordering = ["-is_main", "-created_at"]
+
+    def __str__(self):
+        return f"{self.product.sku} fotoğraf"

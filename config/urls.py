@@ -14,3 +14,9 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("", include("apps.core.urls")),
 ] + module_urlpatterns()
+
+from django.conf import settings  # noqa: E402
+
+if settings.DEBUG:  # canlıda /media/ dosyalarını Caddy sunar
+    from django.conf.urls.static import static
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

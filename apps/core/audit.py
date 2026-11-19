@@ -14,7 +14,8 @@ SKIP_MODELS = {"core.AuditLog"}
 def _jsonable(value):
     if isinstance(value, (datetime.date, datetime.datetime, datetime.time, decimal.Decimal, uuid.UUID)):
         return str(value)
-    if hasattr(value, "name") and hasattr(value, "url"):  # dosya alanı
+    from django.db.models.fields.files import FieldFile
+    if isinstance(value, FieldFile):  # dosya alanı (boş dosyada .url hata verir)
         return value.name or ""
     return value
 

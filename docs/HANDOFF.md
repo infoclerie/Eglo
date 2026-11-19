@@ -78,3 +78,5 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 - Yeni rol: "Üretim sorumlusu". Kullanıcı kararı: kampanya kurgusu (Trendyol kampanyaya katılım vb.) pazaryeri panelinde kalır;
   sonuçları (satış, kesinti, hakediş) bu sisteme gelir.
 - Test sayısı: 115.
+- Ürün fotoğrafları (catalog.ProductImage): mal kabulde telefondan çekilip yüklenir; bkz. apps/catalog/MODULE.md. Test sayısı: 118.
+- Kullanıcı kararı: kargo firması testleri en sona bırakıldı.

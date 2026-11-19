@@ -7,7 +7,7 @@ ROLES = {
     "Şirket yöneticisi": {"*": "all", "core": "all"},
     "Üretim sorumlusu": {"reports": "all", "catalog": "view", "inventory": ["view_quant", "view_location", "view_lot", "view_stockmove"], "partners": "view", "production": "all"},
     "Depo müdürü": {"catalog": "all", "inventory": "all", "production": "view", "reports": "all", "imports": "all", "shipping": "all", "purchase": "view", "sales": "view", "partners": "view", "core": ["decide_approval", "view_approvalrequest"]},
-    "Depo personeli": {"catalog": "view", "inventory": [
+    "Depo personeli": {"catalog": ["view_product", "view_brand", "view_category", "view_saleschannel", "view_productimage", "add_productimage"], "inventory": [
         "view_quant", "view_location", "view_lot", "view_pallet", "add_pallet", "change_pallet",
         "view_stockmove", "add_stockmove", "add_stockcount", "change_stockcount", "view_stockcount",
         "add_stockcountline", "change_stockcountline", "view_stockcountline"],

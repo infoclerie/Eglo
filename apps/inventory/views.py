@@ -41,7 +41,7 @@ def scan(request):
         quants = Quant.objects.filter(quantity__gt=0).select_related("product", "location", "lot", "pallet")
         if product:
             quants = quants.filter(product=product)
-            ctx.update(product=product, summary=services.stock_summary(product))
+            ctx.update(product=product, summary=services.stock_summary(product), images=list(product.images.all()[:6]))
         elif location:
             quants = quants.filter(location=location)
             ctx["location"] = location
@@ -57,16 +57,21 @@ def scan(request):
     return render(request, "inventory/scan.html", ctx)
 
 
-def _run_form(request, form_cls, action, title):
+def _run_form(request, form_cls, action, title, photos=False):
     form = form_cls(request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
             move = action(form.cleaned_data, request.user)
-            messages.success(request, f"Kaydedildi: {move}")
+            msg = f"Kaydedildi: {move}"
+            if photos and request.FILES.getlist("photos"):
+                from apps.catalog.views import save_photos
+                n = save_photos(request, form.cleaned_data["product"], f"Mal kabul {form.cleaned_data.get('reference') or ''}".strip())
+                msg += f" · {n} fotoğraf eklendi"
+            messages.success(request, msg)
             return redirect(request.path)
         except ValidationError as exc:
             form.add_error(None, exc)
-    return render(request, "inventory/form.html", {"form": form, "title": title})
+    return render(request, "inventory/form.html", {"form": form, "title": title, "photos": photos})
 
 
 @login_required
@@ -76,7 +81,7 @@ def receive(request):
         return services.receive(d["product"], d["quantity"], d["location"], lot_no=d["lot_no"] or None,
                                 expiry_date=d["expiry_date"], production_date=d["production_date"],
                                 reference=d["reference"], user=user, move_type=d["move_type"], pallet=d["pallet"])
-    return _run_form(request, ReceiveForm, action, "Mal Kabul")
+    return _run_form(request, ReceiveForm, action, "Mal Kabul", photos=True)
 
 
 @login_required

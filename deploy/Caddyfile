@@ -1,6 +1,15 @@
 # HTTPS sertifikası otomatik alınır (Let's Encrypt). DOMAIN .env'den gelir.
 {$DOMAIN} {
     encode gzip
+    # Ürün fotoğrafları (media birimi Caddy'ye salt okunur bağlıdır)
+    handle_path /media/* {
+        root * /srv/media
+        header Cache-Control "public, max-age=604800"
+        file_server
+    }
+    request_body {
+        max_size 60MB
+    }
     reverse_proxy web:8000
     header {
         Strict-Transport-Security "max-age=31536000"
