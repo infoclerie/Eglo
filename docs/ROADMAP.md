@@ -33,3 +33,4 @@ Ana panel: grafikler (ciro, kanal, ürün, stok değeri), kart/grafik seçme pan
 
 - [x] Bildirim merkezi (e-posta/SMS sihirbazı, düzenlenebilir şablonlar)
 - [x] Canlı sohbet (ofis içi + bayi destek, çevrimiçi durumu)
+- [x] Yedekler: al / indir / yükle / geri dön, test verilerini temizle, yeni sunucuya taşıma (`deploy/restore.sh`)

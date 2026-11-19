@@ -45,3 +45,32 @@ python3 -m venv .venv && source .venv/bin/activate && pip install -r requirement
 python manage.py migrate && python manage.py setup_roles && python manage.py seed_demo
 python manage.py createsuperuser && python manage.py runserver
 ```
+
+
+## Yedekler ve başka sunucuya taşıma
+
+**Ekrandan:** Sistem › Yedekler (yalnız süper kullanıcı): yedek al, indir, bilgisayardan yükle, geri dön, test verilerini temizle.
+Yedek = tek `.zip` (tüm veritabanı JSON + ürün fotoğrafları). Geri dönüş tek işlemde yapılır; öncesi otomatik yedeklenir.
+Yedekler sunucuda `appbackups` biriminde durur. **Sunucu çökerse içindekiler de gider → önemli yedekleri indirin.**
+
+**Komut satırından:**
+```bash
+cd /opt/eglo-erp
+sudo docker compose exec web python manage.py create_backup --name "Aylık"     # /app/backups_app altına yazar
+sudo docker compose cp web:/app/backups_app/DOSYA.zip ./                         # sunucu klasörüne kopyala
+```
+
+**Yeni sunucuya taşıma (adım adım):**
+1. Eski sistemde Yedekler › "Yedek al" → **İndir**. Eski sunucudaki `/opt/eglo-erp/.env` dosyasının içeriğini de güvenli bir yere
+   kopyalayın (içindeki `DJANGO_SECRET_KEY` entegrasyon şifrelerini açan anahtardır; kimseyle paylaşmayın).
+2. Yeni sunucuda hızlı kurulum komutunu çalıştırın (yukarıda). Kurulum bitince:
+   `sudo nano /opt/eglo-erp/.env` → `DJANGO_SECRET_KEY=` satırını eskisiyle değiştirin (diğer satırlar yeni sunucunun kalsın),
+   sonra `cd /opt/eglo-erp && sudo docker compose up -d`.
+   (Anahtarı taşımazsanız da sistem çalışır; yalnız entegrasyon şifrelerini sihirbazlardan yeniden girersiniz.)
+3. Yedek dosyasını sunucuya kopyalayın (ör. `scp yedek.zip ubuntu@YENI_IP:/tmp/`) ve:
+   `cd /opt/eglo-erp && sudo ./deploy/restore.sh /tmp/yedek.zip`
+   Süper kullanıcı oluşturmanıza gerek yok: eski kullanıcılar ve şifreler yedekle gelir.
+4. Alan adının DNS kaydını yeni sunucunun IP'sine yönlendirin; Lightsail'de 80/443 portlarını açın.
+5. Pazaryeri entegrasyonlarında (Trendyol test ortamı vb.) IP yetkisi gerekiyorsa yeni IP'yi bildirin.
+
+Yedek PostgreSQL / SQLite bağımsızdır; aynı veya daha yeni yazılım sürümüne yüklenebilir (önce `git pull` ile güncel kod).

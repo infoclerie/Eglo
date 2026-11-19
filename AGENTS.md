@@ -37,3 +37,4 @@ python manage.py modules           # açık modüller ve bağımlılıklar
 python manage.py seed_demo         # örnek depo/ürün verisi
 python manage.py setup_roles       # rol/izin güncelle
 ```
+12. Yeni bir hareket (işlem) tablosu eklerseniz modülün MANIFEST'indeki `reset_data` grubuna ekleyin (Yedekler › Test verilerini temizle).

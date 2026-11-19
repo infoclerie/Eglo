@@ -106,3 +106,69 @@ def appearance(request):
         pref.save()
         return redirect("core:appearance")
     return render(request, "core/appearance.html", {"presets": theme.PRESETS, "pref": pref})
+
+
+# ---------------------------------------------------------------- yedekler (yalnız süper kullanıcı)
+from django.contrib.auth.decorators import user_passes_test  # noqa: E402
+from django.core.exceptions import ValidationError as _VE  # noqa: E402
+from django.http import FileResponse  # noqa: E402
+
+from . import backups as bk  # noqa: E402
+
+superuser_required = user_passes_test(lambda u: u.is_active and u.is_superuser)
+
+
+def _tr_upper(s):
+    """Türkçe büyük harf: i→İ, ı→I ('geri dön' → 'GERİ DÖN')."""
+    return (s or "").strip().replace("i", "İ").replace("ı", "I").upper().replace("İ", "I")  # İngilizce klavye de kabul
+
+
+@login_required
+@superuser_required
+def backups(request):
+    from django.contrib import messages
+    from django.shortcuts import redirect
+    if request.method == "POST":
+        action = request.POST.get("action")
+        try:
+            if action == "create":
+                name = bk.create_backup(request.POST.get("name") or "Elle alınan yedek", request.user)
+                messages.success(request, f"Yedek alındı: {name}")
+            elif action == "upload" and request.FILES.get("file"):
+                messages.success(request, f"Yedek dosyası eklendi: {bk.save_upload(request.FILES['file'])}. Geri dönmek için listeden seçin.")
+            elif action == "delete":
+                bk.delete_backup(request.POST.get("file"))
+                messages.success(request, "Yedek silindi.")
+            elif action == "restore":
+                if _tr_upper(request.POST.get("confirm")) != "GERI DÖN":
+                    raise _VE("Onay için kutuya GERİ DÖN yazın.")
+                res = bk.restore_backup(request.POST.get("file"), user=request.user)
+                for w in res["warnings"]:
+                    messages.warning(request, w)
+                messages.success(request, f"Sistem '{res['meta'].get('name')}' yedeğine döndü. Dönüş öncesi hali de yedeklendi "
+                                          f"({res['safety']}). Güvenlik için tüm oturumlar kapandı; yeniden giriş yapın.")
+                return redirect("login")
+            elif action == "reset":
+                if _tr_upper(request.POST.get("confirm")) != "TEMIZLE":
+                    raise _VE("Onay için kutuya TEMİZLE yazın.")
+                res = bk.reset_test_data(request.POST.getlist("groups"), request.user)
+                total = sum(res["counts"].values())
+                messages.success(request, f"{total} test kaydı silindi. Öncesi yedeklendi: {res['safety']}")
+        except _VE as exc:
+            messages.error(request, " ".join(exc.messages))
+        return redirect("core:backups")
+    import shutil
+    usage = shutil.disk_usage(bk.root())
+    return render(request, "core/backups.html", {"items": bk.list_backups(), "groups": bk.reset_groups(),
+                                                 "free_gb": round(usage.free / 1024 ** 3, 1)})
+
+
+@login_required
+@superuser_required
+def backup_download(request, filename):
+    try:
+        path = bk._path(filename)
+    except _VE:
+        from django.http import Http404
+        raise Http404
+    return FileResponse(path.open("rb"), as_attachment=True, filename=filename)

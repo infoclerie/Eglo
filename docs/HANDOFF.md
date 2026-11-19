@@ -80,3 +80,12 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 - Test sayısı: 115.
 - Ürün fotoğrafları (catalog.ProductImage): mal kabulde telefondan çekilip yüklenir; bkz. apps/catalog/MODULE.md. Test sayısı: 118.
 - Kullanıcı kararı: kargo firması testleri en sona bırakıldı.
+
+## Yedekler / taşıma (Kasım 2026)
+- `apps/core/backups.py`: yedek = zip (meta.json + data.json [dumpdata, natural foreign keys] + media/). Geri dönüş: flush + loaddata
+  tek transaction, sonra fotoğraflar değişir; öncesi otomatik yedek (son 10 saklanır). Ekran: Sistem › Yedekler (süper kullanıcı).
+- Test verisi temizliği: her modülün MANIFEST["reset_data"] grupları (modeller + numara serileri). Yeni modülde hareket tablosu
+  eklerseniz buraya ekleyin. Ana veriler (ürün, cari, depo, reçete, ayarlar, kullanıcılar) silinmez.
+- Komutlar: `create_backup`, `restore_backup <zip> --yes`; sunucuda `deploy/restore.sh` (taşıma adımları docs/DEPLOY.md).
+- Entegrasyon şifreleri DJANGO_SECRET_KEY'den türeyen anahtarla şifreli → taşımada .env'deki anahtar da taşınmalı (meta'da parmak izi).
+- Yedekten dönünce bekleyen entegrasyon işleri durdurulur (`core.restored` olayı). PostgreSQL ve SQLite'da test edildi. Test: 122.

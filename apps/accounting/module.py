@@ -14,4 +14,5 @@ MANIFEST = {
         ("Ürün Kârlılığı", "accounting:profitability", "chart"),
         ("Pazaryeri Hakediş", "admin:accounting_marketplacesettlement_changelist", "cart"),
     ],
+    "reset_data": [{'label': 'Faturalar, tahsilatlar, cari hareketler', 'desc': "Faturalar, ödemeler, cari hareketler ve hakedişler. DİKKAT: GİB'e canlı gönderilmiş fatura varsa seçmeyin.", 'models': ['accounting.LedgerEntry', 'accounting.Payment', 'accounting.InvoiceLine', 'accounting.Invoice', 'accounting.MarketplaceSettlement'], 'sequences': ['invoice.']}],
 }

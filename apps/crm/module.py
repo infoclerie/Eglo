@@ -7,4 +7,5 @@ MANIFEST = {
     "icon": "users",
     "color": "#be185d",
     "menu": [("Satış fırsatları", "crm:board", "chart"), ("Takiplerim", "crm:activities", "check"), ("Müşteri segmentleri", "crm:segments", "users"), ("Kampanyalar (e-posta / SMS)", "crm:campaigns", "inbox")],
+    "reset_data": [{'label': 'CRM fırsat, takip ve kampanyalar', 'desc': 'Satış fırsatları, aktiviteler ve gönderilmiş/taslak kampanyalar.', 'models': ['crm.CampaignRecipient', 'crm.Campaign', 'crm.Activity', 'crm.Opportunity']}],
 }

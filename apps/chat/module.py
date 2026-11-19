@@ -7,4 +7,5 @@ MANIFEST = {
     "icon": "users",
     "color": "#16a34a",
     "menu": [],
+    "reset_data": [{'label': 'Sohbet mesajları', 'desc': 'Tüm sohbetler ve mesajlar.', 'models': ['chat.Message', 'chat.Participant', 'chat.Conversation']}],
 }

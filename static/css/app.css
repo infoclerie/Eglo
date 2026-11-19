@@ -306,3 +306,8 @@ body.erp .photo-card figcaption { padding: 10px 12px; }
 body.erp .pthumb { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); vertical-align: middle; background: #f3f4f6; }
 body.erp .pthumb.lg { width: 120px; height: 120px; border-radius: 12px; }
 body.erp .pthumb-empty { display: inline-grid; place-items: center; color: var(--muted); font-size: 18px; }
+body.erp .reset-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+body.erp .reset-group { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--line); border-radius: 10px; font-weight: 400; cursor: pointer; }
+body.erp .reset-group input { margin-top: 3px; }
+body.erp .reset-group b { display: block; } body.erp .reset-group small { color: var(--muted); }
+body.erp dialog::backdrop { background: rgba(15, 23, 42, .45); }

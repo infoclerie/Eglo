@@ -106,3 +106,13 @@ def _stock_changed(**kw):
 for _ev in ("inventory.reserved", "inventory.released", "inventory.shipped", "inventory.count_applied", "purchase.goods_received",
             "production.completed"):
     subscribe(_ev)(_stock_changed)
+
+
+@subscribe("core.restored")
+def stop_pending_after_restore(**kw):
+    """Yedekten dönülünce bekleyen gönderimler durdurulur (aynı e-posta / pazaryeri bildirimi iki kez gitmesin)."""
+    from django.utils import timezone
+
+    from .models import IntegrationJob
+    IntegrationJob.objects.filter(status__in=("pending", "running")).update(
+        status="failed", last_error="Yedekten geri dönüldü; otomatik durduruldu. Gerekirse 'Yeniden dene'.", finished_at=timezone.now())

@@ -133,3 +133,7 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": env("LOG_LEVEL", "INFO")},
 }
+
+# Yedekler (Ayarlar › Yedekler): veritabanı + ürün fotoğrafları tek .zip dosyası
+BACKUP_ROOT = Path(env("BACKUP_ROOT", str(BASE_DIR / "backups_app")))
+BACKUP_KEEP_AUTO = 10  # otomatik (geri dönüş öncesi) yedeklerden saklanacak adet

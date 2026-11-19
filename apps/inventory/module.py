@@ -13,4 +13,5 @@ MANIFEST = {
         ("Transfer", "inventory:transfer", "swap"),
         ("Sayımlar", "admin:inventory_stockcount_changelist", "check"),
     ],
+    "reset_data": [{'label': 'Stok miktarları ve hareketleri', 'desc': "Eldeki stok, LOT'lar, hareketler, rezervasyonlar ve sayımlar sıfırlanır (depo, lokasyon, palet tanımları kalır).", 'models': ['inventory.Reservation', 'inventory.StockCountLine', 'inventory.StockCount', 'inventory.Quant', 'inventory.StockMove', 'inventory.Lot'], 'sequences': ['inventory.', 'count']}],
 }

@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Yedekler{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Yedekler</h1><p>Teste başlamadan yedek alın; işler karışınca o ana dönün. Bir yedek = veritabanının tamamı + ürün fotoğrafları (tek .zip).</p></div></div>
+
+<div class="grid grid-2" style="margin-bottom:16px">
+  <form method="post" class="card card-pad form">{% csrf_token %}<input type="hidden" name="action" value="create">
+    <h2 style="margin-top:0">Şimdi yedek al</h2>
+    <div><label for="bn">Yedeğin adı</label><input id="bn" name="name" placeholder="Ör. Test öncesi temiz, Canlıya geçiş" maxlength="60">
+      <div class="helptext">Neyi kaydettiğinizi hatırlatacak kısa bir ad. Boşsa "Elle alınan yedek" olur.</div></div>
+    <button class="btn btn-primary btn-lg">{% icon "check" %}Yedek al</button>
+    <p class="small muted" style="margin:0">Sunucuda boş alan: {{ free_gb }} GB</p></form>
+  <form method="post" enctype="multipart/form-data" class="card card-pad form">{% csrf_token %}<input type="hidden" name="action" value="upload">
+    <h2 style="margin-top:0">Bilgisayardan yedek yükle</h2>
+    <div><label for="bf">Yedek dosyası (.zip)</label><input id="bf" type="file" name="file" accept=".zip" required>
+      <div class="helptext">Daha önce indirdiğiniz veya başka sunucudan aldığınız yedek. Yüklemek sistemi değiştirmez; listeye eklenir, sonra "Geri dön" dersiniz.</div></div>
+    <button class="btn">Yükle</button></form>
+</div>
+
+<h2>Yedek listesi</h2>
+<div class="card" style="margin-bottom:24px"><div class="table-wrap"><table class="table"><thead><tr><th>Yedek</th><th>Tarih</th><th>Alan</th><th class="num">Kayıt</th><th class="num">Fotoğraf</th><th class="num">Boyut</th><th></th></tr></thead><tbody>
+{% for b in items %}<tr><td><b>{{ b.name }}</b>{% if b.kind == "auto" %} <span class="badge">otomatik</span>{% elif b.kind == "upload" %} <span class="badge info">yüklenen</span>{% endif %}
+  {% if not b.key_ok %}<div class="small" style="color:var(--danger,#b91c1c)">Başka sunucunun anahtarıyla alınmış: entegrasyon şifreleri yeniden girilmeli.</div>{% endif %}<div class="small muted">{{ b.file }}</div></td>
+<td>{{ b.created|date:"d.m.Y H:i"|default:"—" }}</td><td>{{ b.created_by }}</td><td class="num">{{ b.records }}</td><td class="num">{{ b.photos }}</td><td class="num">{{ b.size|filesizeformat }}</td>
+<td class="num"><div class="inline" style="justify-content:flex-end;flex-wrap:wrap">
+  <a class="btn btn-sm" href="{% url 'core:backup_download' b.file %}">İndir</a>
+  <button class="btn btn-sm btn-primary" type="button" onclick="openRestore('{{ b.file }}','{{ b.name|escapejs }}','{{ b.created|date:'d.m.Y H:i' }}')">Geri dön</button>
+  <form method="post" onsubmit="return confirm('Bu yedek dosyası silinsin mi?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="file" value="{{ b.file }}"><button class="btn btn-sm">Sil</button></form></div></td></tr>
+{% empty %}<tr><td colspan="7"><div class="empty">{% icon "inbox" %}<div>Henüz yedek yok. Teste başlamadan "Test öncesi temiz" adıyla bir yedek alın.</div></div></td></tr>{% endfor %}
+</tbody></table></div></div>
+
+<dialog id="restore" class="card card-pad" style="max-width:520px;border:0">
+  <form method="post" class="form">{% csrf_token %}<input type="hidden" name="action" value="restore"><input type="hidden" name="file" id="rf">
+    <h2 style="margin-top:0">Yedeğe geri dön</h2>
+    <div class="alert danger">{% icon "alert" %}<div><b id="rn"></b> (<span id="rd"></span>) anına dönülecek. O andan sonra girilen <b>tüm</b> kayıtlar (sipariş, stok, fatura, fotoğraf...) bütün modüllerde birlikte geri alınır.</div></div>
+    <p class="small muted" style="margin:0">Güvenlik için şu anki hali önce otomatik yedeklenir; vazgeçerseniz ona dönebilirsiniz. İşlem sonunda herkes yeniden giriş yapar.</p>
+    <div><label for="rc">Onay için <b>GERİ DÖN</b> yazın</label><input id="rc" name="confirm" autocomplete="off" required></div>
+    <div class="inline" style="justify-content:flex-end"><button type="button" class="btn" onclick="document.getElementById('restore').close()">Vazgeç</button><button class="btn btn-danger btn-lg">Geri dön</button></div></form>
+</dialog>
+
+<h2>Test verilerini temizle</h2>
+<form method="post" class="card card-pad form" onsubmit="return confirm('Seçilen kayıtlar silinecek. Öncesi otomatik yedeklenir. Devam?')">{% csrf_token %}<input type="hidden" name="action" value="reset">
+  <p class="muted" style="margin:0">Canlıya geçmeden önce deneme kayıtlarını siler. <b>Kalanlar:</b> ürün kartları ve fotoğraflar, cariler, depo/lokasyonlar, fiyatlar, reçeteler, kullanıcılar, entegrasyon ve bildirim ayarları. Belge numaraları (SIP-, SVK-, fatura...) baştan başlar.</p>
+  <div class="reset-groups">{% for g in groups %}<label class="reset-group"><input type="checkbox" name="groups" value="{{ g.key }}" checked><span><b>{{ g.label }}</b><small>{{ g.desc }}</small></span></label>{% endfor %}</div>
+  <div style="max-width:320px"><label for="tc">Onay için <b>TEMİZLE</b> yazın</label><input id="tc" name="confirm" autocomplete="off" required></div>
+  <div><button class="btn btn-danger btn-lg">Seçilenleri temizle</button></div>
+</form>
+<script>function openRestore(f,n,d){document.getElementById("rf").value=f;document.getElementById("rn").textContent=n;document.getElementById("rd").textContent=d;document.getElementById("rc").value="";document.getElementById("restore").showModal();}</script>
+{% endblock %}

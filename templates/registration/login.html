@@ -4,6 +4,7 @@
 <body class="erp"><div class="auth"><div class="card">
   <div class="logo">{% icon "box" %} Eglo ERP</div>
   <p class="muted" style="margin:0 0 22px">Depo, sipariş, sevkiyat ve finans yönetimi</p>
+  {% for m in messages %}<div class="alert {% if m.level_tag == 'error' %}error{% elif m.level_tag == 'warning' %}danger{% else %}success{% endif %}" style="margin-bottom:14px">{{ m }}</div>{% endfor %}
   {% if form.errors %}<div class="alert error" style="margin-bottom:14px">{% icon "alert" %}Kullanıcı adı veya şifre hatalı.</div>{% endif %}
   <form method="post" class="form">{% csrf_token %}
     <div><label for="id_username">Kullanıcı adı</label><input type="text" name="username" id="id_username" autofocus autocomplete="username" required></div>

@@ -7,3 +7,4 @@ media/
 backups/
 .venv/
 .git/
+backups_app/
