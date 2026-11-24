@@ -250,3 +250,16 @@ def active_users(request):
         rows.append({"a": a, "online": mins < 5, "mins": mins, "device": _device(a.user_agent)})
     return render(request, "core/active_users.html", {"rows": rows, "hours": hours,
                                                       "online": sum(1 for r in rows if r["online"])})
+
+
+@login_required
+@superuser_required
+def ai_context(request):
+    """Yapay zekâ için proje rehberi (.md) — tüm dokümanlar + canlı özet, gizli bilgi yok."""
+    from django.http import HttpResponse
+    from django.utils import timezone
+
+    from .context_pack import build_pack
+    resp = HttpResponse(build_pack(), content_type="text/markdown; charset=utf-8")
+    resp["Content-Disposition"] = f'attachment; filename="EGLO_ERP_PROJE_REHBERI_{timezone.localdate():%Y%m%d}.md"'
+    return resp

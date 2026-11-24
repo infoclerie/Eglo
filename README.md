@@ -1,3 +1,5 @@
+> 🤖 **Yapay zekâ ile çalışacaksanız:** önce [`PROJE_REHBERI_AI.md`](PROJE_REHBERI_AI.md) dosyasını okutun — projenin tamamı tek dosyada.
+
 # Eglo ERP — Depo, Stok, Sipariş, Sevkiyat, CRM ve Muhasebe
 
 Deterjan ve kozmetik firması için web tabanlı, modüler, entegre işletme yönetim sistemi.

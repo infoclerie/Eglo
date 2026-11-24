@@ -76,6 +76,8 @@ def create_backup(name, user=None, kind="manual"):
         part = root() / (filename + ".part")
         with zipfile.ZipFile(part, "w", zipfile.ZIP_DEFLATED) as z:
             z.writestr("meta.json", json.dumps(meta, ensure_ascii=False, indent=1))
+            from .context_pack import build_pack
+            z.writestr("PROJE_REHBERI_AI.md", build_pack())  # bu yedeği başka bir yapay zekâya verince projeyi anlasın
             z.write(data, "data.json")
             if media.exists():
                 for f in media.rglob("*"):

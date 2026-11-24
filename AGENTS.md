@@ -38,3 +38,4 @@ python manage.py seed_demo         # örnek depo/ürün verisi
 python manage.py setup_roles       # rol/izin güncelle
 ```
 12. Yeni bir hareket (işlem) tablosu eklerseniz modülün MANIFEST'indeki `reset_data` grubuna ekleyin (Yedekler › Test verilerini temizle).
+13. Dokümanlar değişince tek dosyalık rehberi yenileyin: `python manage.py build_ai_context --no-live` (kökteki PROJE_REHBERI_AI.md). Canlı sistemde Yedekler ekranından ve her yedeğin içinden de alınır.

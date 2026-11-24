@@ -133,3 +133,21 @@ class FullResetTests(ErpFixture, TransactionTestCase):
         self.assertEqual(self.client.get("/").status_code, 200)
         self.assertContains(self.client.get("/ayarlar/yedekler/"), "Her şeyi seç")
         self.assertTrue(bk.list_backups()[0]["name"].startswith("Temizlik öncesi"))
+
+
+class AiContextTests(ErpFixture, TransactionTestCase):
+    def test_pack_download_and_in_backup(self):
+        import zipfile
+        self.setup_erp()
+        self.client.force_login(self.boss)
+        r = self.client.get("/ayarlar/yedekler/ai-rehberi/")
+        body = r.content.decode()
+        self.assertIn("Yapay zekâ için proje rehberi", body)
+        self.assertIn("Bölüm 1 · Kurallar", body)
+        self.assertIn("Modül `inventory`", body)
+        from django.conf import settings
+        self.assertNotIn(settings.SECRET_KEY, body)
+        with override_settings(BACKUP_ROOT=TMP + "/bk3", MEDIA_ROOT=TMP + "/m3"):
+            name = bk.create_backup("rehber")
+            with zipfile.ZipFile(Path(TMP) / "bk3" / name) as z:
+                self.assertIn("PROJE_REHBERI_AI.md", z.namelist())
