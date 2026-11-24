@@ -7,7 +7,7 @@
 > Sunucu güncelleme komutu: `cd /opt/eglo-erp && sudo git pull && sudo docker compose up -d --build`
 > Şifre / API anahtarı ASLA sohbette istenmez; kullanıcı bunları sistemdeki sihirbazlara kendisi girer.
 
-Oluşturulma: 24.11.2026 10:28 · Dosya sistem tarafından otomatik üretildi (Sistem › Yedekler › "Yapay zekâ rehberini indir").
+Oluşturulma: 24.11.2026 12:05 · Dosya sistem tarafından otomatik üretildi (Sistem › Yedekler › "Yapay zekâ rehberini indir").
 
 ---
 
@@ -174,6 +174,11 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 
 - Aktif kullanıcılar `/ayarlar/aktif-kullanicilar/` (core.UserActivity + UserActivityMiddleware; IP = X-Forwarded-For ilk değeri, Caddy arkasında). ikas stok: v2 `listProductStockLocation`. Test: 137.
 
+## Sanal Ofis (Kasım 2026)
+- Kullanıcı isteği: "şirketi 3B ofis olarak göster, çalışanlar masada/iş akışında hareket etsin, tıklayınca canlı veri; ayrı sekmede tam ekran izleyeyim".
+- `apps/office` + `static/vendor/three/` (three.js r170, MIT). Menüde "Sanal ofis (3B) ↗" yeni sekmede açılır.
+- Kişi sayısı rol gruplarındaki gerçek kullanıcılardan gelir; boşsa örnek unvanlar. Ayrıntı: `apps/office/MODULE.md`.
+
 ---
 
 ## Bölüm 3 · ARCHITECTURE.md
@@ -272,6 +277,7 @@ Durum: ✅ tamam · 🟡 kısmi · ⬜ başlanmadı. Sıra müşteri dokümanı 
 | 9b | Toplu yükleme (`imports`) | Excel ile ürün, fiyat, stok (önizleme + hata kontrolü) | ✅ |
 | 10 | Entegrasyonlar (`integrations`) | sihirbaz, şifreli bilgiler, iş kuyruğu + yeniden deneme + loglar, arka plan işçisi; **Uyumsoft e-Fatura/e-Arşiv** ✅ (test ortamında doğrulandı); **Trendyol** ✅, **Hepsiburada** ✅, **ikas** ✅ (sipariş/stok/fiyat/durum + hakediş çekimi; HB/ikas canlı doğrulama bekliyor); Amazon, kargo, banka ⬜ | 🟡 |
 | — | Bildirimler (`notifications`) · Sohbet (`chat`) | bildirim merkezi, e-posta/SMS sihirbazı, canlı sohbet | ✅ |
+| — | Sanal Ofis (`office`) | three.js 3B canlı ofis: departmanlar, gerçek/örnek çalışanlar, tıklanınca canlı veri, iş akışı animasyonları, tam ekran sekme | ✅ |
 
 ## Açık sorular (müşteriye)
 - Muhasebe/e-belge: **Uyumsoft** (cevaplandı). Uyumsoft canlı kullanıcı bilgileri ve seri ön ekleri müşteriden alınacak.
@@ -691,6 +697,24 @@ Palet doluluk oranı, stok yaşlandırma raporu, depolar arası dengesizlik uyar
 - Ekranlar: `/notifications/` (bildirimlerim), `/notifications/merkez/` (kanal seçimi), `/notifications/merkez/<id>/` (şablon + önizleme).
 - Yeni olay eklemek: EVENTS'e ekle → handler'da `notify()` çağır → `setup_notifications`.
 - SMS yalnız işlemsel (İYS onayı gerektiren pazarlama SMS'i burada yok).
+
+### Modül `office`
+
+# Sanal Ofis (office)
+
+Şirketin 3B canlı ofis görünümü (three.js r170, `static/vendor/three/`, MIT lisansı — ücretsiz, CDN yok).
+
+- `/office/` — tam sayfa, kenar menüsüz; menüden **yeni sekmede** açılır (MANIFEST menü öğesinin 4. elemanı `"new_tab"`).
+  Düğmeler: Panele dön · Tam ekran · Tur (otomatik kamera) · canlı saat.
+- `/office/api/` — `services.snapshot()` JSON'u; sayfa 30 sn'de bir yeniler.
+- Departmanlar: Yönetim, Satış, Depo, Sevkiyat ve Kargo, Satın Alma, Finans ve Muhasebe, Üretim ve Kalite,
+  ve her aktif pazaryeri/e-ticaret hesabı için bir masa (Trendyol, Hepsiburada, ikas…).
+- Çalışanlar: ilgili rol grubundaki gerçek kullanıcılar (en çok 5, son 5 dk etkinse "çevrimiçi").
+  Grup boşsa örnek unvanlar gösterilir ("örnek" etiketi). Gerçek kişi görmek için kullanıcıyı rol grubuna atayın.
+- Tıklama: kişi/masa/zemin → o departmanın canlı göstergeleri (ilgili ekrana bağlantılı), çalışanlar, son işler.
+- Animasyon: iş varsa ekranlar parlar ve kişiler yazar; kargo varsa kurye depodan kamyona paket taşır;
+  satış→depo, satın alma→muhasebe, e-ticaret→kargo evrak taşıyan kişiler yürür.
+- Model yok; yalnızca diğer modüllerin verisini okur.
 
 ### Modül `partners`
 

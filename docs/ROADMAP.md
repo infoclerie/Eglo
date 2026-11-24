@@ -17,6 +17,7 @@ Durum: ✅ tamam · 🟡 kısmi · ⬜ başlanmadı. Sıra müşteri dokümanı 
 | 9b | Toplu yükleme (`imports`) | Excel ile ürün, fiyat, stok (önizleme + hata kontrolü) | ✅ |
 | 10 | Entegrasyonlar (`integrations`) | sihirbaz, şifreli bilgiler, iş kuyruğu + yeniden deneme + loglar, arka plan işçisi; **Uyumsoft e-Fatura/e-Arşiv** ✅ (test ortamında doğrulandı); **Trendyol** ✅, **Hepsiburada** ✅, **ikas** ✅ (sipariş/stok/fiyat/durum + hakediş çekimi; HB/ikas canlı doğrulama bekliyor); Amazon, kargo, banka ⬜ | 🟡 |
 | — | Bildirimler (`notifications`) · Sohbet (`chat`) | bildirim merkezi, e-posta/SMS sihirbazı, canlı sohbet | ✅ |
+| — | Sanal Ofis (`office`) | three.js 3B canlı ofis: departmanlar, gerçek/örnek çalışanlar, tıklanınca canlı veri, iş akışı animasyonları, tam ekran sekme | ✅ |
 
 ## Açık sorular (müşteriye)
 - Muhasebe/e-belge: **Uyumsoft** (cevaplandı). Uyumsoft canlı kullanıcı bilgileri ve seri ön ekleri müşteriden alınacak.

@@ -108,3 +108,8 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 - Test: 135.
 
 - Aktif kullanıcılar `/ayarlar/aktif-kullanicilar/` (core.UserActivity + UserActivityMiddleware; IP = X-Forwarded-For ilk değeri, Caddy arkasında). ikas stok: v2 `listProductStockLocation`. Test: 137.
+
+## Sanal Ofis (Kasım 2026)
+- Kullanıcı isteği: "şirketi 3B ofis olarak göster, çalışanlar masada/iş akışında hareket etsin, tıklayınca canlı veri; ayrı sekmede tam ekran izleyeyim".
+- `apps/office` + `static/vendor/three/` (three.js r170, MIT). Menüde "Sanal ofis (3B) ↗" yeni sekmede açılır.
+- Kişi sayısı rol gruplarındaki gerçek kullanıcılardan gelir; boşsa örnek unvanlar. Ayrıntı: `apps/office/MODULE.md`.

@@ -1,0 +1,325 @@
+{% load static %}<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sanal Ofis · Eglo</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#0f172a;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#0f172a}
+  #scene{position:fixed;inset:0}
+  .hud{position:fixed;top:14px;left:14px;display:flex;gap:8px;align-items:center;z-index:5;flex-wrap:wrap}
+  .pill{background:rgba(255,255,255,.92);border-radius:999px;padding:8px 14px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.25);border:0;cursor:pointer;color:#0f172a;text-decoration:none;font-weight:600}
+  .pill.live::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:7px;animation:p 1.6s infinite}
+  @keyframes p{50%{opacity:.3}}
+  .legend{position:fixed;bottom:14px;left:14px;z-index:5;background:rgba(255,255,255,.92);border-radius:12px;padding:10px 12px;font-size:12px;max-width:min(560px,92vw);display:flex;flex-wrap:wrap;gap:6px 12px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+  .legend span{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+  #panel{position:fixed;top:0;right:0;bottom:0;width:min(400px,100vw);background:#fff;z-index:6;transform:translateX(105%);transition:transform .25s;box-shadow:-8px 0 30px rgba(0,0,0,.3);display:flex;flex-direction:column}
+  #panel.open{transform:none}
+  #panel header{padding:18px 20px;color:#fff}
+  #panel header h2{margin:0;font-size:20px}#panel header small{opacity:.9}
+  #panel .body{padding:14px 20px;overflow:auto;flex:1}
+  #panel .close{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.25);color:#fff;border:0;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer}
+  .metric{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;text-decoration:none;color:inherit}
+  .metric b{font-size:18px}.metric.warn{border-color:#fca5a5;background:#fef2f2}.metric.warn b{color:#b91c1c}
+  a.metric:hover{border-color:#94a3b8}
+  h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin:16px 0 8px}
+  .person{display:flex;gap:8px;align-items:center;padding:5px 0;font-size:14px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#cbd5e1;flex:0 0 9px}.dot.on{background:#22c55e}
+  .item{font-size:13px;padding:7px 0;border-bottom:1px solid #f1f5f9}.item a{color:#334155}
+  #tip{position:fixed;z-index:7;pointer-events:none;background:#0f172a;color:#fff;font-size:12px;padding:5px 9px;border-radius:6px;display:none;white-space:nowrap}
+  .hint{position:fixed;top:14px;right:14px;z-index:4;color:#cbd5e1;font-size:12px;text-align:right}
+</style>
+<script type="importmap">{"imports":{"three":"{% static 'vendor/three/three.module.min.js' %}"}}</script>
+</head><body>
+<div id="scene"></div>
+<div class="hud">
+  <a class="pill" href="/">← Panele dön</a>
+  <button class="pill" id="fs">⛶ Tam ekran</button>
+  <button class="pill" id="tour">▶ Tur</button>
+  <span class="pill live" id="clock">Canlı</span>
+</div>
+<div class="hint">Sürükle: döndür · Tekerlek: yakınlaş · Kişiye / masaya tıkla: canlı veri</div>
+<div class="legend" id="legend"></div>
+<div id="tip"></div>
+<aside id="panel"><button class="close" onclick="closePanel()">×</button><header id="ph"><h2 id="pt"></h2><small id="ps"></small></header><div class="body" id="pb"></div></aside>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "{% static 'vendor/three/OrbitControls.js' %}";
+
+const API = "{% url 'office:data' %}";
+const host = document.getElementById("scene");
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+host.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#dbe4ee");
+scene.fog = new THREE.Fog("#dbe4ee", 70, 130);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 400);
+camera.position.set(0, 42, 46);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0, 2); controls.enableDamping = true; controls.maxPolarAngle = Math.PI / 2.15; controls.minDistance = 12; controls.maxDistance = 95;
+
+scene.add(new THREE.HemisphereLight("#ffffff", "#94a3b8", 1.1));
+const sun = new THREE.DirectionalLight("#ffffff", 1.6);
+sun.position.set(20, 40, 18); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 40, bottom: -40 });
+scene.add(sun);
+
+const M = c => new THREE.MeshStandardMaterial({ color: c, roughness: .75 });
+function box(w, h, d, color, x = 0, y = 0, z = 0, parent = scene) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), typeof color === "string" ? M(color) : color);
+  m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m;
+}
+function label(text, color = "#0f172a", size = 1) {
+  const c = document.createElement("canvas"), ctx = c.getContext("2d"); c.width = 512; c.height = 128;
+  ctx.font = "bold 54px Inter, system-ui, sans-serif"; { const fw = ctx.measureText(text).width; if (fw > 440) ctx.font = `bold ${Math.floor(54 * 440 / fw)}px Inter, system-ui, sans-serif`; } ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = "rgba(255,255,255,.92)"; const w = Math.min(500, ctx.measureText(text).width + 50);
+  ctx.beginPath(); ctx.roundRect((512 - w) / 2, 14, w, 100, 30); ctx.fill();
+  ctx.fillStyle = color; ctx.fillText(text, 256, 66);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false }));
+  s.scale.set(8 * size, 2 * size, 1); s.renderOrder = 10; return s;
+}
+
+// --- bina
+box(92, .4, 72, "#f1f5f9", 0, -.2, 0);
+box(92, 6, .5, "#e2e8f0", 0, 3, -36); box(.5, 6, 72, "#e2e8f0", -46, 3, 0); box(.5, 6, 72, "#e2e8f0", 46, 3, 0);
+for (let x = -40; x <= 40; x += 16) box(.4, 4, .1, "#93c5fd", x, 3.5, -35.7);  // pencereler
+
+// --- departman yerleşimi (kod → bölge)
+const ZONES = {
+  yonetim:   { x: -32, z: -24, w: 20, d: 16 }, satis:     { x: -8,  z: -24, w: 24, d: 16 },
+  eticaret:  { x: 24,  z: -24, w: 36, d: 16 }, muhasebe:  { x: -32, z: -4,  w: 20, d: 16 },
+  satinalma: { x: -8,  z: -4,  w: 24, d: 16 }, uretim:    { x: 24,  z: -4,  w: 36, d: 16 },
+  depo:      { x: -20, z: 20,  w: 44, d: 22 }, kargo:     { x: 24,  z: 20,  w: 36, d: 22 },
+};
+const DEPTS = {}, clickables = [], walkers = [], screens = [];
+let data = null;
+
+function personMesh(color) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(.42, .9, 4, 10), M(color)); body.position.y = 1.15; body.castShadow = true; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.36, 16, 12), M("#f2c9a0")); head.position.y = 2.15; head.castShadow = true; g.add(head);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(.38, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(["#3f2d20", "#111827", "#7c4a1e", "#a16207"][Math.floor(Math.random() * 4)]));
+  hair.position.y = 2.2; g.add(hair);
+  g.userData.body = body; g.userData.head = head; return g;
+}
+function desk(parent, x, z, rot = 0) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; parent.add(g);
+  box(2.6, .12, 1.4, "#cbd5e1", 0, 1.05, 0, g);
+  for (const [a, b] of [[-1.2, -.6], [1.2, -.6], [-1.2, .6], [1.2, .6]]) box(.1, 1, .1, "#94a3b8", a, .5, b, g);
+  box(1.2, .75, .08, "#1e293b", 0, 1.6, -.45, g);
+  const scr = box(1.1, .64, .02, new THREE.MeshStandardMaterial({ color: "#38bdf8", emissive: "#0ea5e9", emissiveIntensity: .25 }), 0, 1.6, -.4, g);
+  box(.7, .05, .25, "#334155", 0, 1.14, .1, g);
+  box(.9, .1, .9, "#475569", 0, .6, 1.05, g); box(.9, .9, .1, "#475569", 0, 1.05, 1.5, g);   // sandalye
+  screens.push(scr); return { g, scr };
+}
+function shelves(parent, x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g);
+  for (let lv = 0; lv < 4; lv++) box(6, .12, 1.4, "#64748b", 0, .4 + lv * 1.2, 0, g);
+  for (const a of [-2.9, 2.9]) box(.12, 5, 1.4, "#f59e0b", a, 2.5, 0, g);
+  for (let lv = 0; lv < 4; lv++) for (let i = 0; i < 4; i++) if (Math.random() > .2) box(1, .8, 1, "#d6a76b", -2.2 + i * 1.45, .9 + lv * 1.2, 0, g);
+  return g;
+}
+function truck(parent, x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g);
+  box(7, 3.4, 3.2, "#f8fafc", 0, 2.2, 0, g); box(2.4, 2.6, 3.1, "#d97706", 4.6, 1.8, 0, g);
+  box(.05, 1, 2.6, "#93c5fd", 5.82, 2.4, 0, g);
+  for (const [a, b] of [[-2.4, 1.6], [-2.4, -1.6], [3.6, 1.6], [3.6, -1.6]]) {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(.6, .6, .4, 16), M("#111827")); w.rotation.x = Math.PI / 2; w.position.set(a, .6, b); g.add(w);
+  }
+  const lbl = label("KARGO", "#d97706", .6); lbl.position.set(0, 4.6, 0); g.add(lbl); return g;
+}
+
+function buildDept(d) {
+  const zone = ZONES[d.group || d.code] || ZONES.satinalma;
+  const g = new THREE.Group(); g.position.set(zone.x, 0, zone.z); scene.add(g);
+  const floor = box(zone.w - 1, .06, zone.d - 1, new THREE.MeshStandardMaterial({ color: d.color, transparent: true, opacity: .16 }), 0, .08, 0, g);
+  floor.userData.dept = d.code; clickables.push(floor);
+  const lbl = label(d.name, d.color); lbl.position.set(0, 1.4, -zone.d / 2 + 1.4); g.add(lbl);
+  const info = { d, g, zone, people: [], desks: [], label: lbl };
+  if (d.code === "depo") {
+    for (let i = 0; i < 3; i++) shelves(g, -14 + i * 9, -5);
+    for (let i = 0; i < 3; i++) shelves(g, -14 + i * 9, 3);
+    const fl = new THREE.Group(); box(1.6, 1, 2.6, "#facc15", 0, .7, 0, fl); box(.1, 2.6, .1, "#334155", 0, 1.7, 1.4, fl); g.add(fl); fl.position.set(12, 0, 6);
+    walkers.push({ obj: fl, path: [[12, 6], [12, -1], [-14, -1], [-14, 7], [12, 7]], i: 0, speed: 3.2, carry: null, zoneG: g, always: false, info });
+  }
+  if (d.code === "kargo") { truck(g, 9, 6); for (let i = 0; i < 6; i++) box(1, .8, 1, "#d6a76b", -12 + (i % 3) * 1.2, .4 + Math.floor(i / 3) * .8, 6, g); }
+  if (d.code === "uretim") { box(8, 3, 3, "#c4b5fd", 8, 1.5, 0, g); for (let i = 0; i < 4; i++) { const t = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 3.4, 20), M("#e2e8f0")); t.position.set(-2 + i * 2.6, 1.7, 5); t.castShadow = true; g.add(t); } }
+  if (d.code === "yonetim") { box(5, .1, 2.4, "#78350f", 0, 1.05, 2, g); }
+  // masalar + kişiler
+  const staff = d.staff.length ? d.staff : [{ name: d.name + " sorumlusu", online: false }];
+  const deskSpots = d.code === "depo" ? [[-14, 8], [-6, 8], [2, 8]] : d.code === "kargo" ? [[-12, -4], [-6, -4], [0, -4]] :
+                    d.code === "uretim" ? [[-12, -3], [-7, -3], [-2, -3]] : null;
+  staff.forEach((s, i) => {
+    const cols = Math.max(1, Math.floor((zone.w - 4) / 5));
+    const [dx, dz] = deskSpots ? deskSpots[i % deskSpots.length] : [-(zone.w / 2) + 4 + (i % cols) * 5, -1 + Math.floor(i / cols) * 4];
+    const dk = desk(g, dx, dz);
+    const p = personMesh(d.color); p.position.set(dx, 0, dz + 1.05); p.rotation.y = Math.PI; g.add(p);
+    p.userData = { ...p.userData, dept: d.code, person: s, seat: [dx, dz + 1.05], deskObj: dk };
+    p.traverse(o => { if (o.isMesh) { o.userData.dept = d.code; o.userData.person = s; clickables.push(o); } });
+    dk.g.traverse(o => { if (o.isMesh) { o.userData.dept = d.code; clickables.push(o); } });
+    const nm = label(s.name, s.online ? "#15803d" : "#334155", .45); nm.position.set(0, 3.1, 0); p.add(nm);
+    info.people.push(p); info.desks.push(dk);
+  });
+  // bekleyen iş balonu
+  const bubble = label("", "#b91c1c", .55); bubble.position.set(zone.w / 2 - 4, 3.6, -zone.d / 2 + 2); g.add(bubble); info.bubble = bubble;
+  DEPTS[d.code] = info; return info;
+}
+
+// e-ticaret: kanal başına masa grubu, aynı bölgede yan yana
+function layoutEcommerce(list) {
+  if (!list.length) return;
+  const zone = ZONES.eticaret, g = new THREE.Group(); g.position.set(zone.x, 0, zone.z); scene.add(g);
+  const floor = box(zone.w - 1, .06, zone.d - 1, new THREE.MeshStandardMaterial({ color: "#f97316", transparent: true, opacity: .14 }), 0, .08, 0, g);
+  const lbl = label("E-ticaret", "#ea580c"); lbl.position.set(0, 1.4, -zone.d / 2 + 1.4); g.add(lbl);
+  floor.userData.dept = list[0].code; clickables.push(floor);
+  const step = Math.min(10, (zone.w - 4) / list.length);
+  list.forEach((d, i) => {
+    const x = -((list.length - 1) * step) / 2 + i * step;
+    const dk = desk(g, x, 0);
+    const big = box(2.4, 1.4, .1, new THREE.MeshStandardMaterial({ color: d.color, emissive: d.color, emissiveIntensity: .35 }), x, 3, -4, g);
+    const p = personMesh(d.color); p.position.set(x, 0, 1.05); p.rotation.y = Math.PI; g.add(p);
+    const s = d.staff[0]; p.userData = { ...p.userData, dept: d.code, person: s, seat: [x, 1.05], deskObj: dk };
+    for (const o of [p, dk.g, big]) o.traverse(m => { if (m.isMesh) { m.userData.dept = d.code; m.userData.person = s; clickables.push(m); } });
+    const nm = label(d.name, d.color, .55); nm.position.set(x, 4.3, -4); g.add(nm);
+    const pn = label(s.name, s.online ? "#15803d" : "#334155", .45); pn.position.set(0, 3.1, 0); p.add(pn);
+    const bubble = label("", "#b91c1c", .5); bubble.position.set(x, 2.2, -4); g.add(bubble);
+    DEPTS[d.code] = { d, g, zone, people: [p], desks: [dk], bubble, big };
+  });
+}
+
+// --- kargo yürüyüşü: paket depodan kamyona
+function makeCourier() {
+  const info = DEPTS.kargo, depo = DEPTS.depo; if (!info || !depo) return;
+  const p = personMesh("#d97706"); scene.add(p);
+  const pk = box(.8, .6, .8, "#d6a76b", 0, 1.6, .5, p); pk.visible = false;
+  const a = [depo.zone.x + 8, depo.zone.z - 2], b = [info.zone.x - 6, info.zone.z + 4], c = [info.zone.x + 5, info.zone.z + 6];
+  p.position.set(a[0], 0, a[1]);
+  p.traverse(o => { if (o.isMesh) { o.userData.dept = "kargo"; clickables.push(o); } });
+  walkers.push({ obj: p, path: [a, b, c, b], i: 0, speed: 3.6, carry: pk, always: false, info, person: true });
+}
+function makeVisitor(fromCode, toCode, color) {
+  const A = DEPTS[fromCode], B = DEPTS[toCode]; if (!A || !B) return;
+  const p = personMesh(color); scene.add(p);
+  const doc = box(.5, .05, .7, "#ffffff", 0, 1.5, .5, p);
+  p.position.set(A.zone.x, 0, A.zone.z + 4);
+  walkers.push({ obj: p, path: [[A.zone.x, A.zone.z + 6], [B.zone.x, B.zone.z + 6]], i: 0, speed: 2.4, carry: doc, always: true, person: true });
+}
+
+function build() {
+  const eco = data.departments.filter(d => d.group === "eticaret");
+  data.departments.filter(d => d.group !== "eticaret").forEach(buildDept);
+  layoutEcommerce(eco);
+  makeCourier();
+  makeVisitor("satis", "depo", "#e11d48");          // satış → depo: sipariş evrakı
+  makeVisitor("satinalma", "muhasebe", "#a16207");   // satın alma → muhasebe: fatura
+  if (eco.length) makeVisitor(eco[0].code, "kargo", eco[0].color);
+  legend(); refreshLive();
+}
+
+function legend() {
+  const el = document.getElementById("legend"); el.innerHTML = "";
+  data.departments.forEach(d => {
+    const s = document.createElement("span"); s.innerHTML = `<i style="background:${d.color}"></i>${d.name}${d.load ? " · " + d.load : ""}`;
+    s.onclick = () => { focus(d.code); openPanel(d.code); }; el.appendChild(s);
+  });
+}
+
+// canlı veriyi sahneye yansıt: iş yükü balonu, ekran parlaklığı, yürüyüşler
+function refreshLive() {
+  data.departments.forEach(d => {
+    const info = DEPTS[d.code]; if (!info) return; info.d = d;
+    const warn = d.metrics.filter(m => m.warn).length;
+    const txt = warn ? `⚠ ${warn} uyarı` : (d.load ? `${d.load} iş` : "");
+    setLabel(info.bubble, txt, warn ? "#b91c1c" : "#0f172a");
+    info.desks.forEach(dk => { dk.scr.material.emissiveIntensity = d.load ? .9 : .2; });
+    if (info.big) info.big.material.emissiveIntensity = d.load ? .9 : .3;
+  });
+  walkers.forEach(w => { if (!w.always) w.active = !!(w.info && (w.info.d.moving || w.info.d.load)); else w.active = true; });
+  document.getElementById("clock").textContent = "Canlı · " + data.at;
+  legend();
+}
+function setLabel(spr, text, color) {
+  const c = spr.material.map.image, ctx = c.getContext("2d"); ctx.clearRect(0, 0, 512, 128);
+  spr.visible = !!text; if (!text) return;
+  ctx.font = "bold 54px Inter, system-ui, sans-serif"; { const fw = ctx.measureText(text).width; if (fw > 440) ctx.font = `bold ${Math.floor(54 * 440 / fw)}px Inter, system-ui, sans-serif`; } ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const w = Math.min(500, ctx.measureText(text).width + 50);
+  ctx.fillStyle = "rgba(255,255,255,.95)"; ctx.beginPath(); ctx.roundRect((512 - w) / 2, 14, w, 100, 30); ctx.fill();
+  ctx.fillStyle = color; ctx.fillText(text, 256, 66); spr.material.map.needsUpdate = true;
+}
+
+// --- panel
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let openCode = null;
+window.openPanel = function (code, person) {
+  const info = DEPTS[code]; if (!info) return; const d = info.d; openCode = code;
+  document.getElementById("ph").style.background = d.color;
+  document.getElementById("pt").textContent = person ? person.name : d.name;
+  document.getElementById("ps").textContent = person ? d.name + (person.real ? (person.online ? " · çevrimiçi" : " · çevrimdışı") : " · (örnek çalışan — bu role kullanıcı atayın)") : `${d.staff.length} çalışan · güncelleme ${data.at}`;
+  let h = "<h3>Canlı göstergeler</h3>";
+  d.metrics.forEach(m => { h += `<${m.url ? `a href="${esc(m.url)}" target="_blank"` : "div"} class="metric ${m.warn ? "warn" : ""}"><span>${esc(m.label)}</span><b>${esc(m.value)}</b></${m.url ? "a" : "div"}>`; });
+  h += "<h3>Çalışanlar</h3>" + d.staff.map(s => `<div class="person"><span class="dot ${s.online ? "on" : ""}"></span>${esc(s.name)}${s.real ? "" : ' <small style="color:#94a3b8">(örnek)</small>'}</div>`).join("");
+  if (d.items.length) h += "<h3>Son işler</h3>" + d.items.map(i => `<div class="item">${i.url ? `<a href="${esc(i.url)}" target="_blank">${esc(i.text)}</a>` : esc(i.text)}</div>`).join("");
+  document.getElementById("pb").innerHTML = h; document.getElementById("panel").classList.add("open");
+};
+window.closePanel = () => { document.getElementById("panel").classList.remove("open"); openCode = null; };
+let camGoal = null;
+function focus(code) { const info = DEPTS[code]; if (!info) return; const z = info.zone; camGoal = { t: new THREE.Vector3(z.x, 0, z.z), p: new THREE.Vector3(z.x + 6, 22, z.z + 24) }; }
+
+// --- tıklama / üzerine gelme
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = document.getElementById("tip");
+function pick(ev) { const r = renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(mouse, camera); return ray.intersectObjects(clickables, false)[0]; }
+let downAt = null;
+renderer.domElement.addEventListener("pointerdown", e => downAt = [e.clientX, e.clientY]);
+renderer.domElement.addEventListener("pointerup", e => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) return;
+  const h = pick(e); if (h) { focus(h.object.userData.dept); openPanel(h.object.userData.dept, h.object.userData.person); } else closePanel();
+});
+renderer.domElement.addEventListener("pointermove", e => {
+  const h = pick(e); renderer.domElement.style.cursor = h ? "pointer" : "grab";
+  if (h && DEPTS[h.object.userData.dept]) { const d = DEPTS[h.object.userData.dept].d; tip.style.display = "block"; tip.style.left = e.clientX + 14 + "px"; tip.style.top = e.clientY + 10 + "px";
+    tip.textContent = (h.object.userData.person ? h.object.userData.person.name + " · " : "") + d.name + (d.load ? ` · ${d.load} iş` : ""); } else tip.style.display = "none";
+});
+
+// --- animasyon
+const clock = new THREE.Clock();
+function animate() {
+  const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
+  Object.values(DEPTS).forEach(info => info.people.forEach((p, i) => {
+    const busy = info.d.load > 0;
+    p.userData.body.rotation.z = Math.sin(t * (busy ? 9 : 1.5) + i) * (busy ? .05 : .02);   // yazıyor / dinleniyor
+    p.userData.head.position.y = 2.15 + Math.sin(t * 2 + i) * .03;
+  }));
+  screens.forEach((s, i) => { if (s.material.emissiveIntensity > .5) s.material.emissiveIntensity = .7 + Math.sin(t * 6 + i) * .2; });
+  walkers.forEach(w => {
+    if (!w.active) return;
+    const [tx, tz] = w.path[(w.i + 1) % w.path.length], o = w.obj;
+    const base = w.zoneG ? w.zoneG.position : { x: 0, z: 0 };
+    const gx = o.parent === scene ? tx : tx, gz = tz;
+    const dx = gx - o.position.x, dz = gz - o.position.z, dist = Math.hypot(dx, dz);
+    if (dist < .15) { w.i = (w.i + 1) % w.path.length; if (w.carry) w.carry.visible = w.i % 2 === 0; return; }
+    const s = Math.min(dist, w.speed * dt); o.position.x += dx / dist * s; o.position.z += dz / dist * s;
+    o.rotation.y = Math.atan2(dx, dz);
+    if (w.person) o.position.y = Math.abs(Math.sin(t * 10)) * .12;
+  });
+  if (tourOn) { const a = t * .08; camera.position.set(Math.sin(a) * 60, 40, Math.cos(a) * 60); controls.target.set(0, 0, 0); }
+  else if (camGoal) { camera.position.lerp(camGoal.p, .06); controls.target.lerp(camGoal.t, .06); if (camera.position.distanceTo(camGoal.p) < .3) camGoal = null; }
+  controls.update(); renderer.render(scene, camera); requestAnimationFrame(animate);
+}
+function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+addEventListener("resize", resize); resize();
+
+let tourOn = false;
+document.getElementById("tour").onclick = e => { tourOn = !tourOn; e.target.textContent = tourOn ? "■ Turu durdur" : "▶ Tur"; camGoal = null; };
+document.getElementById("fs").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+
+async function load(first) {
+  try {
+    const r = await fetch(API, { headers: { Accept: "application/json" } }); data = await r.json();
+    if (first) build(); else { refreshLive(); if (openCode) openPanel(openCode); }
+  } catch (e) { document.getElementById("clock").textContent = "Bağlantı yok"; }
+}
+await load(true); animate(); setInterval(() => load(false), 30000);
+</script>
+</body></html>

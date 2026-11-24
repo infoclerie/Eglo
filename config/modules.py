@@ -28,6 +28,7 @@ DEFAULT_MODULES = [
     "reports",
     "imports",
     "assistant",
+    "office",
 ]
 
 

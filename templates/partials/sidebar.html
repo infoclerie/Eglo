@@ -2,7 +2,7 @@
   <a class="logo" href="{% url 'core:dashboard' %}"><span>{% icon "box" %}</span>Eglo ERP</a>
   {% for g in erp_nav %}
     <div class="nav-group">{{ g.name }}</div>
-    <nav class="nav">{% for i in g.items %}<a href="{{ i.url }}"{% if i.active %} class="active"{% endif %}>{% icon i.icon %}{{ i.label }}</a>{% endfor %}</nav>
+    <nav class="nav">{% for i in g.items %}<a href="{{ i.url }}"{% if i.new_tab %} target="_blank" rel="noopener"{% endif %}{% if i.active %} class="active"{% endif %}>{% icon i.icon %}{{ i.label }}</a>{% endfor %}</nav>
   {% endfor %}
   <div class="nav-group">Sistem</div>
   <nav class="nav"><a href="{% url 'core:appearance' %}"{% if request.path == '/ayarlar/gorunum/' %} class="active"{% endif %}>{% icon "settings" %}Görünüm</a>{% if request.user.is_staff %}<a href="{% url 'admin:index' %}"{% if request.path == '/admin/' %} class="active"{% endif %}>{% icon "admin" %}Tüm kayıtlar (yönetim)</a>{% endif %}

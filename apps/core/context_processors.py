@@ -22,7 +22,7 @@ def erp(request):
             if url:
                 active = url != "/" and path.startswith(url.split("?")[0]) or (url == "/" and path == "/")
                 items.append({"label": label, "url": url, "icon": entry[2] if len(entry) > 2 else m.get("icon", "box"),
-                              "active": active})
+                              "active": active, "new_tab": len(entry) > 3 and entry[3] == "new_tab"})
         if items:
             nav.append({"code": m["code"], "name": m["name"], "icon": m.get("icon", "box"),
                         "color": m.get("color", "#5b3a6e"), "items": items})
