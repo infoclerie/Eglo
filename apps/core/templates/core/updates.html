@@ -18,16 +18,23 @@
                 <td><strong>Son güncelleme</strong></td>
                 <td>
                     {% if status.status == "success" %}
-                        <span class="badge badge-success">✅ Başarılı</span>
+                        <span class="badge" style="background:#16a34a;color:#fff">✅ Başarılı</span>
                     {% elif status.status == "error" %}
-                        <span class="badge badge-danger">❌ Hata</span>
+                        <span class="badge" style="background:#dc2626;color:#fff">❌ Hata</span>
                     {% elif status.status == "pending" %}
-                        <span class="badge badge-warning">⏳ Bekliyor</span>
+                        <span class="badge" style="background:#f59e0b;color:#fff">⏳ Bekliyor</span>
                     {% endif %}
                     {{ status.message|default:"" }}
                 </td>
             </tr>
             <tr><td><strong>Tarih</strong></td><td>{{ status.last_update|default:"-" }}</td></tr>
+            {% if status.applied_files %}
+            <tr><td><strong>Güncellenen dosyalar</strong></td>
+                <td><details><summary>{{ status.applied_files|length }} dosya</summary>
+                    <ul class="small" style="max-height:200px;overflow:auto;margin:8px 0">
+                    {% for f in status.applied_files %}<li><code>{{ f }}</code></li>{% endfor %}
+                    </ul></details></td></tr>
+            {% endif %}
             {% else %}
             <tr><td><strong>Son güncelleme</strong></td><td class="text-muted">Henüz güncelleme yapılmamış</td></tr>
             {% endif %}
@@ -39,34 +46,20 @@
 <div class="card mb-3">
     <div class="card-header"><strong>📤 Güncelleme Yükle</strong></div>
     <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" id="uploadForm">
             {% csrf_token %}
             <input type="hidden" name="action" value="upload">
             <div class="mb-2">
-                <label class="form-label">Güncelleme paketi (.zip)</label>
-                <div class="helptext">Yapay zekânın ürettiği güncelleme paketi. İçinde değişen kod dosyaları ve sürüm bilgisi bulunur.</div>
+                <label class="form-label">Güncelleme paketi (.zip)
+                    <span class="helptext" style="display:inline" title="Yapay zekânın ürettiği güncelleme paketi. İçinde değişen kod dosyaları ve sürüm bilgisi bulunur.">ⓘ</span>
+                </label>
                 <input type="file" name="file" accept=".zip" class="form-control" required>
             </div>
             <p class="text-muted small mb-2">
                 Yapay zekâdan aldığınız <code>update-vX.X.X.zip</code> dosyasını seçin.
-                Sistem otomatik olarak dosyaları çıkarır ve güncellemeyi uygular.
             </p>
-            <button type="submit" class="btn btn-primary">📤 Yükle ve güncelle</button>
+            <button type="submit" class="btn btn-primary" onclick="showProgress(this,'Yükleniyor...')">📤 Yükle</button>
         </form>
-    </div>
-</div>
-
-<!-- Nasıl çalışır -->
-<div class="card mb-3">
-    <div class="card-header"><strong>ℹ️ Nasıl çalışır?</strong></div>
-    <div class="card-body">
-        <ol class="mb-0">
-            <li>Yapay zekâya istediğiniz değişikliği söyleyin.</li>
-            <li>Yapay zekâ değişiklikleri yapar ve size bir <strong>güncelleme paketi</strong> (zip) indirir.</li>
-            <li>Bu sayfadan zip dosyasını yükleyin.</li>
-            <li>Sistem otomatik olarak güncellenir (1-2 dakika sürebilir).</li>
-            <li>Sayfa yenilenince yeni sürüm numarasını göreceksiniz.</li>
-        </ol>
     </div>
 </div>
 
@@ -84,7 +77,13 @@
                 <td>v{{ u.version|default:"?" }}</td>
                 <td>{{ u.description|default:"-" }}</td>
                 <td>{{ u.file_count }} dosya</td>
-                <td>
+                <td style="white-space:nowrap">
+                    <form method="post" style="display:inline" class="apply-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="apply">
+                        <input type="hidden" name="file" value="{{ u.filename }}">
+                        <button class="btn btn-sm btn-primary" onclick="showProgress(this,'Güncelleniyor...')">▶ Şimdi Uygula</button>
+                    </form>
                     <form method="post" style="display:inline">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="cancel">
@@ -96,10 +95,6 @@
             {% endfor %}
             </tbody>
         </table>
-        <p class="text-muted small mb-0">
-            Bekleyen güncellemeler sunucu tarafından 1 dakika içinde uygulanır.
-            Birden fazla güncelleme varsa sırayla uygulanır.
-        </p>
     </div>
 </div>
 {% endif %}
@@ -126,4 +121,34 @@
 </div>
 {% endif %}
 
+<!-- Nasıl çalışır -->
+<div class="card mb-3">
+    <div class="card-header"><strong>ℹ️ Nasıl çalışır?</strong></div>
+    <div class="card-body">
+        <ol class="mb-0">
+            <li>Yapay zekâya istediğiniz değişikliği söyleyin.</li>
+            <li>Yapay zekâ değişiklikleri yapar ve size bir <strong>güncelleme paketi</strong> (zip) indirir.</li>
+            <li>Bu sayfadan zip dosyasını yükleyin.</li>
+            <li><strong>Şimdi Uygula</strong> butonuna basın — dosyalar anında güncellenir.</li>
+            <li>Sayfa yenilenince yeni sürüm numarasını ve güncellenen dosya listesini göreceksiniz.</li>
+        </ol>
+    </div>
+</div>
+
+<!-- İlerleme göstergesi -->
+<div id="progressOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:32px 48px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+    <div style="width:48px;height:48px;border:4px solid #e5e7eb;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
+    <div id="progressText" style="font-size:16px;font-weight:600;color:#1f2937">İşleniyor...</div>
+    <div style="font-size:13px;color:#6b7280;margin-top:8px">Lütfen sayfayı kapatmayın</div>
+  </div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<script>
+function showProgress(btn, text){
+  btn.disabled=true;
+  document.getElementById('progressText').textContent=text;
+  document.getElementById('progressOverlay').style.display='flex';
+}
+</script>
 {% endblock %}

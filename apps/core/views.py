@@ -199,7 +199,13 @@ def updates(request):
                 meta = upd.save_update(request.FILES["file"])
                 messages.success(request, f"Güncelleme paketi yüklendi: v{meta.get('version', '?')} "
                                           f"({meta.get('file_count', 0)} dosya). "
-                                          f"Sistem 1-2 dakika içinde otomatik güncellenecek.")
+                                          f"'Şimdi Uygula' butonuna basarak güncelleyin.")
+            elif action == "apply":
+                result = upd.apply_update(request.POST.get("file"))
+                if result["status"] == "success":
+                    messages.success(request, f"✅ Güncelleme uygulandı! {result['message']}")
+                else:
+                    messages.error(request, f"Güncelleme hatası: {result['message']}")
             elif action == "cancel":
                 upd.cancel_pending(request.POST.get("file"))
                 messages.success(request, "Güncelleme iptal edildi.")
