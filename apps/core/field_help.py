@@ -77,4 +77,6 @@ FIELD_HELP = {
     "fee": "Banka / POS kesintisi (varsa).",
     "note": "İsteğe bağlı açıklama.",
     "partner": "Bu kullanıcının bağlı olduğu bayi cari kartı. Bayi yalnızca bu carinin sipariş, fatura ve ekstresini görür.",
+# güncellemeler
+    "guncelleme_yukleme": "Yapay zekânın ürettiği güncelleme paketi (.zip). İçinde değişen kod dosyaları ve sürüm bilgisi bulunur. Yükledikten sonra sistem 1-2 dakika içinde otomatik güncellenir.",
 }

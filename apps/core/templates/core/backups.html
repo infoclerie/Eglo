@@ -6,7 +6,8 @@
 <div class="card card-pad" style="margin-bottom:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
   <div style="flex:1;min-width:260px"><h2 style="margin:0">🤖 Yapay zekâ için proje rehberi</h2>
   <p class="muted" style="margin:4px 0 0">Projenin tamamını (kurallar, modüller, formüller, kaldığımız yer, sunucu bilgisi) tek dosyada toplar. Claude, ChatGPT veya başka bir yapay zekâya bu dosyayı verin, "önce bunu oku" deyin. Şifre ve müşteri bilgisi içermez. Her yedeğin içinde de <code>PROJE_REHBERI_AI.md</code> olarak bulunur.</p></div>
-  <a class="btn btn-primary btn-lg" href="{% url 'core:ai_context' %}">⬇ Rehberi indir (.md)</a></div>
+  <a class="btn btn-primary btn-lg" href="{% url 'core:ai_context' %}">⬇ Rehberi indir (.md)</a>
+  <a class="btn btn-lg" href="{% url 'core:updates' %}" style="margin-left:8px">📦 Kod güncellemeleri</a></div>
 
 <div class="grid grid-2" style="margin-bottom:16px">
   <form method="post" class="card card-pad form">{% csrf_token %}<input type="hidden" name="action" value="create">

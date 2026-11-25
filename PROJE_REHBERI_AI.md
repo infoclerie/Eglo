@@ -7,7 +7,7 @@
 > Sunucu güncelleme komutu: `cd /opt/eglo-erp && sudo git pull && sudo docker compose up -d --build`
 > Şifre / API anahtarı ASLA sohbette istenmez; kullanıcı bunları sistemdeki sihirbazlara kendisi girer.
 
-Oluşturulma: 24.11.2026 12:05 · Dosya sistem tarafından otomatik üretildi (Sistem › Yedekler › "Yapay zekâ rehberini indir").
+Oluşturulma: 25.11.2026 15:25 · Dosya sistem tarafından otomatik üretildi (Sistem › Yedekler › "Yapay zekâ rehberini indir").
 
 ---
 

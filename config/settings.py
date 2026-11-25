@@ -138,3 +138,6 @@ LOGGING = {
 # Yedekler (Ayarlar › Yedekler): veritabanı + ürün fotoğrafları tek .zip dosyası
 BACKUP_ROOT = Path(env("BACKUP_ROOT", str(BASE_DIR / "backups_app")))
 BACKUP_KEEP_AUTO = 10  # otomatik (geri dönüş öncesi) yedeklerden saklanacak adet
+
+# Kod güncellemeleri (Ayarlar › Güncellemeler): AI'dan gelen güncelleme paketleri
+UPDATES_ROOT = Path(env("UPDATES_ROOT", str(BASE_DIR / "updates")))

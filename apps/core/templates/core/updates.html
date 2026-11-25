@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Güncellemeler{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Sistem Güncellemeleri</h1>
+    <p class="text-muted">Yapay zekânın ürettiği güncelleme paketlerini buradan yükleyin.</p>
+</div>
+
+<!-- Mevcut durum -->
+<div class="card mb-3">
+    <div class="card-header"><strong>📦 Mevcut Durum</strong></div>
+    <div class="card-body">
+        <table class="table table-sm mb-0">
+            <tr><td style="width:180px"><strong>Mevcut sürüm</strong></td><td>v{{ version }}</td></tr>
+            {% if status %}
+            <tr>
+                <td><strong>Son güncelleme</strong></td>
+                <td>
+                    {% if status.status == "success" %}
+                        <span class="badge badge-success">✅ Başarılı</span>
+                    {% elif status.status == "error" %}
+                        <span class="badge badge-danger">❌ Hata</span>
+                    {% elif status.status == "pending" %}
+                        <span class="badge badge-warning">⏳ Bekliyor</span>
+                    {% endif %}
+                    {{ status.message|default:"" }}
+                </td>
+            </tr>
+            <tr><td><strong>Tarih</strong></td><td>{{ status.last_update|default:"-" }}</td></tr>
+            {% else %}
+            <tr><td><strong>Son güncelleme</strong></td><td class="text-muted">Henüz güncelleme yapılmamış</td></tr>
+            {% endif %}
+        </table>
+    </div>
+</div>
+
+<!-- Yükleme alanı -->
+<div class="card mb-3">
+    <div class="card-header"><strong>📤 Güncelleme Yükle</strong></div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="upload">
+            <div class="mb-2">
+                <label class="form-label">Güncelleme paketi (.zip)</label>
+                <div class="helptext">Yapay zekânın ürettiği güncelleme paketi. İçinde değişen kod dosyaları ve sürüm bilgisi bulunur.</div>
+                <input type="file" name="file" accept=".zip" class="form-control" required>
+            </div>
+            <p class="text-muted small mb-2">
+                Yapay zekâdan aldığınız <code>update-vX.X.X.zip</code> dosyasını seçin.
+                Sistem otomatik olarak dosyaları çıkarır ve güncellemeyi uygular.
+            </p>
+            <button type="submit" class="btn btn-primary">📤 Yükle ve güncelle</button>
+        </form>
+    </div>
+</div>
+
+<!-- Nasıl çalışır -->
+<div class="card mb-3">
+    <div class="card-header"><strong>ℹ️ Nasıl çalışır?</strong></div>
+    <div class="card-body">
+        <ol class="mb-0">
+            <li>Yapay zekâya istediğiniz değişikliği söyleyin.</li>
+            <li>Yapay zekâ değişiklikleri yapar ve size bir <strong>güncelleme paketi</strong> (zip) indirir.</li>
+            <li>Bu sayfadan zip dosyasını yükleyin.</li>
+            <li>Sistem otomatik olarak güncellenir (1-2 dakika sürebilir).</li>
+            <li>Sayfa yenilenince yeni sürüm numarasını göreceksiniz.</li>
+        </ol>
+    </div>
+</div>
+
+{% if pending %}
+<!-- Bekleyen güncellemeler -->
+<div class="card mb-3">
+    <div class="card-header"><strong>⏳ Bekleyen Güncellemeler</strong></div>
+    <div class="card-body">
+        <table class="table table-sm">
+            <thead><tr><th>Dosya</th><th>Sürüm</th><th>Açıklama</th><th>Dosya sayısı</th><th></th></tr></thead>
+            <tbody>
+            {% for u in pending %}
+            <tr>
+                <td><code>{{ u.filename }}</code></td>
+                <td>v{{ u.version|default:"?" }}</td>
+                <td>{{ u.description|default:"-" }}</td>
+                <td>{{ u.file_count }} dosya</td>
+                <td>
+                    <form method="post" style="display:inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="cancel">
+                        <input type="hidden" name="file" value="{{ u.filename }}">
+                        <button class="btn btn-sm btn-danger" title="İptal et">✕</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <p class="text-muted small mb-0">
+            Bekleyen güncellemeler sunucu tarafından 1 dakika içinde uygulanır.
+            Birden fazla güncelleme varsa sırayla uygulanır.
+        </p>
+    </div>
+</div>
+{% endif %}
+
+{% if applied %}
+<!-- Uygulanan güncellemeler -->
+<div class="card mb-3">
+    <div class="card-header"><strong>✅ Uygulanan Güncellemeler</strong></div>
+    <div class="card-body">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>Dosya</th><th>Sürüm</th><th>Açıklama</th><th>Dosya sayısı</th></tr></thead>
+            <tbody>
+            {% for u in applied %}
+            <tr>
+                <td><code>{{ u.filename }}</code></td>
+                <td>v{{ u.version|default:"?" }}</td>
+                <td>{{ u.description|default:"-" }}</td>
+                <td>{{ u.file_count }} dosya</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

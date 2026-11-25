@@ -183,6 +183,37 @@ def backup_download(request, filename):
     return FileResponse(path.open("rb"), as_attachment=True, filename=filename)
 
 
+# ---------------------------------------------------------------- güncellemeler (yalnız süper kullanıcı)
+from . import updates as upd  # noqa: E402
+
+
+@login_required
+@superuser_required
+def updates(request):
+    from django.contrib import messages
+    from django.shortcuts import redirect
+    if request.method == "POST":
+        action = request.POST.get("action")
+        try:
+            if action == "upload" and request.FILES.get("file"):
+                meta = upd.save_update(request.FILES["file"])
+                messages.success(request, f"Güncelleme paketi yüklendi: v{meta.get('version', '?')} "
+                                          f"({meta.get('file_count', 0)} dosya). "
+                                          f"Sistem 1-2 dakika içinde otomatik güncellenecek.")
+            elif action == "cancel":
+                upd.cancel_pending(request.POST.get("file"))
+                messages.success(request, "Güncelleme iptal edildi.")
+        except _VE as exc:
+            messages.error(request, " ".join(exc.messages))
+        return redirect("core:updates")
+    return render(request, "core/updates.html", {
+        "version": upd.current_version(),
+        "status": upd.last_status(),
+        "pending": upd.list_pending(),
+        "applied": upd.list_applied(),
+    })
+
+
 @login_required
 def activity(request):
     """Tüm işlemlerin geçmişi (kayıt değişikliği, entegrasyon, stok, sipariş) — filtre ve Excel."""

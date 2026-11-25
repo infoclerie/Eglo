@@ -23,7 +23,7 @@ services:
     depends_on:
       db: {condition: service_healthy}
       media-init: {condition: service_completed_successfully}
-    volumes: [media:/app/media, appbackups:/app/backups_app]
+    volumes: [media:/app/media, appbackups:/app/backups_app, "./updates:/app/updates"]
   worker:
     build: .
     restart: unless-stopped
