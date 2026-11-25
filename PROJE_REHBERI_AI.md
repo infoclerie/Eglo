@@ -4,10 +4,11 @@
 > muhasebe sisteminin TAM tanımıdır. Kaynak kod: https://github.com/infoclerie/Eglo (main dalı).
 > Önce "Bölüm 1 · Kurallar" ve "Bölüm 2 · Devir notları"nı okuyun; kod değiştirmeden önce ilgili modülün MODULE.md
 > bölümüne bakın. Kullanıcı Türkçe konuşur, teknik olmayan bir işletme sahibidir: cevaplarınız Türkçe, sade ve adım adım olsun.
-> Sunucu güncelleme komutu: `cd /opt/eglo-erp && sudo git pull && sudo docker compose up -d --build`
+> Güncelleme: değişiklikleri GitHub main dalına gönderin; kullanıcı Ayarlar › Güncellemeler › «GitHub'dan güncelle» ile uygular
+> (SSH gerekmez). GitHub'a erişiminiz yoksa `files/` + `meta.json` içeren zip paketi üretin (bkz. deploy/build-update.sh).
 > Şifre / API anahtarı ASLA sohbette istenmez; kullanıcı bunları sistemdeki sihirbazlara kendisi girer.
 
-Oluşturulma: 25.11.2026 15:25 · Dosya sistem tarafından otomatik üretildi (Sistem › Yedekler › "Yapay zekâ rehberini indir").
+Oluşturulma: 25.11.2026 17:33 · Dosya sistem tarafından otomatik üretildi (Sistem › Yedekler › "Yapay zekâ rehberini indir").
 
 ---
 
@@ -178,6 +179,23 @@ Ayrıntılar her modülün `apps/<modül>/MODULE.md` dosyasında.
 - Kullanıcı isteği: "şirketi 3B ofis olarak göster, çalışanlar masada/iş akışında hareket etsin, tıklayınca canlı veri; ayrı sekmede tam ekran izleyeyim".
 - `apps/office` + `static/vendor/three/` (three.js r170, MIT). Menüde "Sanal ofis (3B) ↗" yeni sekmede açılır.
 - Kişi sayısı rol gruplarındaki gerçek kullanıcılardan gelir; boşsa örnek unvanlar. Ayrıntı: `apps/office/MODULE.md`.
+
+## Yol haritası + güncelleme sistemi (25 Kasım 2026)
+- Kaynak: kullanıcının `EGLO_ERP_Gelistirme_Yol_Haritasi.docx` dosyası (katalog, depo, cari, satış/muhasebe).
+- Katalog: kendi ekranları (`/catalog/`): liste, detay, yeni/düzenle; fotoğraf ilk ekrandan, set (kit) bileşenleri, bağlı
+  kategori (`alt-kategoriler/` AJAX), kanal fiyatları. Cari: `/partners/` liste/detay/yeni/düzenle, VKN (10) / TCKN (11) doğrulama.
+- Depo: `python manage.py check_critical_stock [--email ...] [--dry-run]` — min. stok altı + SKT yaklaşan LOT raporu,
+  alıcılar `Setting inventory.critical_stock_emails` (virgüllü), gönderim aktif e-posta entegrasyonu kuyruğuyla.
+- Satış: sipariş havuzunda kanal çipleri, `/sales/<id>/` sipariş detay (satırlar, durum geçmişi, müşteri).
+- YAPILMADI (sıradaki): cari çoklu e-posta + PDF ek + koşullu onay + otomatik gönderim; koli barkodlu transfer ekranı;
+  kanal bazlı sipariş→tahsilat (hakediş eşleştirme) raporu; kritik stok komutunu zamanlanmış işe bağlama.
+- Güncelleme sistemi (Ayarlar › Güncellemeler): web yalnız talep bırakır (`updates/request.json` veya `updates/pending/*.zip`);
+  host'ta root crontab `* * * * * /opt/eglo-erp/deploy/auto-update.sh` git pull / zip açma → `docker compose build` → `up -d`
+  yapar, adımları `updates/progress.json` + `update.log`'a yazar; sayfa `/ayarlar/guncellemeler/durum/` ile 2 sn'de bir izler.
+  Neden: web container `app` kullanıcısıyla çalışır, kod imajın içindedir → web'den dosya yazarak güncelleme yapılamaz.
+  Zip, `unzip` yerine Python ile açılır (sunucuda unzip yok). `updates/` git dışıdır.
+- Rehber (PROJE_REHBERI_AI.md / Yedekler › Rehberi indir) her indirmede canlı üretilir ve `updates/changelog.md`
+  (auto-update.sh'nin yazdığı son 40 commit) "Son değişiklikler" bölümü olarak eklenir. Yeni iş bitince bu dosyaya not düşün.
 
 ---
 

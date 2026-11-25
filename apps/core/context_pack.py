@@ -18,7 +18,8 @@ INTRO = """# EGLO ERP — Yapay zekâ için proje rehberi
 > muhasebe sisteminin TAM tanımıdır. Kaynak kod: https://github.com/infoclerie/Eglo (main dalı).
 > Önce "Bölüm 1 · Kurallar" ve "Bölüm 2 · Devir notları"nı okuyun; kod değiştirmeden önce ilgili modülün MODULE.md
 > bölümüne bakın. Kullanıcı Türkçe konuşur, teknik olmayan bir işletme sahibidir: cevaplarınız Türkçe, sade ve adım adım olsun.
-> Sunucu güncelleme komutu: `cd /opt/eglo-erp && sudo git pull && sudo docker compose up -d --build`
+> Güncelleme: değişiklikleri GitHub main dalına gönderin; kullanıcı Ayarlar › Güncellemeler › «GitHub'dan güncelle» ile uygular
+> (SSH gerekmez). GitHub'a erişiminiz yoksa `files/` + `meta.json` içeren zip paketi üretin (bkz. deploy/build-update.sh).
 > Şifre / API anahtarı ASLA sohbette istenmez; kullanıcı bunları sistemdeki sihirbazlara kendisi girer.
 
 Oluşturulma: {stamp} · Dosya sistem tarafından otomatik üretildi (Sistem › Yedekler › "Yapay zekâ rehberini indir").
@@ -68,6 +69,9 @@ def build_pack(include_live=True):
     parts = [INTRO.format(stamp=timezone.localtime().strftime("%d.%m.%Y %H:%M"))]
     if include_live:
         parts.append(live_summary())
+    changes = _read("updates/changelog.md")
+    if changes:
+        parts.append("\n---\n\n## Son değişiklikler (sunucudaki son 40 commit, yeniden eskiye)\n\n" + changes.strip() + "\n")
     titles = {"AGENTS.md": "Bölüm 1 · Kurallar (AGENTS.md)", "docs/HANDOFF.md": "Bölüm 2 · Devir notları ve kaldığımız yer (HANDOFF.md)"}
     for n, rel in enumerate(DOC_ORDER, start=1):
         text = _read(rel)

@@ -22,6 +22,11 @@ exec 200>"$U/.update.lock"
 flock -n 200 || exit 0
 
 TOTAL=5
+changelog() {  # rehberin "Son değişiklikler" bölümü (updates/changelog.md, web container'ı okur)
+  git -C "$PROJECT_DIR" log -40 --date=format:'%d.%m.%Y %H:%M' --format='- %ad · `%h` · %s' > "$U/changelog.md" 2>/dev/null
+  chmod 666 "$U/changelog.md" 2>/dev/null
+}
+[ -f "$U/changelog.md" ] || changelog
 log() { echo "$(date '+%H:%M:%S') $*" >> "$LOG"; }
 step() {  # step <no> <etiket>
   printf '{"running": true, "step": %s, "total": %s, "label": "%s", "started": "%s"}\n' \
@@ -38,6 +43,7 @@ json.dump({"status": s, "message": msg, "current_version": ver,
            "last_update": datetime.datetime.now().strftime("%d.%m.%Y %H:%M")},
           open(path, "w"), ensure_ascii=False, indent=2)
 PY
+  changelog
   chmod 666 "$PROGRESS" "$STATUS" "$LOG" 2>/dev/null
   log "$2"
 }
