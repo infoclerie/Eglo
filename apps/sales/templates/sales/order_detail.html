@@ -1,0 +1,78 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ order.number }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ order.number }}</h1><p>{{ order.channel }} · {{ order.get_status_display }}</p></div>
+  <a class="btn" href="{% url 'sales:pool' %}">{% icon "back" %}Havuza dön</a>
+  <a class="btn" href="{% url 'admin:sales_salesorder_change' order.pk %}">{% icon "edit" %}Düzenle</a></div>
+
+<div class="grid-2">
+  <div class="card mb-3">
+    <div class="card-header"><strong>Sipariş bilgileri</strong></div>
+    <div class="card-body">
+      <table class="detail-table">
+        <tr><th>Sipariş no</th><td>{{ order.number }}</td></tr>
+        {% if order.external_ref %}<tr><th>Kanal sipariş no</th><td>{{ order.external_ref }}</td></tr>{% endif %}
+        <tr><th>Tarih</th><td>{{ order.order_date|date:"d.m.Y H:i" }}</td></tr>
+        <tr><th>Kanal</th><td>{{ order.channel }}</td></tr>
+        <tr><th>Durum</th><td>{{ order.status|badge:order.get_status_display }}</td></tr>
+        <tr><th>Bekleme süresi</th><td>{{ order.hours_in_status }} saat</td></tr>
+        <tr><th>Ödeme şekli</th><td>{{ order.get_payment_method_display }}</td></tr>
+        {% if order.warehouse %}<tr><th>Çıkış deposu</th><td>{{ order.warehouse }}</td></tr>{% endif %}
+        {% if order.coupon_code %}<tr><th>Kupon</th><td>{{ order.coupon_code }}</td></tr>{% endif %}
+        {% if order.applied_campaigns %}<tr><th>Kampanyalar</th><td>{{ order.applied_campaigns }}</td></tr>{% endif %}
+        {% if order.note %}<tr><th>Not</th><td>{{ order.note }}</td></tr>{% endif %}
+      </table>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header"><strong>Müşteri</strong></div>
+    <div class="card-body">
+      <table class="detail-table">
+        <tr><th>Müşteri</th><td>{% if order.customer %}<a href="{% url 'partners:detail' order.customer.pk %}">{{ order.customer.name }}</a>{% else %}{{ order.customer_name|default:"—" }}{% endif %}</td></tr>
+        {% if order.phone %}<tr><th>Telefon</th><td>{{ order.phone }}</td></tr>{% endif %}
+        {% if order.email %}<tr><th>E-posta</th><td>{{ order.email }}</td></tr>{% endif %}
+        {% if order.tax_number %}<tr><th>VKN / TCKN</th><td>{{ order.tax_number }}</td></tr>{% endif %}
+        {% if order.shipping_address %}<tr><th>Teslimat adresi</th><td>{{ order.shipping_address }}</td></tr>{% endif %}
+        {% if order.billing_address %}<tr><th>Fatura adresi</th><td>{{ order.billing_address }}</td></tr>{% endif %}
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header"><strong>Sipariş satırları</strong></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Ürün</th><th>SKU</th><th class="num">Miktar</th><th class="num">Birim fiyat</th><th class="num">İndirim</th><th class="num">KDV %</th><th class="num">KDV</th><th class="num">Net tutar</th></tr></thead>
+    <tbody>
+    {% for ln in lines %}
+    <tr><td>{{ ln.product.name }}</td><td class="muted">{{ ln.product.sku }}</td>
+        <td class="num">{{ ln.quantity }}</td><td class="num">{{ ln.unit_price }} ₺</td>
+        <td class="num">{% if ln.discount %}{{ ln.discount }} ₺{% else %}—{% endif %}</td>
+        <td class="num">%{{ ln.vat_rate }}</td><td class="num">{{ ln.vat_amount }} ₺</td>
+        <td class="num"><b>{{ ln.net }} ₺</b></td></tr>
+    {% empty %}<tr><td colspan="8" class="muted">Satır yok.</td></tr>{% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="6"></td><th class="num">Ara toplam</th><td class="num">{{ order.subtotal }} ₺</td></tr>
+      {% if order.discount_total %}<tr><td colspan="6"></td><th class="num">İndirim</th><td class="num">-{{ order.discount_total }} ₺</td></tr>{% endif %}
+      <tr><td colspan="6"></td><th class="num">Kargo</th><td class="num">{{ order.shipping_fee }} ₺</td></tr>
+      <tr><td colspan="6"></td><th class="num">KDV toplam</th><td class="num">{{ order.vat_total }} ₺</td></tr>
+      <tr><td colspan="6"></td><th class="num"><b>Genel toplam</b></th><td class="num"><b>{{ order.grand_total }} ₺</b></td></tr>
+    </tfoot>
+  </table></div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header"><strong>Durum geçmişi</strong></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Tarih</th><th>Durum</th><th>Kullanıcı</th><th>Not</th></tr></thead>
+    <tbody>
+    {% for log in logs %}
+    <tr><td>{{ log.at|date:"d.m.Y H:i" }}</td><td>{{ log.get_status_display }}</td>
+        <td>{{ log.user|default:"Sistem" }}</td><td>{{ log.note|default:"—" }}</td></tr>
+    {% empty %}<tr><td colspan="4" class="muted">Geçmiş kaydı yok.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

@@ -5,6 +5,7 @@ MANIFEST = {
     "depends": ["core", "catalog"],
     "icon": "users",
     "color": "#2563c9",
-    "menu": [("Cariler", "admin:partners_partner_changelist", "users")],
+    "urls": "apps.partners.urls",
+    "menu": [("Cariler", "partners:list", "users"), ("Yeni Cari", "partners:create", "plus")],
     "reset_master": [{'label': 'Cariler (müşteri, bayi, tedarikçi)', 'desc': 'Tüm cari kartlar. Bayi portal erişimleri de kalkar (kullanıcı hesapları kalır).', 'models': ['partners.Partner'], 'sequences': ['partners.']}],
 }

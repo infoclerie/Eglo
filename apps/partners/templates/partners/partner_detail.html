@@ -1,0 +1,70 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ p.code }} · {{ p.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div>
+  <h1>{{ p.code }} <span class="text-muted">{{ p.name }}</span></h1>
+  <p>{{ p.get_kind_display }} · {{ p.get_group_display }}{% if not p.active %} · <span class="badge danger">Pasif</span>{% endif %}</p></div>
+  <div>{% if perms.partners.change_partner %}<a class="btn" href="{% url 'partners:edit' p.pk %}">{% icon "edit" %}Düzenle</a>{% endif %}
+  <a class="btn" href="{% url 'accounting:statement' p.pk %}">{% icon "file" %}Ekstre</a></div></div>
+
+<div class="grid-2">
+  <div class="card mb-3">
+    <div class="card-header"><strong>İletişim bilgileri</strong></div>
+    <div class="card-body">
+      <table class="table table-sm mb-0">
+        <tr><td><strong>Yetkili kişi</strong></td><td>{{ p.contact_person|default:"-" }}</td></tr>
+        <tr><td><strong>Telefon</strong></td><td>{{ p.phone|default:"-" }}</td></tr>
+        <tr><td><strong>E-posta</strong></td><td>{% if p.email %}<a href="mailto:{{ p.email }}">{{ p.email }}</a>{% else %}-{% endif %}</td></tr>
+        <tr><td><strong>İl / İlçe</strong></td><td>{{ p.city|default:"-" }} {{ p.district }}</td></tr>
+        <tr><td><strong>Fatura adresi</strong></td><td>{{ p.address|default:"-"|linebreaksbr }}</td></tr>
+        {% if p.shipping_address %}<tr><td><strong>Teslimat adresi</strong></td><td>{{ p.shipping_address|linebreaksbr }}</td></tr>{% endif %}
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div class="card mb-3">
+      <div class="card-header"><strong>Mali bilgiler</strong></div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <tr><td><strong>Vergi dairesi</strong></td><td>{{ p.tax_office|default:"-" }}</td></tr>
+          <tr><td><strong>VKN / TCKN</strong></td><td>{{ p.tax_number|default:"-" }}</td></tr>
+          <tr><td><strong>E-fatura mükellefi</strong></td><td>{% if p.e_invoice_user %}Evet{% else %}Hayır{% endif %}</td></tr>
+          <tr><td><strong>IBAN</strong></td><td>{{ p.iban|default:"-" }}</td></tr>
+          <tr><td><strong>Ödeme vadesi</strong></td><td>{{ p.payment_term_days }} gün</td></tr>
+          <tr><td><strong>Kredi limiti</strong></td><td>{% if p.credit_limit %}{{ p.credit_limit|floatformat:2 }} ₺{% else %}Limit yok{% endif %}</td></tr>
+          <tr><td><strong>İndirim %</strong></td><td>{% if p.discount_pct %}%{{ p.discount_pct }}{% else %}-{% endif %}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><strong>Bakiye</strong></div>
+      <div class="card-body">
+        <div style="font-size:1.5em;font-weight:bold;{% if balance > 0 %}color:var(--success){% elif balance < 0 %}color:var(--danger){% endif %}">
+          {{ balance|floatformat:2 }} ₺
+        </div>
+        <div class="text-muted small">{% if balance > 0 %}Alacaklı{% elif balance < 0 %}Borçlu{% else %}Bakiye yok{% endif %}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if p.note %}
+<div class="card mb-3">
+  <div class="card-header"><strong>Notlar</strong></div>
+  <div class="card-body">{{ p.note|linebreaksbr }}</div>
+</div>
+{% endif %}
+
+<div class="card mb-3">
+  <div class="card-header"><strong>İzinler (İYS)</strong></div>
+  <div class="card-body">
+    <table class="table table-sm mb-0">
+      <tr><td>SMS izni</td><td>{% if p.consent_sms %}<span class="badge success">Var</span>{% else %}<span class="badge">Yok</span>{% endif %}</td></tr>
+      <tr><td>E-posta izni</td><td>{% if p.consent_email %}<span class="badge success">Var</span>{% else %}<span class="badge">Yok</span>{% endif %}</td></tr>
+      {% if p.consent_date %}<tr><td>İzin tarihi</td><td>{{ p.consent_date }}</td></tr>{% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}

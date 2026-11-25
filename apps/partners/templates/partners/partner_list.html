@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Cariler{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Cari Kartlar</h1><p class="text-muted">Müşteri, bayi, tedarikçi ve fason üretici</p></div>
+  <div>{% if perms.partners.add_partner %}<a class="btn btn-primary" href="{% url 'partners:create' %}">{% icon "plus" %}Yeni cari</a>{% endif %}</div></div>
+
+<div class="card">
+  <div class="card-head">
+    <form method="get" class="inline" style="width:100%;gap:8px">
+      <input type="search" name="q" value="{{ q }}" placeholder="Kod, ad, VKN, telefon veya e-posta…" style="flex:2">
+      <select name="kind"><option value="">Tüm türler</option>{% for v,l in kinds %}<option value="{{ v }}" {% if filters.kind == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      <select name="group"><option value="">Tüm gruplar</option>{% for v,l in groups %}<option value="{{ v }}" {% if filters.group == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      <button class="btn btn-primary">{% icon "search" %}Ara</button>
+    </form>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Kod</th><th>Firma / kişi adı</th><th class="hide-sm">Tür</th><th class="hide-sm">Grup</th><th class="hide-sm">Telefon</th><th class="hide-sm">İl</th><th></th></tr></thead>
+    <tbody>
+    {% for p in partners %}
+    <tr>
+      <td><a href="{% url 'partners:detail' p.pk %}"><b>{{ p.code }}</b></a></td>
+      <td><a href="{% url 'partners:detail' p.pk %}">{{ p.name }}</a></td>
+      <td class="hide-sm">{{ p.get_kind_display }}</td>
+      <td class="hide-sm">{{ p.get_group_display }}</td>
+      <td class="hide-sm">{{ p.phone|default:"-" }}</td>
+      <td class="hide-sm">{{ p.city|default:"-" }}</td>
+      <td><a href="{% url 'partners:edit' p.pk %}" class="btn btn-sm" title="Düzenle">{% icon "edit" %}</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7"><div class="empty">{% icon "users" %}<div>Kayıt bulunamadı.</div></div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

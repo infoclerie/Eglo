@@ -1,0 +1,93 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ title }}</h1></div>
+
+<form method="post">
+{% csrf_token %}
+<div class="grid-2">
+  <div class="card mb-3">
+    <div class="card-header"><strong>Temel bilgiler</strong></div>
+    <div class="card-body">
+      <div class="form-group"><label>Firma / kişi adı <i class="hi" data-help="Carinin resmi adı veya kişi adı soyadı.">ⓘ</i></label>
+        <input type="text" name="name" value="{{ p.name|default:'' }}" required class="form-control"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Tür <i class="hi" data-help="Müşteri, tedarikçi veya her ikisi.">ⓘ</i></label>
+          <select name="kind" class="form-control">{% for v,l in kinds %}<option value="{{ v }}" {% if p.kind == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="form-group"><label>Grup <i class="hi" data-help="Carinin faaliyet alanı: eczane, kozmetik mağazası, bayi, fason üretici vb.">ⓘ</i></label>
+          <select name="group" class="form-control">{% for v,l in groups %}<option value="{{ v }}" {% if p.group == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="form-group"><label>Yetkili kişi</label>
+        <input type="text" name="contact_person" value="{{ p.contact_person|default:'' }}" class="form-control"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Telefon</label>
+          <input type="tel" name="phone" value="{{ p.phone|default:'' }}" class="form-control"></div>
+        <div class="form-group"><label>E-posta</label>
+          <input type="email" name="email" value="{{ p.email|default:'' }}" class="form-control"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header"><strong>Mali bilgiler</strong></div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="form-group"><label>Vergi dairesi</label>
+          <input type="text" name="tax_office" value="{{ p.tax_office|default:'' }}" class="form-control"></div>
+        <div class="form-group"><label>VKN / TCKN <i class="hi" data-help="Vergi kimlik numarası (10 hane) veya TC kimlik numarası (11 hane). Sistem doğrulama yapar.">ⓘ</i></label>
+          <input type="text" name="tax_number" value="{{ p.tax_number|default:'' }}" class="form-control" maxlength="11"></div>
+      </div>
+      <div class="form-group"><label><input type="checkbox" name="e_invoice_user" {% if p.e_invoice_user %}checked{% endif %}> E-fatura mükellefi <i class="hi" data-help="İşaretlerseniz bu cariye e-fatura kesilir. Yoksa e-arşiv fatura.">ⓘ</i></label></div>
+      <div class="form-group"><label>IBAN</label>
+        <input type="text" name="iban" value="{{ p.iban|default:'' }}" class="form-control" maxlength="34"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Ödeme vadesi (gün) <i class="hi" data-help="Fatura tarihinden itibaren kaç gün ödeme süresi. 0 = peşin.">ⓘ</i></label>
+          <input type="number" name="payment_term_days" value="{{ p.payment_term_days|default:'0' }}" class="form-control"></div>
+        <div class="form-group"><label>Kredi limiti <i class="hi" data-help="Carinin açık bakiye limiti. 0 = limit kontrolü yapılmaz.">ⓘ</i></label>
+          <input type="number" step="0.01" name="credit_limit" value="{{ p.credit_limit|default:'0' }}" class="form-control"></div>
+        <div class="form-group"><label>İndirim %</label>
+          <input type="number" step="0.01" name="discount_pct" value="{{ p.discount_pct|default:'0' }}" class="form-control"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card mb-3">
+    <div class="card-header"><strong>Adres bilgileri</strong></div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="form-group"><label>İl</label>
+          <input type="text" name="city" value="{{ p.city|default:'' }}" class="form-control"></div>
+        <div class="form-group"><label>İlçe</label>
+          <input type="text" name="district" value="{{ p.district|default:'' }}" class="form-control"></div>
+      </div>
+      <div class="form-group"><label>Fatura adresi</label>
+        <textarea name="address" class="form-control" rows="2">{{ p.address|default:'' }}</textarea></div>
+      <div class="form-group"><label>Teslimat adresi <i class="hi" data-help="Fatura adresinden farklıysa doldurun. Boşsa fatura adresi kullanılır.">ⓘ</i></label>
+        <textarea name="shipping_address" class="form-control" rows="2">{{ p.shipping_address|default:'' }}</textarea></div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header"><strong>Diğer</strong></div>
+    <div class="card-body">
+      {% if p.kind == "supplier" or p.kind == "both" %}
+      <div class="form-group"><label>Teslimat süresi (gün, tedarikçi) <i class="hi" data-help="Tedarikçi sipariş verdikten sonra ortalama kaç günde teslim eder.">ⓘ</i></label>
+        <input type="number" name="lead_time_days" value="{{ p.lead_time_days|default:'0' }}" class="form-control"></div>
+      {% endif %}
+      <div class="form-group"><label><input type="checkbox" name="consent_sms" {% if p.consent_sms %}checked{% endif %}> SMS izni (İYS) <i class="hi" data-help="İleti Yönetim Sistemi'ne kayıtlı SMS pazarlama izni. İzinsiz toplu SMS gönderilemez.">ⓘ</i></label></div>
+      <div class="form-group"><label><input type="checkbox" name="consent_email" {% if p.consent_email %}checked{% endif %}> E-posta izni (İYS)</label></div>
+      <div class="form-group"><label>Not</label>
+        <textarea name="note" class="form-control" rows="2">{{ p.note|default:'' }}</textarea></div>
+      <div class="form-group"><label><input type="checkbox" name="active" {% if p.active or not p %}checked{% endif %}> Aktif</label></div>
+    </div>
+  </div>
+</div>
+
+<div class="form-actions">
+  <button type="submit" class="btn btn-primary">💾 Kaydet</button>
+  <a href="{% if p %}{% url 'partners:detail' p.pk %}{% else %}{% url 'partners:list' %}{% endif %}" class="btn">İptal</a>
+</div>
+</form>
+{% endblock %}

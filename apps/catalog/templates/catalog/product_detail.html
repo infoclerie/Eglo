@@ -1,0 +1,91 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ p.sku }} · {{ p.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div>
+  <h1>{{ p.sku }} <span class="text-muted">{{ p.name }}</span></h1>
+  <p>{{ p.get_kind_display }} · {{ p.get_group_display }} · {{ p.brand|default:"Markasız" }}</p></div>
+  <div>{% if perms.catalog.change_product %}<a class="btn" href="{% url 'catalog:edit' p.pk %}">{% icon "edit" %}Düzenle</a>{% endif %}
+  <a class="btn" href="{% url 'catalog:photos' p.pk %}">{% icon "image" %}Fotoğraflar</a></div></div>
+
+<div class="grid-2">
+  <!-- Sol: Bilgiler -->
+  <div class="card">
+    <div class="card-header"><strong>Ürün bilgileri</strong></div>
+    <div class="card-body">
+      <table class="table table-sm mb-0">
+        <tr><td><strong>Barkod</strong></td><td>{{ p.barcode|default:"-" }}</td></tr>
+        <tr><td><strong>Kategori</strong></td><td>{{ p.category|default:"-" }}</td></tr>
+        <tr><td><strong>Birim</strong></td><td>{{ p.get_unit_display }}</td></tr>
+        <tr><td><strong>Hacim / ağırlık</strong></td><td>{{ p.volume|default:"-" }}</td></tr>
+        <tr><td><strong>Koli içi adet</strong></td><td>{{ p.units_per_case }}</td></tr>
+        <tr><td><strong>Koli barkodu</strong></td><td>{{ p.case_barcode|default:"-" }}</td></tr>
+        <tr><td><strong>Palet başına koli</strong></td><td>{{ p.cases_per_pallet }}</td></tr>
+        <tr><td><strong>Liste fiyatı</strong></td><td>{{ p.list_price|floatformat:2 }} ₺</td></tr>
+        <tr><td><strong>Maliyet</strong></td><td>{{ p.cost|floatformat:2 }} ₺</td></tr>
+        <tr><td><strong>KDV</strong></td><td>%{{ p.vat_rate }}</td></tr>
+        <tr><td><strong>Min. stok</strong></td><td>{{ p.min_stock|floatformat:"-3" }}</td></tr>
+        <tr><td><strong>LOT takibi</strong></td><td>{% if p.track_lot %}Evet{% else %}Hayır{% endif %}</td></tr>
+        {% if p.storage_condition %}<tr><td><strong>Depolama</strong></td><td>{{ p.storage_condition }}</td></tr>{% endif %}
+        {% if p.description %}<tr><td><strong>Açıklama</strong></td><td>{{ p.description }}</td></tr>{% endif %}
+      </table>
+    </div>
+  </div>
+
+  <!-- Sağ: Fotoğraflar + Stok -->
+  <div>
+    {% if images %}
+    <div class="card mb-3">
+      <div class="card-header"><strong>Fotoğraflar</strong></div>
+      <div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap">
+        {% for img in images %}
+        <img src="{{ img.thumb.url }}" alt="{{ p.sku }}" style="width:100px;height:100px;object-fit:cover;border-radius:6px;{% if img.is_main %}border:3px solid var(--primary){% endif %}">
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if stock %}
+    <div class="card mb-3">
+      <div class="card-header"><strong>Stok durumu</strong></div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          {% if stock.is_kit %}<tr><td>Satışa uygun (set)</td><td class="num"><b>{{ stock.available|floatformat:0 }}</b></td></tr>
+          {% else %}
+          <tr><td>Fiziksel</td><td class="num">{{ stock.physical|floatformat:"-3" }}</td></tr>
+          <tr><td><b>Satışa uygun</b></td><td class="num"><b>{{ stock.available|floatformat:"-3" }}</b></td></tr>
+          <tr><td>Rezerve</td><td class="num">{{ stock.reserved|floatformat:"-3" }}</td></tr>
+          {% if stock.damaged %}<tr><td>Hasarlı</td><td class="num">{{ stock.damaged|floatformat:"-3" }}</td></tr>{% endif %}
+          {% if stock.return_check %}<tr><td>İade kontrol</td><td class="num">{{ stock.return_check|floatformat:"-3" }}</td></tr>{% endif %}
+          {% if stock.sample %}<tr><td>Numune</td><td class="num">{{ stock.sample|floatformat:"-3" }}</td></tr>{% endif %}
+          {% if stock.quarantine %}<tr><td>Karantina</td><td class="num">{{ stock.quarantine|floatformat:"-3" }}</td></tr>{% endif %}
+          {% endif %}
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if p.is_kit and components %}
+<div class="card mb-3">
+  <div class="card-header"><strong>Set bileşenleri</strong></div>
+  <div class="card-body">
+    <div class="helptext mb-2">Set satıldığında stok bu bileşenlerden düşer. Örneğin bir "Bakım Seti" bir şampuan ve iki krem içeriyorsa, bir set satıldığında bu miktarlar bileşenlerden ayrılır.</div>
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Bileşen</th><th class="num">Miktar</th></tr></thead>
+      <tbody>{% for c in components %}<tr><td><a href="{% url 'catalog:detail' c.component.pk %}">{{ c.component }}</a></td><td class="num">{{ c.quantity|floatformat:"-3" }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if prices %}
+<div class="card mb-3">
+  <div class="card-header"><strong>Kanal fiyatları</strong></div>
+  <div class="card-body"><table class="table table-sm mb-0">
+    <thead><tr><th>Kanal</th><th class="num">Fiyat</th></tr></thead>
+    <tbody>{% for pp in prices %}<tr><td>{{ pp.channel }}</td><td class="num">{{ pp.price|floatformat:2 }} ₺</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Ürünler{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Ürün Kartları</h1><p class="text-muted">Tüm ürünler, setler ve hammaddeler</p></div>
+  <div>{% if perms.catalog.add_product %}<a class="btn btn-primary" href="{% url 'catalog:create' %}">{% icon "plus" %}Yeni ürün</a>{% endif %}</div></div>
+
+<div class="card">
+  <div class="card-head">
+    <form method="get" class="inline" style="width:100%;gap:8px">
+      <input type="search" name="q" value="{{ q }}" placeholder="SKU, ad veya barkod ara…" style="flex:2">
+      <select name="kind"><option value="">Tüm türler</option>{% for v,l in kinds %}<option value="{{ v }}" {% if filters.kind == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      <select name="brand"><option value="">Tüm markalar</option>{% for b in brands %}<option value="{{ b.pk }}" {% if filters.brand == b.pk|stringformat:"d" %}selected{% endif %}>{{ b.name }}</option>{% endfor %}</select>
+      <select name="category"><option value="">Tüm kategoriler</option>{% for c in categories %}<option value="{{ c.pk }}" {% if filters.category == c.pk|stringformat:"d" %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+      <button class="btn btn-primary">{% icon "search" %}Ara</button>
+    </form>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th style="width:60px"></th><th>SKU</th><th>Ürün adı</th><th class="hide-sm">Marka</th><th class="hide-sm">Kategori</th><th class="hide-sm">Tür</th><th class="num">Fiyat</th><th></th></tr></thead>
+    <tbody>
+    {% for p in products %}
+    <tr>
+      <td>{% if p.main_image %}<img src="{{ p.main_image.thumb.url }}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:4px">{% else %}<div style="width:48px;height:48px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#aaa">{% icon "image" %}</div>{% endif %}</td>
+      <td><a href="{% url 'catalog:detail' p.pk %}"><b>{{ p.sku }}</b></a></td>
+      <td><a href="{% url 'catalog:detail' p.pk %}">{{ p.name }}</a></td>
+      <td class="hide-sm">{{ p.brand|default:"-" }}</td>
+      <td class="hide-sm">{{ p.category|default:"-" }}</td>
+      <td class="hide-sm">{{ p.get_kind_display }}</td>
+      <td class="num">{{ p.list_price|floatformat:2 }} ₺</td>
+      <td><a href="{% url 'catalog:edit' p.pk %}" class="btn btn-sm" title="Düzenle">{% icon "edit" %}</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="8"><div class="empty">{% icon "tag" %}<div>Kayıt bulunamadı.</div></div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

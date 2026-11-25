@@ -6,6 +6,6 @@ MANIFEST = {
     "urls": "apps.catalog.urls",
     "icon": "tag",
     "color": "#e07a2e",
-    "menu": [("Ürünler", "admin:catalog_product_changelist", "tag"), ("Markalar ve Kategoriler", "admin:catalog_category_changelist", "tag")],
+    "menu": [("Ürünler", "catalog:list", "tag"), ("Yeni Ürün", "catalog:create", "plus"), ("Markalar ve Kategoriler", "admin:catalog_category_changelist", "tag")],
     "reset_master": [{'label': 'Ürün kartları, fiyatlar ve fotoğraflar', 'desc': 'Tüm ürünler, set içerikleri, kanal fiyatları, markalar, kategoriler ve ürün fotoğrafları.', 'models': ['catalog.ProductImage', 'catalog.ProductPrice', 'catalog.KitComponent', 'catalog.Product', 'catalog.Brand', 'catalog.Category'], 'media': ['urunler']}],
 }
