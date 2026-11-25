@@ -64,17 +64,44 @@ run() {
     VERSION="$(git log -1 --format='%h · %s' | cut -c1-80 | tr -d '"\\')"
   elif [ -n "$ZIP" ]; then
     step 2 "Zip paketi açılıyor: $(basename "$ZIP")"
-    TMP=$(mktemp -d)
-    if ! unzip -q "$ZIP" -d "$TMP" || [ ! -f "$TMP/meta.json" ]; then
-      mv "$ZIP" "$U/rejected/"; rm -rf "$TMP"
-      finish error "Zip bozuk veya meta.json yok" "?"; return
+    # unzip gerekmez: Python ile açılır, yol güvenliği (../, mutlak yol) kontrol edilir
+    if ! VERSION=$(python3 - "$ZIP" "$PROJECT_DIR" "$LOG" <<'PY'
+import json, sys, zipfile, os, time
+zp, root, logp = sys.argv[1:4]
+log = open(logp, "a", encoding="utf-8")
+def w(m): log.write(time.strftime("%H:%M:%S ") + m + "\n"); log.flush()
+try:
+    z = zipfile.ZipFile(zp)
+except zipfile.BadZipFile:
+    w("HATA: Dosya geçerli bir zip değil."); sys.exit(1)
+names = z.namelist()
+if "meta.json" not in names:
+    w("HATA: Paket içinde meta.json yok."); sys.exit(1)
+meta = json.loads(z.read("meta.json"))
+files = [n for n in names if n.startswith("files/") and not n.endswith("/")]
+if not files:
+    w("HATA: Pakette files/ altında dosya yok."); sys.exit(1)
+root_real = os.path.realpath(root)
+for n in files:
+    rel = n[6:]
+    dest = os.path.realpath(os.path.join(root, rel))
+    if not dest.startswith(root_real + os.sep) or rel.startswith((".env", ".git/")):
+        w(f"HATA: İzin verilmeyen yol: {rel}"); sys.exit(1)
+for n in files:
+    rel = n[6:]
+    dest = os.path.join(root, rel)
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    with open(dest, "wb") as fh:
+        fh.write(z.read(n))
+    w(f"  → {rel}")
+w(f"{len(files)} dosya yerleştirildi (paket v{meta.get('version', '?')}).")
+print(meta.get("version", "?"))
+PY
+    ); then
+      mv "$ZIP" "$U/rejected/"
+      finish error "Zip paketi uygulanamadı — ayrıntı günlükte" "$(git rev-parse --short HEAD 2>/dev/null || echo '?')"; return
     fi
-    VERSION=$(python3 -c "import json;print(json.load(open('$TMP/meta.json')).get('version','?'))")
-    (cd "$TMP/files" && find . -type f) | while read -r f; do
-      mkdir -p "$(dirname "$PROJECT_DIR/${f#./}")"
-      cp "$TMP/files/$f" "$PROJECT_DIR/${f#./}" && log "  → ${f#./}"
-    done
-    rm -rf "$TMP"; mv "$ZIP" "$U/applied/"
+    mv "$ZIP" "$U/applied/"
   else
     rm -f "$PROGRESS"; return
   fi
