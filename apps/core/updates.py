@@ -32,8 +32,11 @@ UPDATES_ROOT = Path(getattr(settings, "UPDATES_ROOT", Path(settings.BASE_DIR) / 
 
 
 def _ensure_dirs():
-    for sub in ("pending", "applied", "rejected"):
-        (UPDATES_ROOT / sub).mkdir(parents=True, exist_ok=True)
+    try:
+        for sub in ("pending", "applied", "rejected"):
+            (UPDATES_ROOT / sub).mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass  # Docker volume henüz mount edilmemiş olabilir
 
 
 def pending_dir():

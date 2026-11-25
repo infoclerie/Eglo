@@ -205,12 +205,29 @@ def updates(request):
                 messages.success(request, "Güncelleme iptal edildi.")
         except _VE as exc:
             messages.error(request, " ".join(exc.messages))
+        except OSError as exc:
+            messages.error(request, f"Dosya sistemi hatası: {exc}")
         return redirect("core:updates")
+
+    # Dizin erişim sorunlarını yakala
+    try:
+        version = upd.current_version()
+        status = upd.last_status()
+        pending = upd.list_pending()
+        applied = upd.list_applied()
+    except OSError:
+        version = "1.0.0"
+        status = None
+        pending = []
+        applied = []
+        messages.warning(request, "Güncelleme dizini henüz oluşturulmamış. "
+                                  "Sunucuda 'mkdir -p updates/pending updates/applied' komutunu çalıştırın.")
+
     return render(request, "core/updates.html", {
-        "version": upd.current_version(),
-        "status": upd.last_status(),
-        "pending": upd.list_pending(),
-        "applied": upd.list_applied(),
+        "version": version,
+        "status": status,
+        "pending": pending,
+        "applied": applied,
     })
 
 
