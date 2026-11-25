@@ -195,17 +195,13 @@ def updates(request):
     if request.method == "POST":
         action = request.POST.get("action")
         try:
-            if action == "upload" and request.FILES.get("file"):
+            if action == "git":
+                upd.request_git_update(request.user.username)
+                messages.info(request, "Güncelleme talebi gönderildi. İlerlemeyi aşağıdan izleyebilirsiniz.")
+            elif action == "upload" and request.FILES.get("file"):
                 meta = upd.save_update(request.FILES["file"])
-                messages.success(request, f"Güncelleme paketi yüklendi: v{meta.get('version', '?')} "
-                                          f"({meta.get('file_count', 0)} dosya). "
-                                          f"'Şimdi Uygula' butonuna basarak güncelleyin.")
-            elif action == "apply":
-                result = upd.apply_update(request.POST.get("file"))
-                if result["status"] == "success":
-                    messages.success(request, f"✅ Güncelleme uygulandı! {result['message']}")
-                else:
-                    messages.error(request, f"Güncelleme hatası: {result['message']}")
+                messages.info(request, f"Paket yüklendi: v{meta.get('version', '?')} ({meta.get('file_count', 0)} dosya). "
+                                       f"Sunucu en fazla 1 dk içinde uygulamaya başlar; ilerlemeyi aşağıdan izleyin.")
             elif action == "cancel":
                 upd.cancel_pending(request.POST.get("file"))
                 messages.success(request, "Güncelleme iptal edildi.")
@@ -230,11 +226,21 @@ def updates(request):
                                   "Sunucuda 'mkdir -p updates/pending updates/applied' komutunu çalıştırın.")
 
     return render(request, "core/updates.html", {
+        "progress": upd.progress(),
         "version": version,
         "status": status,
         "pending": pending,
         "applied": applied,
     })
+
+
+@login_required
+@superuser_required
+def updates_progress(request):
+    """Güncelleme sayfasının 2 sn'de bir okuduğu canlı durum."""
+    data = upd.progress()
+    data["version"] = upd.current_version()
+    return JsonResponse(data)
 
 
 @login_required

@@ -3,152 +3,118 @@
 {% block title %}Güncellemeler{% endblock %}
 {% block content %}
 <div class="page-head">
-    <h1>Sistem Güncellemeleri</h1>
-    <p class="text-muted">Yapay zekânın ürettiği güncelleme paketlerini buradan yükleyin.</p>
+  <div><h1>Sistem Güncellemeleri</h1>
+  <p class="text-muted">Sistemi GitHub'daki son sürüme veya bir zip paketine göre günceller.</p></div>
 </div>
 
-<!-- Mevcut durum -->
-<div class="card mb-3">
-    <div class="card-header"><strong>📦 Mevcut Durum</strong></div>
-    <div class="card-body">
-        <table class="table table-sm mb-0">
-            <tr><td style="width:180px"><strong>Mevcut sürüm</strong></td><td>v{{ version }}</td></tr>
-            {% if status %}
-            <tr>
-                <td><strong>Son güncelleme</strong></td>
-                <td>
-                    {% if status.status == "success" %}
-                        <span class="badge" style="background:#16a34a;color:#fff">✅ Başarılı</span>
-                    {% elif status.status == "error" %}
-                        <span class="badge" style="background:#dc2626;color:#fff">❌ Hata</span>
-                    {% elif status.status == "pending" %}
-                        <span class="badge" style="background:#f59e0b;color:#fff">⏳ Bekliyor</span>
-                    {% endif %}
-                    {{ status.message|default:"" }}
-                </td>
-            </tr>
-            <tr><td><strong>Tarih</strong></td><td>{{ status.last_update|default:"-" }}</td></tr>
-            {% if status.applied_files %}
-            <tr><td><strong>Güncellenen dosyalar</strong></td>
-                <td><details><summary>{{ status.applied_files|length }} dosya</summary>
-                    <ul class="small" style="max-height:200px;overflow:auto;margin:8px 0">
-                    {% for f in status.applied_files %}<li><code>{{ f }}</code></li>{% endfor %}
-                    </ul></details></td></tr>
-            {% endif %}
-            {% else %}
-            <tr><td><strong>Son güncelleme</strong></td><td class="text-muted">Henüz güncelleme yapılmamış</td></tr>
-            {% endif %}
-        </table>
+<!-- Canlı ilerleme -->
+<div class="card mb-3" id="progCard">
+  <div class="card-header"><strong>🔄 Güncelleme Durumu</strong> <span id="progBadge" class="badge" style="margin-left:8px"></span></div>
+  <div class="card-body">
+    <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px">
+      <span id="progLabel">—</span><span id="progStep" class="text-muted"></span>
     </div>
-</div>
-
-<!-- Yükleme alanı -->
-<div class="card mb-3">
-    <div class="card-header"><strong>📤 Güncelleme Yükle</strong></div>
-    <div class="card-body">
-        <form method="post" enctype="multipart/form-data" id="uploadForm">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="upload">
-            <div class="mb-2">
-                <label class="form-label">Güncelleme paketi (.zip)
-                    <span class="helptext" style="display:inline" title="Yapay zekânın ürettiği güncelleme paketi. İçinde değişen kod dosyaları ve sürüm bilgisi bulunur.">ⓘ</span>
-                </label>
-                <input type="file" name="file" accept=".zip" class="form-control" required>
-            </div>
-            <p class="text-muted small mb-2">
-                Yapay zekâdan aldığınız <code>update-vX.X.X.zip</code> dosyasını seçin.
-            </p>
-            <button type="submit" class="btn btn-primary" onclick="showProgress(this,'Yükleniyor...')">📤 Yükle</button>
-        </form>
+    <div style="height:10px;background:#e5e7eb;border-radius:6px;overflow:hidden">
+      <div id="progBar" style="height:100%;width:0;background:#2563eb;transition:width .4s"></div>
     </div>
-</div>
-
-{% if pending %}
-<!-- Bekleyen güncellemeler -->
-<div class="card mb-3">
-    <div class="card-header"><strong>⏳ Bekleyen Güncellemeler</strong></div>
-    <div class="card-body">
-        <table class="table table-sm">
-            <thead><tr><th>Dosya</th><th>Sürüm</th><th>Açıklama</th><th>Dosya sayısı</th><th></th></tr></thead>
-            <tbody>
-            {% for u in pending %}
-            <tr>
-                <td><code>{{ u.filename }}</code></td>
-                <td>v{{ u.version|default:"?" }}</td>
-                <td>{{ u.description|default:"-" }}</td>
-                <td>{{ u.file_count }} dosya</td>
-                <td style="white-space:nowrap">
-                    <form method="post" style="display:inline" class="apply-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="apply">
-                        <input type="hidden" name="file" value="{{ u.filename }}">
-                        <button class="btn btn-sm btn-primary" onclick="showProgress(this,'Güncelleniyor...')">▶ Şimdi Uygula</button>
-                    </form>
-                    <form method="post" style="display:inline">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="cancel">
-                        <input type="hidden" name="file" value="{{ u.filename }}">
-                        <button class="btn btn-sm btn-danger" title="İptal et">✕</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
-
-{% if applied %}
-<!-- Uygulanan güncellemeler -->
-<div class="card mb-3">
-    <div class="card-header"><strong>✅ Uygulanan Güncellemeler</strong></div>
-    <div class="card-body">
-        <table class="table table-sm mb-0">
-            <thead><tr><th>Dosya</th><th>Sürüm</th><th>Açıklama</th><th>Dosya sayısı</th></tr></thead>
-            <tbody>
-            {% for u in applied %}
-            <tr>
-                <td><code>{{ u.filename }}</code></td>
-                <td>v{{ u.version|default:"?" }}</td>
-                <td>{{ u.description|default:"-" }}</td>
-                <td>{{ u.file_count }} dosya</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
-
-<!-- Nasıl çalışır -->
-<div class="card mb-3">
-    <div class="card-header"><strong>ℹ️ Nasıl çalışır?</strong></div>
-    <div class="card-body">
-        <ol class="mb-0">
-            <li>Yapay zekâya istediğiniz değişikliği söyleyin.</li>
-            <li>Yapay zekâ değişiklikleri yapar ve size bir <strong>güncelleme paketi</strong> (zip) indirir.</li>
-            <li>Bu sayfadan zip dosyasını yükleyin.</li>
-            <li><strong>Şimdi Uygula</strong> butonuna basın — dosyalar anında güncellenir.</li>
-            <li>Sayfa yenilenince yeni sürüm numarasını ve güncellenen dosya listesini göreceksiniz.</li>
-        </ol>
-    </div>
-</div>
-
-<!-- İlerleme göstergesi -->
-<div id="progressOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:12px;padding:32px 48px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2)">
-    <div style="width:48px;height:48px;border:4px solid #e5e7eb;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
-    <div id="progressText" style="font-size:16px;font-weight:600;color:#1f2937">İşleniyor...</div>
-    <div style="font-size:13px;color:#6b7280;margin-top:8px">Lütfen sayfayı kapatmayın</div>
+    <ol id="progSteps" class="small" style="margin:12px 0 8px;padding-left:20px;color:#6b7280">
+      <li>Talep alındı, hazırlanıyor</li>
+      <li>Kod alınıyor (GitHub veya zip)</li>
+      <li>Uygulama yeniden derleniyor (1-3 dk)</li>
+      <li>Servisler yeniden başlatılıyor, veritabanı güncelleniyor</li>
+      <li>Sistemin açılması bekleniyor</li>
+    </ol>
+    <details id="progLogBox"><summary class="small">Ayrıntılı günlük</summary>
+      <pre id="progLog" style="max-height:220px;overflow:auto;background:#0f172a;color:#e2e8f0;padding:10px;border-radius:6px;font-size:12px;white-space:pre-wrap;margin-top:8px"></pre>
+    </details>
   </div>
 </div>
-<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<div class="grid-2">
+  <!-- Mevcut durum + Git -->
+  <div class="card mb-3">
+    <div class="card-header"><strong>📦 Mevcut Sürüm</strong></div>
+    <div class="card-body">
+      <table class="table table-sm mb-2">
+        <tr><td style="width:140px"><strong>Sürüm</strong></td><td id="curVersion">{{ version }}</td></tr>
+        <tr><td><strong>Son güncelleme</strong></td><td>
+          {% if status %}{% if status.status == "success" %}✅{% else %}❌{% endif %} {{ status.message }} · {{ status.last_update }}
+          {% else %}<span class="text-muted">Henüz yok</span>{% endif %}</td></tr>
+      </table>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="git">
+        <button class="btn btn-primary" id="gitBtn">⬇ GitHub'dan güncelle</button>
+        <span class="helptext" title="Sunucu GitHub'daki main dalını çeker, uygulamayı yeniden derler ve başlatır. Sırasında sistem 1-2 dk erişilemez olabilir.">ⓘ</span>
+      </form>
+    </div>
+  </div>
+
+  <!-- Zip -->
+  <div class="card mb-3">
+    <div class="card-header"><strong>📤 Zip paketi ile güncelle</strong></div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}
+        <input type="hidden" name="action" value="upload">
+        <label class="form-label">Güncelleme paketi (.zip)
+          <span class="helptext" title="Yapay zekânın ürettiği update-vX.X.X.zip dosyası. Yüklenince sunucu otomatik uygular.">ⓘ</span></label>
+        <input type="file" name="file" accept=".zip" class="form-control mb-2" required>
+        <button class="btn">📤 Yükle ve uygula</button>
+      </form>
+      {% for u in pending %}
+      <div class="small mt-2">⏳ <code>{{ u.filename }}</code> sırada
+        <form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="action" value="cancel">
+          <input type="hidden" name="file" value="{{ u.filename }}"><button class="btn btn-sm btn-danger" title="İptal et">✕</button></form></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if applied %}
+<div class="card mb-3"><div class="card-header"><strong>✅ Uygulanan paketler</strong></div>
+  <div class="table-wrap"><table class="table table-sm mb-0">
+    <thead><tr><th>Dosya</th><th>Sürüm</th><th>Açıklama</th><th>Dosya</th></tr></thead><tbody>
+    {% for u in applied %}<tr><td><code>{{ u.filename }}</code></td><td>v{{ u.version|default:"?" }}</td><td>{{ u.description|default:"-" }}</td><td>{{ u.file_count }}</td></tr>{% endfor %}
+  </tbody></table></div></div>
+{% endif %}
+
+{{ progress|json_script:"progInit" }}
 <script>
-function showProgress(btn, text){
-  btn.disabled=true;
-  document.getElementById('progressText').textContent=text;
-  document.getElementById('progressOverlay').style.display='flex';
-}
+(function(){
+  const url = "{% url 'core:updates_progress' %}";
+  const $ = id => document.getElementById(id);
+  let wasRunning = false, failures = 0;
+  function render(d){
+    const total = d.total || 5, step = d.step || 0;
+    const active = d.running || d.queued;
+    let pct = Math.round(step / total * 100);
+    if (d.running === false && d.result === "success") pct = 100;
+    $("progBar").style.width = pct + "%";
+    $("progBar").style.background = d.result === "error" ? "#dc2626" : (d.result === "success" && !active ? "#16a34a" : "#2563eb");
+    $("progLabel").textContent = d.label || (active ? "Sunucunun talebi alması bekleniyor (en fazla 1 dk)" : "Bekleyen güncelleme yok");
+    $("progStep").textContent = active ? `Adım ${step}/${total}` : "";
+    const b = $("progBadge");
+    if (active){ b.textContent = "⏳ Çalışıyor"; b.style.cssText = "margin-left:8px;background:#f59e0b;color:#fff"; }
+    else if (d.result === "success"){ b.textContent = "✅ Tamamlandı"; b.style.cssText = "margin-left:8px;background:#16a34a;color:#fff"; }
+    else if (d.result === "error"){ b.textContent = "❌ Hata"; b.style.cssText = "margin-left:8px;background:#dc2626;color:#fff"; $("progLogBox").open = true; }
+    else { b.textContent = ""; b.style.cssText = ""; }
+    [...$("progSteps").children].forEach((li, i) => {
+      li.style.color = i < step - 1 || (!active && d.result === "success") ? "#16a34a" : (i === step - 1 && active ? "#2563eb" : "#6b7280");
+      li.style.fontWeight = i === step - 1 && active ? "600" : "400";
+    });
+    if (d.log){ const pre = $("progLog"); pre.textContent = d.log.join("\n"); pre.scrollTop = pre.scrollHeight; }
+    if (d.version) $("curVersion").textContent = d.version;
+    $("gitBtn").disabled = !!active;
+    if (wasRunning && !active && d.result === "success") setTimeout(() => location.reload(), 1500);
+    wasRunning = active;
+  }
+  function poll(){
+    fetch(url, {credentials: "same-origin", cache: "no-store"})
+      .then(r => { if (!r.ok || r.redirected) throw 0; return r.json(); })
+      .then(d => { failures = 0; render(d); })
+      .catch(() => { failures++; if (wasRunning){ $("progLabel").textContent = "Sistem yeniden başlatılıyor, bağlantı bekleniyor…"; } })
+      .finally(() => setTimeout(poll, 2000));
+  }
+  render(JSON.parse(document.getElementById("progInit").textContent));
+  poll();
+})();
 </script>
 {% endblock %}

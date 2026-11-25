@@ -146,49 +146,30 @@ def last_status():
     return None
 
 
-def apply_update(filename):
-    """Bekleyen güncellemeyi doğrudan uygular (cron'a bağlı kalmadan)."""
-    if not re.match(r"^[\w\-\.]+\.zip$", filename or ""):
-        raise ValidationError("Geçersiz dosya adı.")
-    path = pending_dir() / filename
-    if not path.exists():
-        raise ValidationError("Güncelleme bulunamadı.")
+def request_git_update(user=""):
+    """GitHub'dan güncelleme talebi bırakır; sunucudaki deploy/auto-update.sh işler."""
+    _ensure_dirs()
+    (UPDATES_ROOT / "request.json").write_text(
+        json.dumps({"by": user, "at": timezone.now().isoformat()}), encoding="utf-8")
+    (UPDATES_ROOT / "progress.json").write_text(json.dumps(
+        {"running": True, "step": 0, "total": 5, "label": "Sunucunun talebi alması bekleniyor (en fazla 1 dk)"},
+        ensure_ascii=False), encoding="utf-8")
 
-    meta = read_update_meta(path)
-    base = Path(settings.BASE_DIR)
-    applied_files = []
-    errors = []
 
+def progress():
+    """Canlı ilerleme: progress.json + update.log son satırları + bekleyen talep var mı."""
+    out = {"running": False, "step": 0, "total": 5, "label": "", "log": []}
     try:
-        with zipfile.ZipFile(path) as z:
-            for name in z.namelist():
-                if not name.startswith("files/") or name.endswith("/"):
-                    continue
-                rel = name[6:]  # "files/" kısmını çıkar
-                dest = base / rel
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                dest.write_bytes(z.read(name))
-                applied_files.append(rel)
-    except Exception as exc:
-        errors.append(str(exc))
-
-    # Sonucu status.json'a yaz
-    result = {
-        "status": "error" if errors else "success",
-        "current_version": meta.get("version", "?"),
-        "last_update": timezone.now().strftime("%d.%m.%Y %H:%M"),
-        "message": f"{len(applied_files)} dosya güncellendi." if not errors else f"Hata: {'; '.join(errors)}",
-        "applied_files": applied_files,
-        "errors": errors,
-    }
-    status_file().write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-
-    # Zip'i applied'a taşı
-    if not errors:
-        target = applied_dir() / path.name
-        path.rename(target)
-
-    return result
+        pf = UPDATES_ROOT / "progress.json"
+        if pf.exists():
+            out.update(json.loads(pf.read_text(encoding="utf-8")))
+        lf = UPDATES_ROOT / "update.log"
+        if lf.exists():
+            out["log"] = lf.read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
+        out["queued"] = (UPDATES_ROOT / "request.json").exists() or any(pending_dir().glob("*.zip"))
+    except (OSError, json.JSONDecodeError):
+        pass
+    return out
 
 
 def cancel_pending(filename):

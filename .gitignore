@@ -7,3 +7,6 @@ media/
 backups/
 .venv/
 backups_app/
+
+# Güncelleme talepleri ve günlükleri (sunucuya özel)
+updates/
