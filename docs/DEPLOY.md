@@ -74,3 +74,12 @@ sudo docker compose cp web:/app/backups_app/DOSYA.zip ./                        
 5. Pazaryeri entegrasyonlarında (Trendyol test ortamı vb.) IP yetkisi gerekiyorsa yeni IP'yi bildirin.
 
 Yedek PostgreSQL / SQLite bağımsızdır; aynı veya daha yeni yazılım sürümüne yüklenebilir (önce `git pull` ile güncel kod).
+
+## Sunucudaki (ZIP ile gelen) değişiklikleri GitHub'a aktarma
+ZIP paketleri sunucuda git dışında kalır. Bunları depoya taşımak için (sunucuda, root):
+```bash
+curl -fsSL https://raw.githubusercontent.com/infoclerie/Eglo/main/deploy/export-server-changes.sh | sudo bash
+```
+Betik `.env`, veritabanı/yedek/döküm, `media/`, `updates/`, csv/xlsx, anahtar/sertifika dosyalarını eler, kalan kodda
+şifre taraması yapar ve çalışan sisteme dokunmadan `sunucu-aktarim-<tarih>` dalına gönderir (main'e değil).
+Token yoksa `MODE=arsiv` ile `/root/eglo-aktarim-*.tar.gz` üretir. Dal incelenip main'e birleştirilir.
